@@ -2,9 +2,9 @@
   "name": "waitify-api",
   "version": "1.0.0",
   "description": "API de l'application Waitify",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "scripts": {
-    "start": "tsc && node dist/index.js",
+    "start": "tsc && node dist/src/index.js",
     "build": "tsc",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -21,6 +21,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.57.0",
     "@types/express": "^5.0.3",
+    "body-parser": "^2.2.0",
     "express": "^5.1.0"
   }
 }

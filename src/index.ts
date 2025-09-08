@@ -1,13 +1,18 @@
 import bodyParser from "body-parser";
-import express, { Request, Response } from "express";
+import express, { Response } from "express";
+import { neon } from "@neondatabase/serverless";
+import "dotenv/config";
 
 const app = express();
 const port = process.env.PORT;
 
 app.use(bodyParser.urlencoded({ extended: true }));
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello world");
+app.get("/", async (_, res: Response) => {
+  const sql = neon(`${process.env.DATABASE_URL}`);
+  const response = await sql`SELECT version()`;
+  const { version } = response[0];
+  res.json({ version });
 });
 
 app.listen(port, () => {

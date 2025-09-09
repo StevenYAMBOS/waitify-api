@@ -5,9 +5,9 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"os"
 
-	"github.com/joho/godotenv"
+	"github.com/StevenYAMBOS/waitify-api/internal/config"
+	"github.com/StevenYAMBOS/waitify-api/internal/database"
 )
 
 func HelloWorld(w http.ResponseWriter, r *http.Request) {
@@ -16,13 +16,21 @@ func HelloWorld(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	err := godotenv.Load()
+	// Variables d'environnement
+	cfg, err := config.Load()
 	if err != nil {
-		log.Fatal(`[main.go] -> Erreur lors du chargement des variables d'environnements.`)
+		log.Fatal(`[main.go] -> Erreur lors du chargement des variables d'environnements.`, err)
 	}
 
-	port := os.Getenv("PORT")
-	// database.InitDB()
+	// Initialisation base de données
+	db, err := database.InitDB(cfg.GetDSN())
+	if err != nil {
+		log.Fatal(`[main.go] -> Erreur lors de la connexion à la base de données.`, err)
+	}
+	defer db.DB.Close()
+
+	// Port
+	port := cfg.Server.Port
 
 	r := http.NewServeMux()
 	r.HandleFunc("/", HelloWorld)

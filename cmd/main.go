@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/StevenYAMBOS/waitify-api/internal/database"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
@@ -18,6 +19,7 @@ func main() {
 	}
 
 	port := os.Getenv("PORT")
+	database.InitDB()
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)

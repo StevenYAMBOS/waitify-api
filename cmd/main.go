@@ -2,15 +2,18 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
 
-	"github.com/StevenYAMBOS/waitify-api/internal/database"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 )
+
+func HelloWorld(w http.ResponseWriter, r *http.Request) {
+	fmt.Printf("got /hello request\n")
+	io.WriteString(w, "Hello, HTTP!\n")
+}
 
 func main() {
 	err := godotenv.Load()
@@ -19,13 +22,11 @@ func main() {
 	}
 
 	port := os.Getenv("PORT")
-	database.InitDB()
+	// database.InitDB()
 
-	r := chi.NewRouter()
-	r.Use(middleware.Logger)
-	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte("Health check !"))
-	})
+	r := http.NewServeMux()
+	r.HandleFunc("/", HelloWorld)
+
 	fmt.Print("[main.go] -> Serveur lançé : http://localhost", port)
-	http.ListenAndServe(port, r)
+	http.ListenAndServe(port, nil)
 }

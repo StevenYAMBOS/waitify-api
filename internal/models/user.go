@@ -7,11 +7,11 @@ import (
 )
 
 type User struct {
-	ID           int       `json:"id"`
-	Email        string    `json:"email"`
-	PasswordHash string    `json:"-"` // "-" signifie que ça ne sera pas inclut dans le JSON
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
+	ID        int       `json:"id" db:"id"`
+	Email     string    `json:"email"`
+	Password  string    `json:"-" db:"password"` // "-" signifie que ça ne sera pas inclut dans le JSON
+	CreatedAt time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
 }
 
 type LoginRequest struct {
@@ -21,6 +21,7 @@ type LoginRequest struct {
 
 type RegisterRequest struct {
 	Email    string `json:"email" binding:"required,email"`
+	Username string `json:"username" binding:"required,username"`
 	Password string `json:"password" binding:"required,min=6"`
 }
 

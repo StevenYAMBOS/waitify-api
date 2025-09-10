@@ -108,188 +108,67 @@ L'architecture permet à un utilisateur de gérer plusieurs établissements via 
 
 
 ```sql
-
-
 CREATE TABLE users (
-
-
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-
     email VARCHAR(255) UNIQUE NOT NULL,
-
-
     password_hash VARCHAR(255) NOT NULL,
-
-
     first_name VARCHAR(100),
-
-
     last_name VARCHAR(100),
-
-
     phone VARCHAR(20),
-
-
     company_name VARCHAR(255),
-
-
     is_active BOOLEAN DEFAULT true,
-
-
     subscription_status VARCHAR(50) DEFAULT 'trial',
-
-
     SubscriptionPlanId UUID REFERENCES subscription_plans(id),
-
-
     trial_ends_at TIMESTAMP WITH TIME ZONE,
-
-
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-
-
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-
-
     last_login TIMESTAMP WITH TIME ZONE
-
-
 );
 
-
-
-
-
 -- Index pour les performances
-
-
 CREATE INDEX idx_users_email ON users(email);
-
-
 CREATE INDEX idx_users_subscription_plan ON users(SubscriptionPlanId);
-
-
 CREATE INDEX idx_users_subscription_status ON users(subscription_status);
 
-
-
-
-
 -- Contraintes de validation
-
-
 ALTER TABLE users ADD CONSTRAINT check_email_format CHECK (email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
-
-
 ALTER TABLE users ADD CONSTRAINT check_subscription_status CHECK (subscription_status IN ('trial', 'active', 'suspended', 'cancelled'));
-
-
 ```
-
-
-
-
 
 **Explications des champs :**
 
-
-
-
-
 - `company_name` : Nom de l'entreprise mère (optionnel, pour les chaînes)
-
-
 - `SubscriptionPlanId` : Référence vers le plan d'abonnement actuel
-
-
 - `subscription_status` : État global de l'abonnement utilisateur
-
-
 - `trial_ends_at` : Date limite de la période d'essai gratuite de 14 jours
-
-
 - `is_active` : Permet de suspendre un compte utilisateur globalement
-
-
-
-
 
 ### Table `subscription_plans`
 
-
-
-
-
 **Description :** Définit les différents plans tarifaires avec leurs limites et fonctionnalités. Cette table permet une gestion flexible des offres commerciales et une évolution tarifaire sans modification du code.
 
-
-
-
-
 ```sql
-
-
 CREATE TABLE subscription_plans (
-
-
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-
     name VARCHAR(100) UNIQUE NOT NULL,
-
-
     price_cents INTEGER NOT NULL,
-
-
     max_businesses INTEGER NOT NULL,
-
-
     sms_quota_monthly INTEGER DEFAULT 1000,
-
-
     features JSONB,
-
-
     is_active BOOLEAN DEFAULT true,
-
-
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-
-
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-
-
 );
 
 
-
-
-
 -- Index pour les requêtes fréquentes
-
-
 CREATE INDEX idx_subscription_plans_active ON subscription_plans(is_active);
-
-
 CREATE INDEX idx_subscription_plans_name ON subscription_plans(name);
 
-
-
-
-
 -- Contraintes de validation
-
-
 ALTER TABLE subscription_plans ADD CONSTRAINT check_price_positive CHECK (price_cents >= 0);
-
-
 ALTER TABLE subscription_plans ADD CONSTRAINT check_max_businesses_valid CHECK (max_businesses = -1 OR max_businesses > 0);
-
-
 ALTER TABLE subscription_plans ADD CONSTRAINT check_sms_quota_positive CHECK (sms_quota_monthly > 0);
-
-
 ```
 
 

@@ -8,6 +8,9 @@ import (
 
 	"github.com/StevenYAMBOS/waitify-api/internal/config"
 	"github.com/StevenYAMBOS/waitify-api/internal/database"
+	"github.com/StevenYAMBOS/waitify-api/internal/handlers"
+	middleware "github.com/StevenYAMBOS/waitify-api/internal/middlewares"
+	"github.com/StevenYAMBOS/waitify-api/internal/utils"
 )
 
 func HelloWorld(w http.ResponseWriter, r *http.Request) {
@@ -25,10 +28,18 @@ func main() {
 	// Initialisation base de données
 	database.InitDB()
 
+	// Initialisation du JWT
+	utils.InitJWT()
+
 	// Port
 	port := cfg.Server.Port
 
+	// Routeur
 	r := http.NewServeMux()
+	// Public routes
+	r.HandleFunc("POST /auth/register", middleware.CORSMiddleware(handlers.Register))
+	// r.HandleFunc("/api/login", middleware.CORSMiddleware(handlers.Login)).Methods("POST", "OPTIONS")
+
 	r.HandleFunc("/", HelloWorld)
 
 	fmt.Print("[main.go] -> Serveur lançé : http://localhost", port)

@@ -23,11 +23,7 @@ func main() {
 	}
 
 	// Initialisation base de données
-	db, err := database.InitDB(cfg.GetDSN())
-	if err != nil {
-		log.Fatal(`[main.go] -> Erreur lors de la connexion à la base de données.`, err)
-	}
-	defer db.DB.Close()
+	database.InitDB()
 
 	// Port
 	port := cfg.Server.Port
@@ -36,5 +32,5 @@ func main() {
 	r.HandleFunc("/", HelloWorld)
 
 	fmt.Print("[main.go] -> Serveur lançé : http://localhost", port)
-	http.ListenAndServe(port, nil)
+	http.ListenAndServe(port, r)
 }

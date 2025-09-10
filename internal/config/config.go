@@ -40,35 +40,35 @@ func Load() (*Config, error) {
 	cfg := &Config{}
 
 	// Server config
-	cfg.Server.Port = getEnv("SERVER_PORT", "8080")
-	cfg.Server.Host = getEnv("SERVER_HOST", "0.0.0.0")
+	cfg.Server.Port = os.Getenv("SERVER_PORT")
+	cfg.Server.Host = os.Getenv("SERVER_HOST")
 	cfg.Server.ReadTimeout = time.Second * 15
 	cfg.Server.WriteTimeout = time.Second * 15
 
 	// Database config
-	cfg.Database.Host = getEnv("DB_HOST", "localhost")
-	cfg.Database.Port = getEnv("DB_PORT", "5432")
-	cfg.Database.User = getEnv("DB_USER", "postgres")
-	cfg.Database.Password = getEnv("DB_PASSWORD", "")
-	cfg.Database.DBName = getEnv("DB_NAME", "auth_service")
-	cfg.Database.SSLMode = getEnv("DB_SSLMODE", "disable")
+	cfg.Database.Host = os.Getenv("DB_HOST")
+	cfg.Database.Port = os.Getenv("DB_PORT")
+	cfg.Database.User = os.Getenv("DB_USER")
+	cfg.Database.Password = os.Getenv("DB_PASSWORD")
+	cfg.Database.DBName = os.Getenv("DB_NAME")
+	cfg.Database.SSLMode = os.Getenv("DB_SSLMODE")
 
 	// JWT config
-	cfg.JWT.Secret = getEnv("JWT_SECRET", "0000000000")
+	cfg.JWT.Secret = os.Getenv("JWT_SECRET")
 	cfg.JWT.TokenExpiry = time.Hour * 24    // 24 heures
 	cfg.JWT.RefreshExpiry = time.Hour * 168 // 7 jours
 
-	cfg.Environment = getEnv("ENV", "development")
+	cfg.Environment = os.Getenv("ENV")
 
 	return cfg, nil
 }
 
-func getEnv(key, defaultValue string) string {
-	if value := os.Getenv(key); value != "" {
-		return value
-	}
-	return defaultValue
-}
+// func getEnv(key, defaultValue string) string {
+// 	if value := os.Getenv(key); value != "" {
+// 		return value
+// 	}
+// 	return defaultValue
+// }
 
 func (c *Config) GetDSN() string {
 	return fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",

@@ -14,20 +14,25 @@ type User struct {
 	UpdatedAt    time.Time `json:"updated_at"`
 }
 
-type UserLogin struct {
+type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 }
 
-type UserRegister struct {
+type RegisterRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 }
 
-func (u *UserRegister) Validate() error {
+func (user *RegisterRequest) Validate() error {
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
-	if !emailRegex.MatchString(u.Email) {
+	if !emailRegex.MatchString(user.Email) {
 		return errors.New("[user.go] -> Format d'email invalide.")
 	}
 	return nil
+}
+
+type AuthResponse struct {
+	Token string `json:"token"`
+	User  User   `json:"user"`
 }

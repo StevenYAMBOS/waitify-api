@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"time"
 
@@ -33,6 +33,12 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if err := req.Validate(); err != nil {
+		log.Fatal("Erreur format email : ", err)
+		http.Error(w, `[authHandler.go -> Register()] -> Erreur.`, http.StatusBadRequest)
+		return
+	}
+
 	// Validation mot de passe
 	if req.Password == "" {
 		http.Error(w, `[authHandler.go -> Register()] -> Mot de passe requis pour s'inscrire.`, http.StatusBadRequest)
@@ -46,12 +52,25 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	// }
 
 	// Vérifier si l'utilisateur existe
-	var existingUser models.User
-	err := database.DB.QueryRow("SELECT id FROM users WHERE email = $1", req.Email).Scan(&existingUser.ID)
-	if err != sql.ErrNoRows {
+	var exists bool
+	err := database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)",
+		req.Email).Scan(&exists)
+	if err != nil {
+		log.Fatal("Erreur vérification si l'utilisateur existe : ", err)
+		http.Error(w, `[authHandler.go -> Register()] -> ERREUR base de données`, http.StatusInternalServerError)
+		return
+	}
+	if exists {
+		log.Fatalln("Erreur email est déjà associé à un compte : ", err)
 		http.Error(w, `[authHandler.go -> Register()] -> ERREUR. Cet email est déjà associé à un compte.`, http.StatusConflict)
 		return
 	}
+	// var existingUser models.User
+	// err := database.DB.QueryRow("SELECT id FROM users WHERE email = $1", req.Email).Scan(&existingUser.ID)
+	// if err != sql.ErrNoRows {
+	// 	http.Error(w, `[authHandler.go -> Register()] -> ERREUR. Cet email est déjà associé à un compte.`, http.StatusConflict)
+	// 	return
+	// }
 
 	// Hasher le mot de passe
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
@@ -68,6 +87,7 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	).Scan(&user.ID, &user.Email, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
+		log.Fatalln("Erreur insertion dans la base de données : ", err)
 		http.Error(w, "[authHandler.go -> Register()] -> Erreur lors de la création de l'utilisateur.", http.StatusInternalServerError)
 		return
 	}

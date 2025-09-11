@@ -4,10 +4,12 @@ import (
 	"errors"
 	"regexp"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type User struct {
-	ID        int       `json:"id" db:"id"`
+	ID        uuid.UUID `json:"id" db:"id"`
 	Email     string    `json:"email"`
 	Password  string    `json:"-" db:"password"` // "-" signifie que ça ne sera pas inclut dans le JSON
 	CreatedAt time.Time `json:"created_at" db:"created_at"`

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 var jwtSecret []byte
@@ -19,12 +20,12 @@ func InitJWT() {
 }
 
 type Claims struct {
-	UserID int    `json:"user_id"`
-	Email  string `json:"email"`
+	UserID uuid.UUID `json:"user_id"`
+	Email  string    `json:"email"`
 	jwt.RegisteredClaims
 }
 
-func GenerateToken(userID int, email string) (string, error) {
+func GenerateToken(userID uuid.UUID, email string) (string, error) {
 	claims := &Claims{
 		UserID: userID,
 		Email:  email,

@@ -9,6 +9,7 @@ import (
 	"github.com/StevenYAMBOS/waitify-api/internal/database"
 	"github.com/StevenYAMBOS/waitify-api/internal/models"
 	"github.com/StevenYAMBOS/waitify-api/internal/utils"
+	"github.com/google/uuid"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -82,9 +83,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	// Insertion dans la base de données
 	var user models.User
 	err = database.DB.QueryRow(
-		"INSERT INTO users (email, password, created_at, updated_at) VALUES ($1, $2, $3, $4) RETURNING id, email, created_at, updated_at",
-		req.Email, string(hashedPassword), time.Now(), time.Now(),
-	).Scan(&user.ID, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+		"INSERT INTO users (id, email, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, password, created_at, updated_at",
+		uuid.New().String(), req.Email, string(hashedPassword), time.Now(), time.Now(),
+	).Scan(&user.ID, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		log.Fatalln("Erreur insertion dans la base de données : ", err)

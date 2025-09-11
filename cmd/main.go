@@ -37,7 +37,7 @@ func main() {
 	r.HandleFunc("POST /auth/register", middlewares.CORSMiddleware(handlers.RegisterHandler))
 	r.HandleFunc("POST /auth/login", middlewares.CORSMiddleware(handlers.LoginHandler))
 	// Route utilisateur
-	r.HandleFunc("GET /api/profile", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.ProfileHandler)))
+	r.HandleFunc("GET /admin/profile", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.ProfileHandler)))
 
 	fmt.Print("[main.go] -> Serveur lançé : http://localhost:", port)
 	http.ListenAndServe(port, r)

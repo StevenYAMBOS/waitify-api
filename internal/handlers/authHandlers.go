@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 	"time"
@@ -15,68 +17,62 @@ import (
 )
 
 // Inscription
-func Register(w http.ResponseWriter, r *http.Request) {
+func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, `[authHandler.go -> Register()] -> Mauvaise requête HTTP (mauvaise méthode).`, http.StatusBadRequest)
+		http.Error(w, `[authHandler.go -> RegisterHandler()] -> Mauvaise requête HTTP (mauvaise méthode).`, http.StatusBadRequest)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 
-	var req models.RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, `[authHandler.go -> Register()] -> Corps de la requête invalide.`, http.StatusBadRequest)
+	var registerRequest models.RegisterRequest
+	if err := json.NewDecoder(r.Body).Decode(&registerRequest); err != nil {
+		http.Error(w, `[authHandler.go -> RegisterHandler()] -> Corps de la requête invalide.`, http.StatusBadRequest)
 		return
 	}
 
 	// Validation Email
-	if req.Email == "" {
-		http.Error(w, `[authHandler.go -> Register()] -> Email requis pour s'inscrire.`, http.StatusBadRequest)
+	if registerRequest.Email == "" {
+		http.Error(w, `[authHandler.go -> RegisterHandler()] -> Email requis pour s'inscrire.`, http.StatusBadRequest)
 		return
 	}
 
-	if err := req.Validate(); err != nil {
-		log.Fatal("Erreur format email : ", err)
-		http.Error(w, `[authHandler.go -> Register()] -> Erreur.`, http.StatusBadRequest)
+	if err := registerRequest.Validate(); err != nil {
+		log.Println("Erreur format email : ", err)
+		http.Error(w, `[authHandler.go -> RegisterHandler()] -> Erreur format de l'email.`, http.StatusBadRequest)
 		return
 	}
 
 	// Validation mot de passe
-	if req.Password == "" {
-		http.Error(w, `[authHandler.go -> Register()] -> Mot de passe requis pour s'inscrire.`, http.StatusBadRequest)
+	if registerRequest.Password == "" {
+		http.Error(w, `[authHandler.go -> RegisterHandler()] -> Mot de passe requis pour s'inscrire.`, http.StatusBadRequest)
 		return
 	}
-	// else if len(req.Password) < 6 {
-	// 	http.Error(w, `[authHandler.go -> Register()] -> Le mot de passe doit avoir au moins caractères.`, http.StatusBadRequest)
-	// } else {
-	// 	http.Error(w, `[authHandler.go -> Register()] -> Le mot de passe ne doit pas dépasser 100 caractères.`, http.StatusBadRequest)
-	// 	return
-	// }
+
+	if err := registerRequest.ValidatePassword(); err != nil {
+		log.Println("Erreur format du mot de passe : ", err)
+		http.Error(w, `[authHandler.go -> RegisterHandler()] -> Erreur format du mot de passe.`, http.StatusBadRequest)
+		return
+	}
 
 	// Vérifier si l'utilisateur existe
 	var exists bool
 	err := database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)",
-		req.Email).Scan(&exists)
+		registerRequest.Email).Scan(&exists)
 	if err != nil {
 		log.Fatal("Erreur vérification si l'utilisateur existe : ", err)
-		http.Error(w, `[authHandler.go -> Register()] -> ERREUR base de données`, http.StatusInternalServerError)
+		http.Error(w, `[authHandler.go -> RegisterHandler()] -> ERREUR base de données`, http.StatusInternalServerError)
 		return
 	}
 	if exists {
 		log.Fatalln("Erreur email est déjà associé à un compte : ", err)
-		http.Error(w, `[authHandler.go -> Register()] -> ERREUR. Cet email est déjà associé à un compte.`, http.StatusConflict)
+		http.Error(w, `[authHandler.go -> RegisterHandler()] -> ERREUR. Cet email est déjà associé à un compte.`, http.StatusConflict)
 		return
 	}
-	// var existingUser models.User
-	// err := database.DB.QueryRow("SELECT id FROM users WHERE email = $1", req.Email).Scan(&existingUser.ID)
-	// if err != sql.ErrNoRows {
-	// 	http.Error(w, `[authHandler.go -> Register()] -> ERREUR. Cet email est déjà associé à un compte.`, http.StatusConflict)
-	// 	return
-	// }
 
 	// Hasher le mot de passe
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerRequest.Password), bcrypt.DefaultCost)
 	if err != nil {
-		http.Error(w, "[authHandler.go -> Register()] -> Erreur lors du hashage du mot de passe.", http.StatusInternalServerError)
+		http.Error(w, "[authHandler.go -> RegisterHandler()] -> Erreur lors du hashage du mot de passe.", http.StatusInternalServerError)
 		return
 	}
 
@@ -84,19 +80,19 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	var user models.User
 	err = database.DB.QueryRow(
 		"INSERT INTO users (id, email, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, password, created_at, updated_at",
-		uuid.New().String(), req.Email, string(hashedPassword), time.Now(), time.Now(),
+		uuid.New().String(), registerRequest.Email, string(hashedPassword), time.Now(), time.Now(),
 	).Scan(&user.ID, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		log.Fatalln("Erreur insertion dans la base de données : ", err)
-		http.Error(w, "[authHandler.go -> Register()] -> Erreur lors de la création de l'utilisateur.", http.StatusInternalServerError)
+		http.Error(w, "[authHandler.go -> RegisterHandler()] -> Erreur lors de la création de l'utilisateur.", http.StatusInternalServerError)
 		return
 	}
 
 	// Génération du token
 	token, err := utils.GenerateToken(user.ID, user.Email)
 	if err != nil {
-		http.Error(w, "[authHandler.go -> Register()] -> Erreur lors de la génération du token", http.StatusInternalServerError)
+		http.Error(w, "[authHandler.go -> RegisterHandler()] -> Erreur lors de la génération du token", http.StatusInternalServerError)
 		return
 	}
 
@@ -109,87 +105,111 @@ func Register(w http.ResponseWriter, r *http.Request) {
 }
 
 // Connexion
-// func Login(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
+func LoginHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, `[authHandler.go -> LoginHandler()] -> Mauvaise requête HTTP (mauvaise méthode).`, http.StatusBadRequest)
+	}
 
-// 	var req models.LoginRequest
-// 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-// 		http.Error(w, "Invalid request body", http.StatusBadRequest)
-// 		return
-// 	}
+	w.Header().Set("Content-Type", "application/json")
 
-// 	// Validate input
-// 	if req.Username == "" || req.Password == "" {
-// 		http.Error(w, "Username and password are required", http.StatusBadRequest)
-// 		return
-// 	}
+	// Décode JSON de la requête
+	var loginRequest models.LoginRequest
+	if err := json.NewDecoder(r.Body).Decode(&loginRequest); err != nil {
+		log.Println(`[authHandler.go -> LoginHandler()] -> Mauvais corps de requête : `, err)
+		http.Error(w, `[authHandler.go -> LoginHandler()] -> Mauvais corps de requête.`, http.StatusBadRequest)
+		return
+	}
 
-// 	// Get user from database
-// 	var user models.User
-// 	err := database.DB.QueryRow("SELECT id, username, password, created_at, updated_at FROM users WHERE username = $1", req.Username).
-// 		Scan(&user.ID, &user.Username, &user.Password, &user.CreatedAt, &user.UpdatedAt)
+	// Validation des inputs
+	if loginRequest.Email == "" || loginRequest.Password == "" {
+		http.Error(w, `[authHandler.go -> LoginHandler()] -> L'email et le mot de passe sont requis.`, http.StatusBadRequest)
+		return
+	}
 
-// 	if err == sql.ErrNoRows {
-// 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-// 		return
-// 	}
-// 	if err != nil {
-// 		http.Error(w, "Database error", http.StatusInternalServerError)
-// 		return
-// 	}
+	// Récupérer les informations de l'utilisateur
+	var user models.User
+	err := database.DB.QueryRow("SELECT id, email, password, created_at, updated_at FROM users WHERE email = $1", loginRequest.Email).
+		Scan(&user.ID, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 
-// 	// Check password
-// 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
-// 	if err != nil {
-// 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
-// 		return
-// 	}
+	if err == sql.ErrNoRows {
+		log.Println(`[authHandler.go -> LoginHandler()] -> Mauvaises informations de connexion : `, err)
+		http.Error(w, `[authHandler.go -> LoginHandler()] -> Mauvaises informations de connexion.`, http.StatusUnauthorized)
+		return
+	}
+	if err != nil {
+		log.Println(`[authHandler.go -> LoginHandler()] -> Erreur base de données : `, err)
+		http.Error(w, `[authHandler.go -> LoginHandler()] -> Erreur base de données.`, http.StatusInternalServerError)
+		return
+	}
 
-// 	// Generate JWT token
-// 	token, err := auth.GenerateToken(user.ID, user.Username)
-// 	if err != nil {
-// 		http.Error(w, "Error generating token", http.StatusInternalServerError)
-// 		return
-// 	}
+	// Vérification du mot de passe
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(loginRequest.Password))
+	if err != nil {
+		log.Println(`[authHandler.go -> LoginHandler()] -> Erreur mot de passe incorrect : `, err)
+		http.Error(w, `[authHandler.go -> LoginHandler()] -> Mot de passe incorrect.`, http.StatusUnauthorized)
+		return
+	}
 
-// 	response := models.AuthResponse{
-// 		Token: token,
-// 		User:  user,
-// 	}
+	// Générer le token JWT
+	token, err := utils.GenerateToken(user.ID, user.Email)
+	if err != nil {
+		log.Println(`[authHandler.go -> LoginHandler()] -> Erreur lors de la génération du token : `, err)
+		http.Error(w, `[authHandler.go -> LoginHandler()] -> Erreur lors de la génération du token.`, http.StatusInternalServerError)
+		return
+	}
 
-// 	json.NewEncoder(w).Encode(response)
-// }
+	response := models.AuthResponse{
+		Token: token,
+		User:  user,
+	}
 
-// // Profil utilisateur
-// func Profile(w http.ResponseWriter, r *http.Request) {
-// 	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
 
-// 	tokenString := r.Header.Get("Authorization")
-// 	if tokenString == "" {
-// 		http.Error(w, "Authorization header required", http.StatusUnauthorized)
-// 		return
-// 	}
+// Health check
+func HealthCheck(w http.ResponseWriter, r *http.Request) {
+	log.Println("Health check !")
+	io.WriteString(w, "Health check!\n")
+}
 
-// 	// Remove "Bearer " prefix if present
-// 	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-// 		tokenString = tokenString[7:]
-// 	}
+// Récupérer les informations de l'utilisateur
+func ProfileHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, `[authHandler.go -> ProfileHandler()] -> Mauvaise requête HTTP (mauvaise méthode).`, http.StatusBadRequest)
+	}
 
-// 	claims, err := auth.ValidateToken(tokenString)
-// 	if err != nil {
-// 		http.Error(w, "Invalid token", http.StatusUnauthorized)
-// 		return
-// 	}
+	w.Header().Set("Content-Type", "application/json")
 
-// 	// Get user from database
-// 	var user models.User
-// 	err = database.DB.QueryRow("SELECT id, username, created_at, updated_at FROM users WHERE id = $1", claims.UserID).
-// 		Scan(&user.ID, &user.Username, &user.CreatedAt, &user.UpdatedAt)
+	// Vérification de l'autorisation
+	tokenString := r.Header.Get("Authorization")
+	if tokenString == "" {
+		http.Error(w, `[authHandler.go -> ProfileHandler()] -> Header d'autorisation "Authorization" requis.`, http.StatusUnauthorized)
+		return
+	}
 
-// 	if err != nil {
-// 		http.Error(w, "User not found", http.StatusNotFound)
-// 		return
-// 	}
+	// Retirer le préfixe "Bearer "
+	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
+		tokenString = tokenString[7:]
+	}
 
-// 	json.NewEncoder(w).Encode(user)
-// }
+	// Validation du token
+	claims, err := utils.ValidateToken(tokenString)
+	if err != nil {
+		log.Println(`[authHandler.go -> ProfileHandler()] -> Token invalide : `, err)
+		http.Error(w, `[authHandler.go -> ProfileHandler()] -> Token invalide.`, http.StatusUnauthorized)
+		return
+	}
+
+	// Récupéreration de l'utilisateur
+	var user models.User
+	err = database.DB.QueryRow("SELECT id, email, created_at, updated_at FROM users WHERE id = $1", claims.UserID).
+		Scan(&user.ID, &user.Email, &user.CreatedAt, &user.UpdatedAt)
+
+	if err != nil {
+		log.Println(`[authHandler.go -> ProfileHandler()] -> Utilisateur non trouvé, erreur : `, err)
+		http.Error(w, `[authHandler.go -> ProfileHandler()] -> Utilisateur non trouvé`, http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(user)
+}

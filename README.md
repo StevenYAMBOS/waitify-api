@@ -2,15 +2,14 @@
 
 <div align="center">
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff)](#)
-[![NodeJS](https://img.shields.io/badge/Node.js-6DA55F?logo=node.js&logoColor=white)](#)
-[![Express.js](https://img.shields.io/badge/Express.js-%23404d59.svg?logo=express&logoColor=%2361DAFB)](#)
+[![Go](https://img.shields.io/badge/Go-%2300ADD8.svg?logo=go&logoColor=white)](#)
+[![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?logo=amazon-aws&logoColor=white)](#)
 [![Postgres](https://img.shields.io/badge/Postgres-%23316192.svg?logo=postgresql&logoColor=white)](#)
 [![Stripe](https://img.shields.io/badge/Stripe-5851DD?logo=stripe&logoColor=fff)](#)
 
 <h3>Système de file d'attente virtuelle par QR code pour commerçants</h3>
 
- API REST sécurisée gérant l'authentification, les queues temps réel et la facturation automatique.
+API REST sécurisée gérant l'authentification, les queues temps réel et la facturation automatique.
 
 [Demo](https://waitify.fr) · [Documentation](https://github.com/StevenYAMBOS/waitify-api/wiki) · [Signaler un bug](https://github.com/StevenYAMBOS/waitify-api/issues) · [Nouvelle fonctionnalité](https://github.com/StevenYAMBOS/waitify-api/issues)
 
@@ -24,111 +23,45 @@ Waitify est un SaaS français de gestion de files d'attente virtuelles par QR co
 
 | Composant | Technologie | Version |
 |-----------|-------------|---------|
-| Runtime | Node.js | 18+ |
-| Framework | Express.js | 4.x |
-| Base de données | Supabase | PostgreSQL |
+| Runtime | Go | 1.21+ |
+| Framework | Gin/Echo | Latest |
+| Base de données | PostgreSQL | 15+ |
+| Infrastructure | AWS | RDS/Lambda/ECS |
 | Paiements | Stripe | API v2023 |
-| Authentification | Supabase Auth | JWT |
-| SMS | ? | - |
+| Authentification | JWT | RS256 |
+| SMS | AWS SNS | Latest |
 
 ## Installation
 
 ### Prérequis
-- Node.js 18 ou supérieur
-- Compte Supabase configuré
+
+- Go 1.21 ou supérieur
+- PostgreSQL 15 ou supérieur
+- Compte AWS configuré
 - Clés API Stripe (test/prod)
-- Accès API SMS (Twilio/Orange)
-
-### Configuration environnement
-```bash
-cp .env.example .env
-```
-
-Variables d'environnement requises :
-```bash
-# Database
-SUPABASE_URL=your_supabase_url
-SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_key
-
-# Stripe
-STRIPE_PUBLISHABLE_KEY=pk_test_xxx
-STRIPE_SECRET_KEY=sk_test_xxx
-STRIPE_WEBHOOK_SECRET=whsec_xxx
-
-# SMS Provider pas encore défini
-
-# App Config
-PORT=3000
-NODE_ENV=development
-JWT_SECRET=your_jwt_secret
-CORS_ORIGIN=http://localhost:5173 # tout dépend ici, 5173 sert d'exemple
-```
 
 ### Lancement
-```bash
-npm install
-npm run dev
-```
-
-L'API sera accessible sur `http://localhost:3000`
-
-## Architecture API
-
-### Authentification
-Toutes les routes protégées nécessitent un token JWT Bearer dans l'header Authorization.
 
 ```bash
-Authorization: Bearer <supabase_jwt_token>
+# Installation des dépendances
+go mod download
+
+# Développement
+go run main.go
+
+# Build
+go build -o waitify-api
+
+# Production
+./waitify-api
 ```
 
-### Routes principales
-
-#### Authentification
-```
-POST /auth/register     # Inscription utilisateur
-POST /auth/login        # Connexion
-POST /auth/logout       # Déconnexion
-GET  /auth/profile      # Profil utilisateur
-PUT  /auth/profile      # Mise à jour profil
-```
-
-#### Business management
-```
-GET    /business           # Détails du business
-PUT    /business           # Mise à jour paramètres
-POST   /business/qr-code   # Génération QR code
-PUT    /business/queue     # Activation/pause queue
-```
-
-#### File d'attente
-```
-POST   /queue/join         # Inscription client (public)
-GET    /queue/status/:id   # Position client (public)
-DELETE /queue/cancel/:id   # Annulation client (public)
-GET    /queue/list         # Liste complète (privé)
-POST   /queue/next         # Client suivant (privé)
-PUT    /queue/client/:id   # Marquer servi/manqué (privé)
-```
-
-#### Analytics
-```
-GET /analytics/dashboard    # Métriques temps réel
-GET /analytics/daily        # Statistiques quotidiennes
-GET /analytics/weekly       # Analyse hebdomadaire
-GET /analytics/export       # Export données CSV
-```
-
-#### Billing et webhooks
-```
-GET  /billing/invoices      # Liste des factures
-POST /billing/webhooks      # Webhooks Stripe
-GET  /billing/usage         # Consommation SMS
-```
+L'API sera accessible sur `http://localhost:8080`
 
 ## Modèles de données
 
 ### Queue entry
+
 ```json
 {
   "id": "uuid",
@@ -141,6 +74,7 @@ GET  /billing/usage         # Consommation SMS
 ```
 
 ### Business status
+
 ```json
 {
   "is_queue_active": true,
@@ -152,6 +86,7 @@ GET  /billing/usage         # Consommation SMS
 ```
 
 ### Analytics response
+
 ```json
 {
   "today": {
@@ -172,6 +107,7 @@ GET  /billing/usage         # Consommation SMS
 ## Logique métier
 
 ### Système de queue
+
 1. Client scanne QR code unique du business
 2. Inscription avec numéro de téléphone
 3. Attribution position automatique + estimation temps
@@ -181,12 +117,14 @@ GET  /billing/usage         # Consommation SMS
 7. Timer 5 minutes avant passage automatique au suivant
 
 ### Gestion des abandons
+
 - Annulation manuelle : position libérée, SMS confirmation
 - Timeout : passage automatique, SMS "tour manqué"
 - Recalcul automatique des positions restantes
 - Notification clients suivants (temps réduit)
 
 ### Facturation automatique
+
 - Calcul mensuel basé sur la consommation SMS
 - 19€/mois incluant 1000 SMS
 - 0.03€ par SMS supplémentaire
@@ -196,89 +134,110 @@ GET  /billing/usage         # Consommation SMS
 ## Sécurité
 
 ### Row Level Security (RLS)
-Chaque utilisateur ne peut accéder qu'à ses propres données via les politiques Supabase.
+
+Chaque utilisateur ne peut accéder qu'à ses propres données via les politiques PostgreSQL.
 
 ### Validation des données
-- Validation Joi sur toutes les entrées
+
+- Validation struct avec tags Go
 - Nettoyage des numéros de téléphone
-- Rate limiting sur les inscriptions
+- Rate limiting avec middleware
 - Protection CSRF et XSS
 
 ### CORS
+
 Configuration stricte limitée aux domaines autorisés en production.
 
 ## Monitoring
 
 ### Logs structurés
-```javascript
-logger.info('Queue joined', {
-  business_id: 'uuid',
-  phone: '06xxxxxxxx',
-  position: 3,
-  wait_time: 12
-});
+
+```go
+log.WithFields(log.Fields{
+    "business_id": businessID,
+    "phone": "06xxxxxxxx",
+    "position": 3,
+    "wait_time": 12,
+}).Info("Queue joined")
 ```
 
 ### Métriques surveillées
+
 - Temps de réponse API
 - Taux de succès SMS
 - Erreurs base de données
-- Consommation ressources
+- Consommation ressources AWS
 
 ### Health check
+
 ```
 GET /health
 ```
-Retourne le statut des services externes (Supabase, Stripe, SMS).
+
+Retourne le statut des services externes (PostgreSQL, Stripe, AWS SNS).
 
 ## Scripts utiles
 
 ```bash
 # Développement
-npm run dev          # Serveur avec hot-reload
-npm run dev:debug    # Mode debug avec logs détaillés
+go run main.go          # Serveur avec hot-reload
+go run -race main.go    # Mode debug avec détection race conditions
 
 # Tests
-npm test             # Suite complète
-npm run test:unit    # Tests unitaires
-npm run test:api     # Tests d'intégration
+go test ./...           # Suite complète
+go test -v ./internal/  # Tests unitaires détaillés
+go test -bench=.        # Tests de performance
 
 # Production
-npm start            # Serveur production
-npm run build        # Build optimisé
+go build -ldflags="-s -w" -o waitify-api  # Build optimisé
+./waitify-api                             # Serveur production
 
 # Database
-npm run db:migrate   # Migrations Supabase
-npm run db:seed      # Données de test
-npm run db:reset     # Reset complet
+migrate -path ./migrations -database postgres://... up    # Migrations
+go run cmd/seed/main.go                                    # Données de test
+psql -d waitify -f scripts/reset.sql                      # Reset complet
 ```
 
-## Déploiement
+## Déploiement AWS
+
+### Infrastructure
+
+- **ECS Fargate** : Containers serverless
+- **RDS PostgreSQL** : Base de données managée
+- **Application Load Balancer** : Distribution du trafic
+- **CloudWatch** : Monitoring et logs
+- **SNS** : Notifications SMS
 
 ### Variables production
-Configurer les variables d'environnement sur la plateforme de déploiement :
-- URLs Supabase production
+
+Configuration via AWS Systems Manager Parameter Store :
+
+- Credentials base de données RDS
 - Clés Stripe live
-- Webhooks sécurisés
-- CORS origins production
+- Secrets JWT
+- Configuration CORS
 
 ### Monitoring production
-- Logs centralisés via service externe
-- Alertes sur erreurs critiques
-- Surveillance performance base
-- Backup automatique quotidien
+
+- CloudWatch Logs centralisés
+- Alertes CloudWatch sur erreurs critiques
+- RDS Performance Insights
+- Backup automatique RDS quotidien
 
 ## Webhooks Stripe
 
 ### Configuration requise
+
 URL webhook : `https://api.waitify.fr/billing/webhooks`
 
 Événements écoutés :
+
 - `invoice.payment_succeeded`
 - `invoice.payment_failed`
 - `customer.subscription.deleted`
 
 ### Gestion des échecs de paiement
+
 1. Premier échec : email de relance automatique
 2. Deuxième échec : suspension partielle (lecture seule)
 3. Troisième échec : suspension complète du compte
@@ -291,6 +250,17 @@ URL webhook : `https://api.waitify.fr/billing/webhooks`
 | SMS/mois | 1000 inclus | Facturation +0.03€ |
 | API calls | 1000/min | Rate limiting |
 | Timeout client | 5 minutes | Passage automatique |
+
+## Codes d'erreur
+
+| Code | Description | Action recommandée |
+|------|-------------|-------------------|
+| 4001 | Queue fermée | Réessayer plus tard |
+| 4002 | Queue pleine | Réessayer plus tard |
+| 4003 | Client déjà inscrit | Vérifier statut existant |
+| 4004 | Business suspendu | Contacter support |
+| 5001 | Erreur SMS | Réessayer, fallback notification |
+| 5002 | Erreur Stripe | Vérifier configuration |
 
 <div align="center">
 

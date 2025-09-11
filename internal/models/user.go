@@ -34,6 +34,17 @@ func (user *RegisterRequest) Validate() error {
 	return nil
 }
 
+func (user *RegisterRequest) ValidatePassword() error {
+	if len(user.Password) < 6 {
+		return errors.New("[user.go] -> Le mot de passe doit avoir au moins caractères.")
+	}
+
+	if len(user.Password) > 100 {
+		return errors.New("[user.go] -> Le mot de passe ne doit pas dépasser 100 caractères.")
+	}
+	return nil
+}
+
 type AuthResponse struct {
 	Token string `json:"token"`
 	User  User   `json:"user"`

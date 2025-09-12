@@ -39,6 +39,6 @@ func main() {
 	// Route utilisateur
 	r.HandleFunc("GET /admin/profile", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.ProfileHandler)))
 
-	fmt.Print("[main.go] -> Serveur lançé : http://localhost:", port)
+	fmt.Print("[main.go] -> Serveur lançé : http://localhost", port)
 	http.ListenAndServe(port, r)
 }

@@ -26,6 +26,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	var registerRequest models.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&registerRequest); err != nil {
+		log.Println(`[authHandler.go -> RegisterHandler()] -> Mauvais corps de requête : `, err)
 		http.Error(w, `[authHandler.go -> RegisterHandler()] -> Corps de la requête invalide.`, http.StatusBadRequest)
 		return
 	}
@@ -59,12 +60,12 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	err := database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)",
 		registerRequest.Email).Scan(&exists)
 	if err != nil {
-		log.Fatal("Erreur vérification si l'utilisateur existe : ", err)
-		http.Error(w, `[authHandler.go -> RegisterHandler()] -> ERREUR base de données`, http.StatusInternalServerError)
+		log.Println("Erreur vérification si l'utilisateur existe : ", err)
+		http.Error(w, `[authHandler.go -> RegisterHandler()] -> Erreur vérification si l'utilisateur existe.`, http.StatusInternalServerError)
 		return
 	}
 	if exists {
-		log.Fatalln("Erreur email est déjà associé à un compte : ", err)
+		log.Println("Erreur email est déjà associé à un compte : ", err)
 		http.Error(w, `[authHandler.go -> RegisterHandler()] -> ERREUR. Cet email est déjà associé à un compte.`, http.StatusConflict)
 		return
 	}
@@ -72,6 +73,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// Hasher le mot de passe
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(registerRequest.Password), bcrypt.DefaultCost)
 	if err != nil {
+		log.Println("[authHandler.go -> RegisterHandler()] -> Erreur lors du hashage du mot de passe.", err)
 		http.Error(w, "[authHandler.go -> RegisterHandler()] -> Erreur lors du hashage du mot de passe.", http.StatusInternalServerError)
 		return
 	}
@@ -84,7 +86,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	).Scan(&user.ID, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
-		log.Fatalln("Erreur insertion dans la base de données : ", err)
+		log.Println("Erreur insertion dans la base de données : ", err)
 		http.Error(w, "[authHandler.go -> RegisterHandler()] -> Erreur lors de la création de l'utilisateur.", http.StatusInternalServerError)
 		return
 	}

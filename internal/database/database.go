@@ -20,7 +20,7 @@ func InitDB() {
 	// dbPassword := os.Getenv("DB_PASSWORD")
 	// dbName := os.Getenv("DB_NAME")
 
-	connectionString := fmt.Sprintf("postgres://postgres:postgres@localhost/waitifydb?sslmode=disable")
+	connectionString := fmt.Sprintf("postgres://postgres:postgres@localhost:5433/waitifydb?sslmode=disable")
 	// connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 	// 	dbHost, dbPort, dbUser, dbPassword, dbName)
 

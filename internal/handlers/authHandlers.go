@@ -14,6 +14,7 @@ import (
 	"github.com/google/uuid"
 
 	"golang.org/x/crypto/bcrypt"
+	"golang.org/x/oauth2"
 )
 
 // Inscription
@@ -166,6 +167,26 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(response)
+}
+
+// GOOGLE
+func (a *App) oAuthHandler(w http.ResponseWriter, r *http.Request) {
+	// // Variables d'environnement
+	// cfg, err := config.Load()
+	// if err != nil {
+	// 	log.Fatal(`[main.go] -> Erreur lors du chargement des variables d'environnements.`, err)
+	// }
+
+	// conf := &oauth2.Config{
+	// 	ClientID: cfg.GCP.ClientID,
+	// 	ClientSecret: cfg.GCP.ClientSecret,
+	// 	RedirectURL: cfg.GCP.RedirectURL,
+	// 	Scopes: []string{"email", "profile"},
+	// 	Endpoint: google.Endpoint,
+	// }
+
+	url := a.config.AuthCodeURL("hello world", oauth2.AccessTypeOffline)
+	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
 // Health check

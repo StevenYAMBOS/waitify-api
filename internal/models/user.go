@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/oauth2"
 )
 
 type User struct {
@@ -48,4 +49,9 @@ func (user *RegisterRequest) ValidatePassword() error {
 type AuthResponse struct {
 	Token string `json:"token"`
 	User  User   `json:"user"`
+}
+
+// Google Cloud
+type App struct {
+	config *oauth2.Config
 }

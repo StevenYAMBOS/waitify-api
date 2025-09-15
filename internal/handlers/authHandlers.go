@@ -1,8 +1,11 @@
 package handlers
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net/http"
@@ -168,10 +171,68 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+func TestHandler(w http.ResponseWriter, r *http.Request) {
+	// Parsing an HTML document present in the current directory.
+	t, err := template.ParseFiles("index.html")
+	if err != nil {
+		log.Print(err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	// serving the parsed HTML document
+	t.Execute(w, nil)
+}
+
 // GOOGLE
 func GoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
 	url := models.AppConfig.GoogleLoginConfig.AuthCodeURL("randomstate")
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+}
+
+func GoogleCallback(w http.ResponseWriter, r *http.Request) {
+	state := r.URL.Query().Get("state")
+	if state != "randomstate" {
+		http.Error(w, "States don't Match!!", http.StatusBadRequest)
+	}
+	code := r.URL.Query().Get("code")
+
+	googlecon := models.GoogleConfig()
+
+	// Exchanging the code for an access token
+	token, err := googlecon.Exchange(context.Background(), code)
+	if err != nil {
+		log.Println(`[authHandler.go -> GoogleCallBack()] -> Erreur lors de l'échange code <-> token : `, err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Creating an HTTP client to make authenticated request using the access key.
+	// This client method also regenerate the access key using the refresh key.
+	// client := models.GoogleConfig.Client(context.Background(), t)
+
+	// Getting the user public details from google API endpoint
+	resp, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// Closing the request body when this function returns.
+	// This is a good practice to avoid memory leak
+	defer resp.Body.Close()
+
+	var v any
+
+	// Reading the JSON body using JSON decoder
+	err = json.NewDecoder(resp.Body).Decode(&v)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// sending the user public value as a response. This is may not be a good practice,
+	// but for demonstration, I think it serves the need.
+	fmt.Fprintf(w, "%v", v)
 }
 
 // Health check

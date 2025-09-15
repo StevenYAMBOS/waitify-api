@@ -42,7 +42,9 @@ func main() {
 	// Routes d'authentification
 	r.HandleFunc("POST /auth/register", middlewares.CORSMiddleware(handlers.RegisterHandler))
 	r.HandleFunc("POST /auth/login", middlewares.CORSMiddleware(handlers.LoginHandler))
+	r.HandleFunc("GET /auth/test", middlewares.CORSMiddleware(handlers.TestHandler))
 	r.HandleFunc("GET /auth/google/login", middlewares.CORSMiddleware(handlers.GoogleLoginHandler))
+	r.HandleFunc("GET /auth/google/callback", middlewares.CORSMiddleware(handlers.GoogleCallback))
 	// Route utilisateur
 	r.HandleFunc("GET /admin/profile", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.ProfileHandler)))
 

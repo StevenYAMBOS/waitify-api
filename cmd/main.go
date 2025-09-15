@@ -9,16 +9,11 @@ import (
 	"github.com/StevenYAMBOS/waitify-api/internal/database"
 	"github.com/StevenYAMBOS/waitify-api/internal/handlers"
 	"github.com/StevenYAMBOS/waitify-api/internal/middlewares"
+	"github.com/StevenYAMBOS/waitify-api/internal/models"
 
 	// "github.com/StevenYAMBOS/waitify-api/internal/models"
 	"github.com/StevenYAMBOS/waitify-api/internal/utils"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
-
-type App struct {
-	config *oauth2.Config
-}
 
 func main() {
 	// Variables d'environnement
@@ -36,16 +31,8 @@ func main() {
 	// Port
 	port := cfg.Server.Port
 
-	// GCP
-	conf := &oauth2.Config{
-		ClientID:     cfg.GCP.ClientID,
-		ClientSecret: cfg.GCP.ClientSecret,
-		RedirectURL:  cfg.GCP.RedirectURL,
-		Scopes:       []string{"email", "profile"},
-		Endpoint:     google.Endpoint,
-	}
-
-	app := App{config: conf}
+	// Initialisation GCP
+	models.GoogleConfig()
 
 	// Routeur
 	r := http.NewServeMux()
@@ -55,7 +42,7 @@ func main() {
 	// Routes d'authentification
 	r.HandleFunc("POST /auth/register", middlewares.CORSMiddleware(handlers.RegisterHandler))
 	r.HandleFunc("POST /auth/login", middlewares.CORSMiddleware(handlers.LoginHandler))
-	r.HandleFunc("POST /auth/google/login", middlewares.CORSMiddleware(app.oAuthHandler))
+	r.HandleFunc("GET /auth/google/login", middlewares.CORSMiddleware(handlers.GoogleLoginHandler))
 	// Route utilisateur
 	r.HandleFunc("GET /admin/profile", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.ProfileHandler)))
 

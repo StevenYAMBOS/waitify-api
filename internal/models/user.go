@@ -2,11 +2,14 @@ package models
 
 import (
 	"errors"
+	"log"
 	"regexp"
 	"time"
 
+	"github.com/StevenYAMBOS/waitify-api/internal/config"
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 )
 
 type User struct {
@@ -52,6 +55,27 @@ type AuthResponse struct {
 }
 
 // Google Cloud
-type App struct {
-	config *oauth2.Config
+type Config struct {
+	GoogleLoginConfig oauth2.Config
+}
+
+var AppConfig Config
+
+func GoogleConfig() oauth2.Config {
+	// Variables d'environnement
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatal(`[user.go] -> Erreur lors du chargement des variables d'environnements.`, err)
+	}
+
+	AppConfig.GoogleLoginConfig = oauth2.Config{
+		ClientID:     cfg.GCP.ClientID,
+		ClientSecret: cfg.GCP.ClientSecret,
+		RedirectURL:  cfg.GCP.RedirectURL,
+		Scopes: []string{"https://www.googleapis.com/auth/userinfo.email",
+			"https://www.googleapis.com/auth/userinfo.profile"},
+		Endpoint: google.Endpoint,
+	}
+
+	return AppConfig.GoogleLoginConfig
 }

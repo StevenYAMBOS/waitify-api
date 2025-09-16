@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"html/template"
 	"io"
 	"log"
@@ -222,7 +221,7 @@ func GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	// This is a good practice to avoid memory leak
 	defer resp.Body.Close()
 
-	var v *models.GoogleUser
+	var v models.GoogleUser
 
 	// Reading the JSON body using JSON decoder
 	err = json.NewDecoder(resp.Body).Decode(&v)
@@ -231,14 +230,54 @@ func GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if
+	// Insertion dans la base de données
+	var user models.User
+	googleErr := database.DB.QueryRow(
+		"INSERT INTO users (id, google_id, email) VALUES ($1, $2, $3) RETURNING id, google_id, email",
+		uuid.New().String(), v.ID, v.Email,
+	).Scan(&user.ID, &user.Google_id, &user.Email)
 
-	// sending the user public value as a response. This is may not be a good practice,
-	// but for demonstration, I think it serves the need.
-	log.Println("___RÉPONSE___ : ", v)
-	log.Println("___TOKEN___ : ", token.AccessToken)
-	log.Println("___EMAIL___ : ", v.Email)
-	fmt.Fprintf(w, "%v", v)
+	if googleErr != nil {
+		log.Println("USER :", v)
+		log.Println("Erreur insertion dans la base de données : ", googleErr)
+		http.Error(w, googleErr.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := models.GoogleAuthResponse{
+		Token: token.AccessToken,
+		User:  v,
+	}
+
+	json.NewEncoder(w).Encode(response)
+
+	/*
+		// Vérifier si l'utilisateur existe
+		var exists bool
+		var user models.User
+		googleAuthErr := database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)",
+			v.Email).Scan(&exists)
+		// Si l'utilisateur n'existe pas
+		if googleAuthErr != nil {
+			// Insertion dans la base de données
+			database.DB.QueryRow(
+				"INSERT INTO users (id, google_id, email, first_name,  last_name, profile_picture, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, 6$, 7$) RETURNING id, google_id, email, first_name,  last_name, profile_picture, created_at, updated_at",
+				uuid.New().String(), v.ID, v.Email, v.GivenName, v.FamilyName, v.Picture, time.Now(), time.Now(),
+			).Scan(&user.ID, &user.Google_id, &user.Email, &user.FirstName, &user.LastName, &user.ProfilePicture, &user.CreatedAt, &user.UpdatedAt)
+		}
+		// Si l'utilisateur existe
+		if exists {
+			database.DB.QueryRow("SELECT email FROM users WHERE email = $1", v.Email).
+				Scan(&user.Email)
+		}
+
+		// sending the user public value as a response. This is may not be a good practice,
+		but for demonstration, I think it serves the need.
+		log.Println("___RÉPONSE___ : ", v)
+		log.Println("___TOKEN___ : ", token.AccessToken)
+		log.Println("___EMAIL___ : ", v.Email)
+		fmt.Fprintf(w, "%v", v)
+	*/
 }
 
 // Health check

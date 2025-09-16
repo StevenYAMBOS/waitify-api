@@ -14,13 +14,16 @@ import (
 
 // Modèle utilisateur
 type User struct {
-	ID           uuid.UUID `json:"id" db:"id"`
-	Google_id    string    `json:"google_id" db:"google_id"`
-	Email        string    `json:"email"`
-	AuthProvider string    `json:"auth_provider"`
-	Password     string    `json:"-" db:"password"` // "-" signifie que ça ne sera pas inclut dans le JSON
-	CreatedAt    time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
+	ID             uuid.UUID `json:"id" db:"id"`
+	Google_id      string    `json:"google_id" db:"google_id"`
+	Email          string    `json:"email" db:"email"`
+	FirstName      string    `json:"first_name" db:"first_name"`
+	LastName       string    `json:"last_name" db:"last_name"`
+	ProfilePicture string    `json:"profile_picture" db:"profile_picture"`
+	AuthProvider   string    `json:"auth_provider" db:"auth_provider"`
+	Password       string    `json:"-" db:"password"` // "-" signifie que ça ne sera pas inclut dans le JSON
+	CreatedAt      time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // Format requête connexion
@@ -101,4 +104,9 @@ func GoogleConfig() oauth2.Config {
 	}
 
 	return AppConfig.GoogleLoginConfig
+}
+
+type GoogleAuthResponse struct {
+	Token string     `json:"TOKEN"`
+	User  GoogleUser `json:"USER_INFOS"`
 }

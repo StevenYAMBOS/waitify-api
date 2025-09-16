@@ -58,10 +58,11 @@ CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     google_id VARCHAR(255),
     email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
+    password VARCHAR(255),
     first_name VARCHAR(100),
     last_name VARCHAR(100),
     phone VARCHAR(20),
+    profile_picture VARCHAR(255),
     company_name VARCHAR(255),
     is_active BOOLEAN DEFAULT true,
     auth_provider VARCHAR(50) DEFAULT 'google',
@@ -91,10 +92,11 @@ ALTER TABLE users ADD CONSTRAINT check_phone_format CHECK (phone IS NULL OR phon
 - `id` : Identifiant unique UUID généré automatiquement
 - `google_id` : Identifiant unique partagé par Google lors de l'inscription avec Google oAuth2
 - `email` : Adresse email unique servant d'identifiant de connexion
-- `password` : Hash bcrypt du mot de passe, jamais stocké en clair
+- `password` : Hash bcrypt du mot de passe, jamais stocké en clair. ⚠️ Le mot de passe n'est pas `NOT NULL` car avec l'inscription avec Google on ne récupère pas le mot de passe de l'utilisateur ⚠️
 - `first_name` : Prénom de l'utilisateur
 - `last_name` : Nom de famille de l'utilisateur
 - `phone` : Numéro de téléphone de contact
+- `profile_picture` : Image de profile
 - `company_name` : Nom de l'entreprise mère (optionnel, pour les chaînes)
 - `is_active` : Permet de suspendre un compte utilisateur globalement
 - `auth_provider` : Application de connexion

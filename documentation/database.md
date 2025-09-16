@@ -56,6 +56,7 @@ L'architecture permet à un utilisateur de gérer plusieurs établissements via 
 ```sql
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    google_id VARCHAR(255),
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     first_name VARCHAR(100),
@@ -63,6 +64,7 @@ CREATE TABLE users (
     phone VARCHAR(20),
     company_name VARCHAR(255),
     is_active BOOLEAN DEFAULT true,
+    auth_provider VARCHAR(50) DEFAULT 'google',
     subscription_status VARCHAR(50) DEFAULT 'trial',
     SubscriptionPlanId UUID REFERENCES subscription_plans(id),
     trial_ends_at TIMESTAMP WITH TIME ZONE,
@@ -80,12 +82,14 @@ CREATE INDEX idx_users_active ON users(is_active) WHERE is_active = true;
 -- Contraintes de validation
 ALTER TABLE users ADD CONSTRAINT check_email_format CHECK (email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
 ALTER TABLE users ADD CONSTRAINT check_subscription_status CHECK (subscription_status IN ('trial', 'active', 'suspended', 'cancelled'));
+ALTER TABLE users ADD CONSTRAINT check_auth_provider CHECK (auth_provider IN ('google', 'facebook'));
 ALTER TABLE users ADD CONSTRAINT check_phone_format CHECK (phone IS NULL OR phone ~ '^(\+33|0)[1-9][0-9]{8}$');
 ```
 
 **Explications des colonnes :**
 
 - `id` : Identifiant unique UUID généré automatiquement
+- `google_id` : Identifiant unique partagé par Google lors de l'inscription avec Google oAuth2
 - `email` : Adresse email unique servant d'identifiant de connexion
 - `password` : Hash bcrypt du mot de passe, jamais stocké en clair
 - `first_name` : Prénom de l'utilisateur
@@ -93,6 +97,7 @@ ALTER TABLE users ADD CONSTRAINT check_phone_format CHECK (phone IS NULL OR phon
 - `phone` : Numéro de téléphone de contact
 - `company_name` : Nom de l'entreprise mère (optionnel, pour les chaînes)
 - `is_active` : Permet de suspendre un compte utilisateur globalement
+- `auth_provider` : Application de connexion
 - `subscription_status` : État global de l'abonnement utilisateur
 - `SubscriptionPlanId` : Référence vers le plan d'abonnement actuel
 - `trial_ends_at` : Date limite de la période d'essai gratuite de 14 jours
@@ -272,8 +277,8 @@ CREATE INDEX idx_queue_entries_waiting_by_business ON queue_entries(BusinessId, 
 
 -- Index pour requêtes cross-business (performance)
 CREATE INDEX idx_queue_entries_user_status ON queue_entries(
-    (SELECT UserId FROM businesses WHERE id = BusinessId), 
-    status, 
+    (SELECT UserId FROM businesses WHERE id = BusinessId),
+    status,
     created_at
 );
 
@@ -398,8 +403,8 @@ CREATE INDEX idx_analytics_daily_date ON analytics_daily(date);
 ALTER TABLE analytics_daily ADD CONSTRAINT check_abandonment_rate_valid CHECK (abandonment_rate >= 0 AND abandonment_rate <= 100);
 ALTER TABLE analytics_daily ADD CONSTRAINT check_peak_hour_valid CHECK (peak_hour IS NULL OR (peak_hour >= 0 AND peak_hour <= 23));
 ALTER TABLE analytics_daily ADD CONSTRAINT check_totals_positive CHECK (
-    total_clients_served >= 0 AND 
-    total_clients_missed >= 0 AND 
+    total_clients_served >= 0 AND
+    total_clients_missed >= 0 AND
     total_clients_cancelled >= 0 AND
     total_clients_registered >= 0
 );
@@ -467,7 +472,7 @@ ALTER TABLE billings ADD CONSTRAINT check_period_valid CHECK (billing_period_end
 ALTER TABLE billings ADD CONSTRAINT check_businesses_count_positive CHECK (active_businesses_count > 0);
 ALTER TABLE billings ADD CONSTRAINT check_billing_period_sequential CHECK (billing_period_start < billing_period_end);
 ALTER TABLE billings ADD CONSTRAINT check_sms_overage_calculation CHECK (
-    (sms_used <= sms_included AND sms_overage = 0) OR 
+    (sms_used <= sms_included AND sms_overage = 0) OR
     (sms_used > sms_included AND sms_overage = sms_used - sms_included)
 );
 ```
@@ -542,7 +547,7 @@ INSERT INTO system_configs (key, value, data_type, description, is_public) VALUE
 ```sql
 -- Vue pour simplifier les requêtes cross-business
 CREATE VIEW queue_entries_with_user AS
-SELECT 
+SELECT
     qe.*,
     b.UserId,
     b.name as business_name,
@@ -554,7 +559,7 @@ JOIN users u ON b.UserId = u.id;
 
 -- Vue agrégée multi-business par utilisateur
 CREATE VIEW user_business_summary AS
-SELECT 
+SELECT
     u.id as user_id,
     u.email,
     sp.name as plan_name,
@@ -566,11 +571,11 @@ FROM users u
 LEFT JOIN subscription_plans sp ON u.SubscriptionPlanId = sp.id
 LEFT JOIN businesses b ON u.id = b.UserId
 LEFT JOIN (
-    SELECT 
+    SELECT
         BusinessId,
         COUNT(*) FILTER (WHERE status = 'waiting') as queue_size,
         COUNT(*) FILTER (WHERE status = 'served' AND created_at >= CURRENT_DATE) as served_today
-    FROM queue_entries 
+    FROM queue_entries
     GROUP BY BusinessId
 ) today_stats ON b.id = today_stats.BusinessId
 GROUP BY u.id, u.email, sp.name;
@@ -590,26 +595,26 @@ DECLARE
 BEGIN
     -- Compter les business actifs de l'utilisateur
     SELECT COUNT(*) INTO current_count
-    FROM businesses 
+    FROM businesses
     WHERE UserId = NEW.UserId AND is_active = true;
-    
+
     -- Récupérer les limites du plan
     SELECT sp.max_businesses, sp.name INTO max_allowed, plan_name
     FROM users u
     JOIN subscription_plans sp ON u.SubscriptionPlanId = sp.id
     WHERE u.id = NEW.UserId;
-    
+
     -- Vérifier la limite (-1 = illimité)
     IF max_allowed != -1 AND current_count >= max_allowed THEN
         RAISE EXCEPTION 'Plan % allows maximum % businesses. Upgrade required.', plan_name, max_allowed;
     END IF;
-    
+
     RETURN NEW;
 END;
 $ language 'plpgsql';
 
-CREATE TRIGGER check_business_limit_trigger 
-    BEFORE INSERT ON businesses 
+CREATE TRIGGER check_business_limit_trigger
+    BEFORE INSERT ON businesses
     FOR EACH ROW EXECUTE FUNCTION check_business_limit();
 ```
 
@@ -637,28 +642,28 @@ BEGIN
     FROM users u
     JOIN subscription_plans sp ON u.SubscriptionPlanId = sp.id
     WHERE u.id = user_id;
-    
+
     -- Calculer usage SMS par business
-    FOR business_rec IN 
+    FOR business_rec IN
         SELECT b.id, b.name, COALESCE(SUM(1), 0) as sms_count
         FROM businesses b
-        LEFT JOIN sms_logs sl ON b.id = sl.BusinessId 
-            AND sl.sent_at >= period_start 
+        LEFT JOIN sms_logs sl ON b.id = sl.BusinessId
+            AND sl.sent_at >= period_start
             AND sl.sent_at < period_end
             AND sl.status = 'sent'
         WHERE b.UserId = user_id AND b.is_active = true
         GROUP BY b.id, b.name
     LOOP
-        sms_usage := jsonb_set(sms_usage, ARRAY[business_rec.id::text], 
+        sms_usage := jsonb_set(sms_usage, ARRAY[business_rec.id::text],
             jsonb_build_object('name', business_rec.name, 'sms_count', business_rec.sms_count));
         total_sms_used := total_sms_used + business_rec.sms_count;
     END LOOP;
-    
+
     -- Calculer dépassement
     sms_overage := GREATEST(0, total_sms_used - plan_info.sms_quota_monthly);
     overage_cost := sms_overage * 3; -- 3 centimes par SMS
-    
-    RETURN QUERY SELECT 
+
+    RETURN QUERY SELECT
         plan_info.price_cents,
         (SELECT COUNT(*)::INTEGER FROM businesses WHERE UserId = user_id AND is_active = true),
         total_sms_used,
@@ -692,22 +697,22 @@ CREATE TRIGGER update_subscription_plans_updated_at BEFORE UPDATE ON subscriptio
 CREATE OR REPLACE FUNCTION recalculate_queue_positions()
 RETURNS TRIGGER AS $
 BEGIN
-    UPDATE queue_entries 
+    UPDATE queue_entries
     SET position = new_position
     FROM (
         SELECT id, ROW_NUMBER() OVER (ORDER BY created_at) as new_position
-        FROM queue_entries 
-        WHERE BusinessId = COALESCE(NEW.BusinessId, OLD.BusinessId) 
+        FROM queue_entries
+        WHERE BusinessId = COALESCE(NEW.BusinessId, OLD.BusinessId)
         AND status = 'waiting'
     ) AS positioned
     WHERE queue_entries.id = positioned.id;
-    
+
     RETURN COALESCE(NEW, OLD);
 END;
 $ language 'plpgsql';
 
-CREATE TRIGGER recalculate_positions_after_change 
-    AFTER UPDATE OF status OR DELETE ON queue_entries 
+CREATE TRIGGER recalculate_positions_after_change
+    AFTER UPDATE OF status OR DELETE ON queue_entries
     FOR EACH ROW EXECUTE FUNCTION recalculate_queue_positions();
 
 -- Contrainte pour limiter les business selon le plan
@@ -719,26 +724,26 @@ DECLARE
 BEGIN
     -- Récupérer le nombre de business actifs
     SELECT COUNT(*) INTO current_businesses
-    FROM businesses 
+    FROM businesses
     WHERE UserId = NEW.id AND is_active = true;
-    
+
     -- Récupérer la nouvelle limite
     SELECT max_businesses INTO new_max_businesses
-    FROM subscription_plans 
+    FROM subscription_plans
     WHERE id = NEW.SubscriptionPlanId;
-    
+
     -- Vérifier si le changement de plan est valide
     IF new_max_businesses != -1 AND current_businesses > new_max_businesses THEN
-        RAISE EXCEPTION 'Cannot downgrade: user has % businesses but plan allows only %', 
+        RAISE EXCEPTION 'Cannot downgrade: user has % businesses but plan allows only %',
             current_businesses, new_max_businesses;
     END IF;
-    
+
     RETURN NEW;
 END;
 $ language 'plpgsql';
 
-CREATE TRIGGER validate_plan_change_trigger 
-    BEFORE UPDATE OF SubscriptionPlanId ON users 
+CREATE TRIGGER validate_plan_change_trigger
+    BEFORE UPDATE OF SubscriptionPlanId ON users
     FOR EACH ROW EXECUTE FUNCTION validate_business_count_on_plan_change();
 ```
 
@@ -754,29 +759,29 @@ ALTER TABLE analytics_daily ENABLE ROW LEVEL SECURITY;
 ALTER TABLE billings ENABLE ROW LEVEL SECURITY;
 
 -- Politiques sécurisées multi-business (adapté pour PostgreSQL pur)
-CREATE POLICY "Users manage own data" ON users 
+CREATE POLICY "Users manage own data" ON users
     FOR ALL USING (id = current_setting('app.current_user_id')::UUID);
 
-CREATE POLICY "Users manage own businesses" ON businesses 
+CREATE POLICY "Users manage own businesses" ON businesses
     FOR ALL USING (UserId = current_setting('app.current_user_id')::UUID);
 
-CREATE POLICY "Users access queues via businesses" ON queue_entries 
+CREATE POLICY "Users access queues via businesses" ON queue_entries
     FOR ALL USING (current_setting('app.current_user_id')::UUID = (SELECT UserId FROM businesses WHERE id = BusinessId));
 
-CREATE POLICY "Users access SMS logs via businesses" ON sms_logs 
+CREATE POLICY "Users access SMS logs via businesses" ON sms_logs
     FOR SELECT USING (current_setting('app.current_user_id')::UUID = (SELECT UserId FROM businesses WHERE id = BusinessId));
 
-CREATE POLICY "Users access analytics via businesses" ON analytics_daily 
+CREATE POLICY "Users access analytics via businesses" ON analytics_daily
     FOR SELECT USING (current_setting('app.current_user_id')::UUID = (SELECT UserId FROM businesses WHERE id = BusinessId));
 
-CREATE POLICY "Users access own billing" ON billings 
+CREATE POLICY "Users access own billing" ON billings
     FOR SELECT USING (UserId = current_setting('app.current_user_id')::UUID);
 
 -- Accès public via QR code (avec context setting)
-CREATE POLICY "Public queue access via QR token" ON queue_entries 
+CREATE POLICY "Public queue access via QR token" ON queue_entries
     FOR SELECT USING (
         BusinessId IN (
-            SELECT id FROM businesses 
+            SELECT id FROM businesses
             WHERE qr_code_token = current_setting('app.current_business_token', true)
         )
     );
@@ -797,7 +802,7 @@ RETURNS TABLE(
 ) AS $
 BEGIN
     RETURN QUERY
-    SELECT 
+    SELECT
         b.id,
         b.name,
         COUNT(qe.id) FILTER (WHERE qe.status = 'waiting'),
@@ -814,7 +819,7 @@ $ language 'plpgsql';
 
 -- Vue matérialisée pour les performances multi-business
 CREATE MATERIALIZED VIEW businesses_stats_realtime AS
-SELECT 
+SELECT
     b.id as business_id,
     b.UserId,
     b.name as business_name,
@@ -857,18 +862,18 @@ DECLARE
 BEGIN
     -- Récupérer l'ID du plan basic
     SELECT id INTO basic_plan_id FROM subscription_plans WHERE name = 'basic';
-    
+
     -- Traiter chaque utilisateur qui n'a pas encore de business
-    FOR user_record IN 
-        SELECT u.* FROM users u 
-        LEFT JOIN businesses b ON u.id = b.UserId 
+    FOR user_record IN
+        SELECT u.* FROM users u
+        LEFT JOIN businesses b ON u.id = b.UserId
         WHERE b.UserId IS NULL
     LOOP
         -- Assigner le plan basic si pas de plan
         IF user_record.SubscriptionPlanId IS NULL THEN
             UPDATE users SET SubscriptionPlanId = basic_plan_id WHERE id = user_record.id;
         END IF;
-        
+
         -- Créer un business par défaut si les données legacy existent
         IF user_record.company_name IS NOT NULL THEN
             INSERT INTO businesses (
@@ -887,7 +892,7 @@ BEGIN
                 300,
                 true
             ) RETURNING id INTO new_business_id;
-            
+
             RAISE NOTICE 'Created business % for user %', new_business_id, user_record.email;
         END IF;
     END LOOP;
@@ -901,12 +906,12 @@ DECLARE
     deleted_count INTEGER;
 BEGIN
     -- Supprimer les entrées de queue anciennes (gardées pour analytics)
-    DELETE FROM queue_entries 
+    DELETE FROM queue_entries
     WHERE created_at < NOW() - INTERVAL '1 day' * days_old
     AND status IN ('served', 'missed', 'cancelled');
-    
+
     GET DIAGNOSTICS deleted_count = ROW_COUNT;
-    
+
     RAISE NOTICE 'Deleted % old queue entries', deleted_count;
     RETURN deleted_count;
 END;
@@ -914,8 +919,8 @@ $ language 'plpgsql';
 
 -- Fonction de calcul des statistiques consolidées utilisateur
 CREATE OR REPLACE FUNCTION calculate_user_consolidated_stats(
-    user_id UUID, 
-    start_date DATE, 
+    user_id UUID,
+    start_date DATE,
     end_date DATE
 )
 RETURNS TABLE(
@@ -935,10 +940,10 @@ DECLARE
 BEGIN
     -- Calculer les performances par business pour trouver le meilleur/pire
     FOR business_rec IN
-        SELECT b.name, 
+        SELECT b.name,
                COALESCE(AVG(ad.abandonment_rate), 0) as avg_abandonment
         FROM businesses b
-        LEFT JOIN analytics_daily ad ON b.id = ad.BusinessId 
+        LEFT JOIN analytics_daily ad ON b.id = ad.BusinessId
             AND ad.date BETWEEN start_date AND end_date
         WHERE b.UserId = user_id AND b.is_active = true
         GROUP BY b.name
@@ -947,16 +952,16 @@ BEGIN
             best_rate := business_rec.avg_abandonment;
             worst_business := business_rec.name;
         END IF;
-        
+
         IF business_rec.avg_abandonment < worst_rate THEN
             worst_rate := business_rec.avg_abandonment;
             best_business := business_rec.name;
         END IF;
     END LOOP;
-    
+
     -- Retourner les statistiques consolidées
     RETURN QUERY
-    SELECT 
+    SELECT
         COUNT(b.id)::INTEGER as total_businesses,
         COALESCE(SUM(ad.total_clients_served), 0) as total_clients_served,
         COALESCE(SUM(ad.sms_sent_count), 0) as total_sms_sent,
@@ -964,7 +969,7 @@ BEGIN
         best_business,
         worst_business
     FROM businesses b
-    LEFT JOIN analytics_daily ad ON b.id = ad.BusinessId 
+    LEFT JOIN analytics_daily ad ON b.id = ad.BusinessId
         AND ad.date BETWEEN start_date AND end_date
     WHERE b.UserId = user_id AND b.is_active = true;
 END;
@@ -1049,7 +1054,7 @@ GET    /businesses/:id/analytics/export      # Export CSV business spécifique
     {
       "id": "uuid",
       "name": "Boulangerie Quartier Gare",
-      "business_type": "bakery", 
+      "business_type": "bakery",
       "is_active": true,
       "is_queue_active": false,
       "current_queue_size": 0,
@@ -1080,7 +1085,7 @@ GET    /businesses/:id/analytics/export      # Export CSV business spécifique
     },
     {
       "business_id": "uuid",
-      "business_name": "Boulangerie Quartier Gare", 
+      "business_name": "Boulangerie Quartier Gare",
       "metrics": {
         "total_clients": 186,
         "clients_served": 172,
@@ -1127,23 +1132,23 @@ GET    /businesses/:id/analytics/export      # Export CSV business spécifique
 
 ```sql
 -- Requête pour identifier les tables les plus sollicitées
-SELECT 
+SELECT
     schemaname,
     tablename,
     n_tup_ins + n_tup_upd + n_tup_del as total_operations,
     n_tup_ins as inserts,
     n_tup_upd as updates,
     n_tup_del as deletes
-FROM pg_stat_user_tables 
+FROM pg_stat_user_tables
 ORDER BY total_operations DESC;
 
 -- Monitoring des index inutilisés
-SELECT 
+SELECT
     schemaname,
     tablename,
     indexname,
     idx_scan
-FROM pg_stat_user_indexes 
+FROM pg_stat_user_indexes
 WHERE idx_scan = 0
 ORDER BY schemaname, tablename;
 ```

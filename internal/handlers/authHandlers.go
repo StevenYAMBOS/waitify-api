@@ -183,16 +183,17 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, nil)
 }
 
-// GOOGLE
+// Pop up Google Auth
 func GoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
 	url := models.AppConfig.GoogleLoginConfig.AuthCodeURL("randomstate")
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
+// Connexion avec Google
 func GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 	if state != "randomstate" {
-		http.Error(w, "States don't Match!!", http.StatusBadRequest)
+		http.Error(w, `[authHandlers.go -> GoogleCallBack()] -> Les états ne matchent pas. "randomstate" manquant !`, http.StatusBadRequest)
 	}
 	code := r.URL.Query().Get("code")
 
@@ -221,7 +222,7 @@ func GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	// This is a good practice to avoid memory leak
 	defer resp.Body.Close()
 
-	var v any
+	var v *models.GoogleUser
 
 	// Reading the JSON body using JSON decoder
 	err = json.NewDecoder(resp.Body).Decode(&v)
@@ -230,8 +231,13 @@ func GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if
+
 	// sending the user public value as a response. This is may not be a good practice,
 	// but for demonstration, I think it serves the need.
+	log.Println("___RÉPONSE___ : ", v)
+	log.Println("___TOKEN___ : ", token.AccessToken)
+	log.Println("___EMAIL___ : ", v.Email)
 	fmt.Fprintf(w, "%v", v)
 }
 

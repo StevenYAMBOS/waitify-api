@@ -12,24 +12,30 @@ import (
 	"golang.org/x/oauth2/google"
 )
 
+// Modèle utilisateur
 type User struct {
-	ID        uuid.UUID `json:"id" db:"id"`
-	Email     string    `json:"email"`
-	Password  string    `json:"-" db:"password"` // "-" signifie que ça ne sera pas inclut dans le JSON
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+	ID           uuid.UUID `json:"id" db:"id"`
+	Google_id    string    `json:"google_id" db:"google_id"`
+	Email        string    `json:"email"`
+	AuthProvider string    `json:"auth_provider"`
+	Password     string    `json:"-" db:"password"` // "-" signifie que ça ne sera pas inclut dans le JSON
+	CreatedAt    time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// Format requête connexion
 type LoginRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 }
 
+// Format requête inscription
 type RegisterRequest struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required,min=6"`
 }
 
+// Format validation email
 func (user *RegisterRequest) Validate() error {
 	emailRegex := regexp.MustCompile(`^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`)
 	if !emailRegex.MatchString(user.Email) {
@@ -38,6 +44,7 @@ func (user *RegisterRequest) Validate() error {
 	return nil
 }
 
+// Format validation mot de passe
 func (user *RegisterRequest) ValidatePassword() error {
 	if len(user.Password) < 6 {
 		return errors.New("[user.go] -> Le mot de passe doit avoir au moins caractères.")
@@ -49,18 +56,34 @@ func (user *RegisterRequest) ValidatePassword() error {
 	return nil
 }
 
+// Format réponse auhtentification
 type AuthResponse struct {
 	Token string `json:"token"`
 	User  User   `json:"user"`
 }
 
-// Google Cloud
+/* ======================= GOOGLE CLOUD ======================= */
+
+// Config Google Cloud
 type Config struct {
 	GoogleLoginConfig oauth2.Config
 }
 
+// Modèle utilisateur Google (SCOPE email + profil)
+type GoogleUser struct {
+	ID            string `json:"id"`
+	Email         string `json:"email"`
+	VerifiedEmail bool   `json:"verified_email"`
+	Name          string `json:"name"`
+	GivenName     string `json:"given_name"`
+	FamilyName    string `json:"family_name"`
+	Picture       string `json:"picture"`
+	Locale        string `json:"locale"`
+}
+
 var AppConfig Config
 
+// Config Google Cloud
 func GoogleConfig() oauth2.Config {
 	// Variables d'environnement
 	cfg, err := config.Load()

@@ -69,8 +69,6 @@ func Load() (*Config, error) {
 	cfg.GCP.ClientID = os.Getenv("GCP_CLIENT_ID")
 	cfg.GCP.ClientSecret = os.Getenv("GCP_CLIENT_SECRET")
 	cfg.GCP.RedirectURL = os.Getenv("GCP_CLIENT_CALLBACK")
-	// cfg.GCP.Scopes = os.Getenv("GCP_CLIENT_ID")
-	// cfg.GCP.Endpoint = os.Getenv("GCP_CLIENT_ID")
 
 	cfg.Environment = os.Getenv("ENV")
 

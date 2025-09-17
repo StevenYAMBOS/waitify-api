@@ -182,17 +182,22 @@ func TestHandler(w http.ResponseWriter, r *http.Request) {
 	t.Execute(w, nil)
 }
 
-// Pop up Google Auth
+// Portail de connexion Google Auth
 func GoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
 	url := models.AppConfig.GoogleLoginConfig.AuthCodeURL("randomstate")
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-// Inscription avec Google
-func GoogleRegisterCallback(w http.ResponseWriter, r *http.Request) {
+/*
+ * Authentification avec Google
+ * La route fonctionne de la manière suivante :
+ * - Si l'utilisateur a déjà un compte enregistré dans la base de données avec son adresse email Google, alors lorsqu'il se connecte on renvoie le token de connexion généré par l'API Google au client
+ * - Si l'utilisateur n'a pas de compte enregistré dans la base de données avec son adresse email Google, alors lorsqu'il s'inscrit ses données sont enregistrées dans la base de données ET on renvoie le token de connexion généré par l'API Google au client
+ */
+func GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 	if state != "randomstate" {
-		http.Error(w, `[authHandlers.go -> GoogleRegisterCallback()] -> Les états ne matchent pas. "randomstate" manquant !`, http.StatusBadRequest)
+		http.Error(w, `[authHandlers.go -> GoogleCallback()] -> Les états ne matchent pas. "randomstate" manquant !`, http.StatusBadRequest)
 	}
 	code := r.URL.Query().Get("code")
 
@@ -201,7 +206,7 @@ func GoogleRegisterCallback(w http.ResponseWriter, r *http.Request) {
 	// Exchanging the code for an access token
 	token, err := googleConnection.Exchange(context.Background(), code)
 	if err != nil {
-		log.Println(`[authHandler.go -> GoogleRegisterCallback()] -> Erreur lors de l'échange code <-> token : `, err)
+		log.Println(`[authHandler.go -> GoogleCallback()] -> Erreur lors de l'échange code <-> token : `, err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -229,71 +234,47 @@ func GoogleRegisterCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Vérifier si l'utilisateur existe
-	var exists bool
-	err = database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)",
-		v.Email).Scan(&exists)
-	if err != nil {
-		log.Println("Erreur vérification si l'utilisateur existe : ", err)
-		http.Error(w, `[authHandler.go -> GoogleRegisterCallback()] -> Erreur vérification si l'utilisateur existe.`, http.StatusInternalServerError)
-		return
-	}
-	if exists {
-		log.Println("Erreur email est déjà associé à un compte : ", err)
-		http.Error(w, `[authHandler.go -> GoogleRegisterCallback()] -> ERREUR. Cet email est déjà associé à un compte.`, http.StatusConflict)
-		return
-	}
-
-	// Insertion dans la base de données
-	var user models.User
-	googleErr := database.DB.QueryRow(
-		"INSERT INTO users (id, google_id, email, first_name, last_name, profile_picture, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, google_id, email, first_name, last_name, profile_picture, created_at, updated_at",
-		uuid.New().String(), v.ID, v.Email, v.GivenName, v.FamilyName, v.Picture, time.Now(), time.Now(),
-	).Scan(&user.ID, &user.Google_id, &user.Email, &user.FirstName, &user.LastName, &user.ProfilePicture, &user.CreatedAt, &user.UpdatedAt)
-
-	if googleErr != nil {
-		log.Println("UTILISATEUR :", v)
-		log.Println("[authHandler.go -> GoogleRegisterCallback()] -> Erreur insertion des données de l'utilisateur dans la base de données, vérifier le format des données envoyées : ", googleErr)
-		http.Error(w, googleErr.Error(), http.StatusInternalServerError)
-		return
-	}
-
+	// Réponse
 	response := models.GoogleAuthResponse{
 		Token: token.AccessToken,
 		User:  v,
 	}
 
-	log.Println("Utilisateur créé avec succès.")
-	w.WriteHeader(200)
-	json.NewEncoder(w).Encode(response.Token)
+	// Vérifier si l'utilisateur existe
+	var exists bool
 
-	/*
-		// Vérifier si l'utilisateur existe
-		var exists bool
+	// Est-ce que l'utilisateur existe ?
+	err = database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)",
+		v.Email).Scan(&exists)
+	if err != nil {
+		log.Println("Erreur vérification si l'utilisateur existe : ", err)
+		http.Error(w, `[authHandler.go -> GoogleCallback()] -> Erreur vérification si l'utilisateur existe.`, http.StatusInternalServerError)
+		return
+	}
+	if exists {
+		// Si l'utilisateur existe on renvoie le token de connexion
+		log.Println("Utilisateur connecté avec succès.")
+		w.WriteHeader(http.StatusAccepted)
+		json.NewEncoder(w).Encode(response)
+		return
+	} else if !exists { // Sinon
+		// Insertion dans la base de données
 		var user models.User
-		googleAuthErr := database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)",
-			v.Email).Scan(&exists)
-		// Si l'utilisateur n'existe pas
-		if googleAuthErr != nil {
-			// Insertion dans la base de données
-			database.DB.QueryRow(
-				"INSERT INTO users (id, google_id, email, first_name,  last_name, profile_picture, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, 6$, 7$) RETURNING id, google_id, email, first_name,  last_name, profile_picture, created_at, updated_at",
-				uuid.New().String(), v.ID, v.Email, v.GivenName, v.FamilyName, v.Picture, time.Now(), time.Now(),
-			).Scan(&user.ID, &user.Google_id, &user.Email, &user.FirstName, &user.LastName, &user.ProfilePicture, &user.CreatedAt, &user.UpdatedAt)
-		}
-		// Si l'utilisateur existe
-		if exists {
-			database.DB.QueryRow("SELECT email FROM users WHERE email = $1", v.Email).
-				Scan(&user.Email)
-		}
+		googleErr := database.DB.QueryRow(
+			"INSERT INTO users (id, google_id, email, first_name, last_name, profile_picture, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, google_id, email, first_name, last_name, profile_picture, created_at, updated_at",
+			uuid.New().String(), v.ID, v.Email, v.GivenName, v.FamilyName, v.Picture, time.Now(), time.Now(),
+		).Scan(&user.ID, &user.Google_id, &user.Email, &user.FirstName, &user.LastName, &user.ProfilePicture, &user.CreatedAt, &user.UpdatedAt)
+		log.Println("Utilisateur créé avec succès.")
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(response)
 
-		// sending the user public value as a response. This is may not be a good practice,
-		but for demonstration, I think it serves the need.
-		log.Println("___RÉPONSE___ : ", v)
-		log.Println("___TOKEN___ : ", token.AccessToken)
-		log.Println("___EMAIL___ : ", v.Email)
-		fmt.Fprintf(w, "%v", v)
-	*/
+		if googleErr != nil {
+			log.Println("UTILISATEUR :", v)
+			log.Println("[authHandler.go -> GoogleCallback()] -> Erreur insertion des données de l'utilisateur dans la base de données, vérifier le format des données envoyées : ", googleErr)
+			http.Error(w, googleErr.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
 }
 
 // Health check

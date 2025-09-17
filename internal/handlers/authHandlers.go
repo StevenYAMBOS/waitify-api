@@ -188,20 +188,20 @@ func GoogleLoginHandler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 }
 
-// Connexion avec Google
-func GoogleCallback(w http.ResponseWriter, r *http.Request) {
+// Inscription avec Google
+func GoogleRegisterCallback(w http.ResponseWriter, r *http.Request) {
 	state := r.URL.Query().Get("state")
 	if state != "randomstate" {
-		http.Error(w, `[authHandlers.go -> GoogleCallBack()] -> Les états ne matchent pas. "randomstate" manquant !`, http.StatusBadRequest)
+		http.Error(w, `[authHandlers.go -> GoogleRegisterCallback()] -> Les états ne matchent pas. "randomstate" manquant !`, http.StatusBadRequest)
 	}
 	code := r.URL.Query().Get("code")
 
-	googlecon := models.GoogleConfig()
+	googleConnection := models.GoogleConfig()
 
 	// Exchanging the code for an access token
-	token, err := googlecon.Exchange(context.Background(), code)
+	token, err := googleConnection.Exchange(context.Background(), code)
 	if err != nil {
-		log.Println(`[authHandler.go -> GoogleCallBack()] -> Erreur lors de l'échange code <-> token : `, err)
+		log.Println(`[authHandler.go -> GoogleRegisterCallback()] -> Erreur lors de l'échange code <-> token : `, err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -210,36 +210,50 @@ func GoogleCallback(w http.ResponseWriter, r *http.Request) {
 	// This client method also regenerate the access key using the refresh key.
 	// client := models.GoogleConfig.Client(context.Background(), t)
 
-	// Getting the user public details from google API endpoint
+	// Récupérer les informations publiques de l'utilisateur depuis l'API GCP
 	resp, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + token.AccessToken)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Closing the request body when this function returns.
-	// This is a good practice to avoid memory leak
 	defer resp.Body.Close()
 
+	// Modèle utilisateur API Google
 	var v models.GoogleUser
 
-	// Reading the JSON body using JSON decoder
+	// Lire le corps JSON en le décodant
 	err = json.NewDecoder(resp.Body).Decode(&v)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
+	// Vérifier si l'utilisateur existe
+	var exists bool
+	err = database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)",
+		v.Email).Scan(&exists)
+	if err != nil {
+		log.Println("Erreur vérification si l'utilisateur existe : ", err)
+		http.Error(w, `[authHandler.go -> GoogleRegisterCallback()] -> Erreur vérification si l'utilisateur existe.`, http.StatusInternalServerError)
+		return
+	}
+	if exists {
+		log.Println("Erreur email est déjà associé à un compte : ", err)
+		http.Error(w, `[authHandler.go -> GoogleRegisterCallback()] -> ERREUR. Cet email est déjà associé à un compte.`, http.StatusConflict)
+		return
+	}
+
 	// Insertion dans la base de données
 	var user models.User
 	googleErr := database.DB.QueryRow(
-		"INSERT INTO users (id, google_id, email) VALUES ($1, $2, $3) RETURNING id, google_id, email",
-		uuid.New().String(), v.ID, v.Email,
-	).Scan(&user.ID, &user.Google_id, &user.Email)
+		"INSERT INTO users (id, google_id, email, first_name, last_name, profile_picture, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id, google_id, email, first_name, last_name, profile_picture, created_at, updated_at",
+		uuid.New().String(), v.ID, v.Email, v.GivenName, v.FamilyName, v.Picture, time.Now(), time.Now(),
+	).Scan(&user.ID, &user.Google_id, &user.Email, &user.FirstName, &user.LastName, &user.ProfilePicture, &user.CreatedAt, &user.UpdatedAt)
 
 	if googleErr != nil {
-		log.Println("USER :", v)
-		log.Println("Erreur insertion dans la base de données : ", googleErr)
+		log.Println("UTILISATEUR :", v)
+		log.Println("[authHandler.go -> GoogleRegisterCallback()] -> Erreur insertion des données de l'utilisateur dans la base de données, vérifier le format des données envoyées : ", googleErr)
 		http.Error(w, googleErr.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -249,7 +263,9 @@ func GoogleCallback(w http.ResponseWriter, r *http.Request) {
 		User:  v,
 	}
 
-	json.NewEncoder(w).Encode(response)
+	log.Println("Utilisateur créé avec succès.")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(response.Token)
 
 	/*
 		// Vérifier si l'utilisateur existe

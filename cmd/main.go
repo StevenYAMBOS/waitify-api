@@ -34,12 +34,16 @@ func main() {
 	// Initialisation GCP
 	models.GoogleConfig()
 
+	// Initialisation AWS S3
+	config.ConfigS3()
+
 	// Routeur
 	r := http.NewServeMux()
 
 	// Health check
 	r.HandleFunc("/", handlers.HealthCheck)
 	// Routes d'authentification
+	r.HandleFunc("GET /test", middlewares.CORSMiddleware(config.ListAWSS3Buckets))
 	r.HandleFunc("POST /auth/register", middlewares.CORSMiddleware(handlers.RegisterHandler))
 	r.HandleFunc("POST /auth/login", middlewares.CORSMiddleware(handlers.LoginHandler))
 	r.HandleFunc("GET /auth/test", middlewares.CORSMiddleware(handlers.TestHandler))

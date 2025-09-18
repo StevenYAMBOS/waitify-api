@@ -37,6 +37,16 @@ type Config struct {
 		Scopes       []string
 		Endpoint     string
 	}
+	AWSS3 struct {
+		AWSS3Region        string
+		AWSS3Bucket        string
+		AWSS3UsersDir      string
+		AWSS3BusinessesDir string
+	}
+	AWSIAM struct {
+		AWSIAMAccessKey string
+		AWSIAMSecretKey string
+	}
 
 	Environment string
 }
@@ -70,6 +80,17 @@ func Load() (*Config, error) {
 	cfg.GCP.ClientSecret = os.Getenv("GCP_CLIENT_SECRET")
 	cfg.GCP.RedirectURL = os.Getenv("GCP_CLIENT_CALLBACK")
 
+	// AWS S3 bucket
+	cfg.AWSS3.AWSS3Region = os.Getenv("AWS_S3_REGION")
+	cfg.AWSS3.AWSS3Bucket = os.Getenv("AWS_S3_BUCKET")
+	cfg.AWSS3.AWSS3UsersDir = os.Getenv("AWS_S3_BUCKET_USERS")
+	cfg.AWSS3.AWSS3BusinessesDir = os.Getenv("AWS_S3_BUCKET_BUSINESSES")
+
+	// AWS S3 bucket
+	cfg.AWSIAM.AWSIAMAccessKey = os.Getenv("AWS_IAM_ACCESS_KEY")
+	cfg.AWSIAM.AWSIAMSecretKey = os.Getenv("AWS_IAM_SECRET_KEY")
+
+	// Environnement de développement
 	cfg.Environment = os.Getenv("ENV")
 
 	return cfg, nil

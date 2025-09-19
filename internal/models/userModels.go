@@ -22,6 +22,7 @@ type User struct {
 	ProfilePicture string    `json:"profile_picture" db:"profile_picture"`
 	AuthProvider   string    `json:"auth_provider" db:"auth_provider"`
 	Password       string    `json:"-" db:"password"` // "-" signifie que ça ne sera pas inclut dans le JSON
+	PhoneNumber    string    `json:"phone" db:"phone"`
 	CreatedAt      time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt      time.Time `json:"updated_at" db:"updated_at"`
 }

@@ -63,7 +63,6 @@ CREATE TABLE users (
     last_name VARCHAR(100),
     phone VARCHAR(20),
     profile_picture VARCHAR(255),
-    company_name VARCHAR(255),
     is_active BOOLEAN DEFAULT true,
     auth_provider VARCHAR(50) DEFAULT 'google',
     subscription_status VARCHAR(50) DEFAULT 'trial',
@@ -97,7 +96,6 @@ ALTER TABLE users ADD CONSTRAINT check_phone_format CHECK (phone IS NULL OR phon
 - `last_name` : Nom de famille de l'utilisateur
 - `phone` : Numéro de téléphone de contact
 - `profile_picture` : Image de profile
-- `company_name` : Nom de l'entreprise mère (optionnel, pour les chaînes)
 - `is_active` : Permet de suspendre un compte utilisateur globalement
 - `auth_provider` : Application de connexion
 - `subscription_status` : État global de l'abonnement utilisateur

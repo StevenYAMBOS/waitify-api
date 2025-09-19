@@ -170,6 +170,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// Test connexion Google
 func TestHandler(w http.ResponseWriter, r *http.Request) {
 	// Parsing an HTML document present in the current directory.
 	t, err := template.ParseFiles("index.html")

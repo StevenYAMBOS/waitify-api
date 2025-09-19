@@ -34,22 +34,19 @@ func main() {
 	// Initialisation GCP
 	models.GoogleConfig()
 
-	// Initialisation AWS S3
-	config.ConfigS3()
-
 	// Routeur
 	r := http.NewServeMux()
 
 	// Health check
 	r.HandleFunc("/", handlers.HealthCheck)
 	// Routes d'authentification
-	r.HandleFunc("GET /test", middlewares.CORSMiddleware(config.ListAWSS3Buckets))
 	r.HandleFunc("POST /auth/register", middlewares.CORSMiddleware(handlers.RegisterHandler))
 	r.HandleFunc("POST /auth/login", middlewares.CORSMiddleware(handlers.LoginHandler))
 	r.HandleFunc("GET /auth/test", middlewares.CORSMiddleware(handlers.TestHandler))
 	r.HandleFunc("GET /auth/google/login", middlewares.CORSMiddleware(handlers.GoogleLoginHandler))
 	r.HandleFunc("GET /auth/google/callback", middlewares.CORSMiddleware(handlers.GoogleCallback))
 	// Route utilisateur
+	r.HandleFunc("POST /business", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.BusinessHandler)))
 	r.HandleFunc("GET /admin/profile", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.ProfileHandler)))
 
 	fmt.Print("[main.go] -> Serveur lançé : http://localhost", port)

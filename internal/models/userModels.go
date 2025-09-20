@@ -33,10 +33,11 @@ type LoginRequest struct {
 	Password string `json:"password" binding:"required,min=6"`
 }
 
-// Format requête inscription
+// Format de la requête d'inscription
 type RegisterRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required,min=6"`
+	Email          string `json:"email" binding:"required,email"`
+	Password       string `json:"password" binding:"required,min=6"`
+	ProfilePicture string `json:"profile_picture" db:"profile_picture"`
 }
 
 // Format validation email

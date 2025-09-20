@@ -4,27 +4,76 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
+	"cloud.google.com/go/storage"
 	"github.com/StevenYAMBOS/waitify-api/internal/database"
 	"github.com/StevenYAMBOS/waitify-api/internal/models"
 	"github.com/StevenYAMBOS/waitify-api/internal/utils"
 	"github.com/google/uuid"
-
 	"golang.org/x/crypto/bcrypt"
 )
+
+func uploadFileToGoogleStorage(w io.Writer, bucket, object string) error {
+	// bucket := "bucket-name"
+	// object := "object-name"
+	ctx := context.Background()
+	client, err := storage.NewClient(ctx)
+	if err != nil {
+		return fmt.Errorf("storage.NewClient: %w", err)
+	}
+	defer client.Close()
+
+	// Open local file.
+	f, err := os.Open("notes.txt")
+	if err != nil {
+		return fmt.Errorf("os.Open: %w", err)
+	}
+	defer f.Close()
+
+	ctx, cancel := context.WithTimeout(ctx, time.Second*50)
+	defer cancel()
+
+	o := client.Bucket(bucket).Object(object)
+
+	// Optional: set a generation-match precondition to avoid potential race
+	// conditions and data corruptions. The request to upload is aborted if the
+	// object's generation number does not match your precondition.
+	// For an object that does not yet exist, set the DoesNotExist precondition.
+	o = o.If(storage.Conditions{DoesNotExist: true})
+	// If the live object already exists in your bucket, set instead a
+	// generation-match precondition using the live object's generation number.
+	// attrs, err := o.Attrs(ctx)
+	// if err != nil {
+	// 	return fmt.Errorf("object.Attrs: %w", err)
+	// }
+	// o = o.If(storage.Conditions{GenerationMatch: attrs.Generation})
+
+	// Upload an object with storage.Writer.
+	wc := o.NewWriter(ctx)
+	if _, err = io.Copy(wc, f); err != nil {
+		return fmt.Errorf("io.Copy: %w", err)
+	}
+	if err := wc.Close(); err != nil {
+		return fmt.Errorf("Writer.Close: %w", err)
+	}
+	fmt.Fprintf(w, "Blob %v uploaded.\n", object)
+	return nil
+}
 
 // Inscription
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, `[authHandler.go -> RegisterHandler()] -> Mauvaise requête HTTP (mauvaise méthode).`, http.StatusBadRequest)
+		http.Error(w, `[authHandler.go -> RegisterHandler()] -> Mauvaise requête HTTP (mauvaise méthode).`, http.StatusMethodNotAllowed)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	/* ************************************************************************************************ */
 
 	var registerRequest models.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&registerRequest); err != nil {
@@ -57,6 +106,9 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Enregistrer l'image sur Google Cloud
+	uploadFileToGoogleStorage(w, "waitify-bucket", registerRequest.ProfilePicture)
+
 	// Vérifier si l'utilisateur existe
 	var exists bool
 	err := database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)",
@@ -83,9 +135,9 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	// Insertion dans la base de données
 	var user models.User
 	err = database.DB.QueryRow(
-		"INSERT INTO users (id, email, password, created_at, updated_at) VALUES ($1, $2, $3, $4, $5) RETURNING id, email, password, created_at, updated_at",
-		uuid.New().String(), registerRequest.Email, string(hashedPassword), time.Now(), time.Now(),
-	).Scan(&user.ID, &user.Email, &user.Password, &user.CreatedAt, &user.UpdatedAt)
+		"INSERT INTO users (id, email, password, profile_picture, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id, email, password, profile_picture, created_at, updated_at",
+		uuid.New().String(), registerRequest.Email, string(hashedPassword), registerRequest.ProfilePicture, time.Now(), time.Now(),
+	).Scan(&user.ID, &user.Email, &user.Password, &user.ProfilePicture, &user.CreatedAt, &user.UpdatedAt)
 
 	if err != nil {
 		log.Println("Erreur insertion dans la base de données : ", err)
@@ -105,6 +157,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		User:  user,
 	}
 
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
 

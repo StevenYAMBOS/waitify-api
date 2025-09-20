@@ -45,8 +45,8 @@ func main() {
 	r.HandleFunc("GET /auth/test", middlewares.CORSMiddleware(handlers.TestHandler))
 	r.HandleFunc("GET /auth/google/login", middlewares.CORSMiddleware(handlers.GoogleLoginHandler))
 	r.HandleFunc("GET /auth/google/callback", middlewares.CORSMiddleware(handlers.GoogleCallback))
-	// Route utilisateur
-	r.HandleFunc("POST /business", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.BusinessHandler)))
+	// Routes utilisateur
+	r.HandleFunc("POST /business", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.AddBusinessHandler)))
 	r.HandleFunc("GET /admin/profile", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.ProfileHandler)))
 
 	fmt.Print("[main.go] -> Serveur lançé : http://localhost", port)

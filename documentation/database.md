@@ -61,7 +61,7 @@ CREATE TABLE users (
     password VARCHAR(255),
     first_name VARCHAR(100),
     last_name VARCHAR(100),
-    phone VARCHAR(20),
+    phone_number VARCHAR(20),
     profile_picture VARCHAR(255),
     is_active BOOLEAN DEFAULT true,
     auth_provider VARCHAR(50) DEFAULT 'google',
@@ -83,7 +83,7 @@ CREATE INDEX idx_users_active ON users(is_active) WHERE is_active = true;
 ALTER TABLE users ADD CONSTRAINT check_email_format CHECK (email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
 ALTER TABLE users ADD CONSTRAINT check_subscription_status CHECK (subscription_status IN ('trial', 'active', 'suspended', 'cancelled'));
 ALTER TABLE users ADD CONSTRAINT check_auth_provider CHECK (auth_provider IN ('google', 'facebook'));
-ALTER TABLE users ADD CONSTRAINT check_phone_format CHECK (phone IS NULL OR phone ~ '^(\+33|0)[1-9][0-9]{8}$');
+ALTER TABLE users ADD CONSTRAINT check_phone_number_format CHECK (phone_number IS NULL OR phone_number ~ '^(\+33|0)[1-9][0-9]{8}$');
 ```
 
 **Explications des colonnes :**
@@ -94,7 +94,7 @@ ALTER TABLE users ADD CONSTRAINT check_phone_format CHECK (phone IS NULL OR phon
 - `password` : Hash bcrypt du mot de passe, jamais stocké en clair. ⚠️ Le mot de passe n'est pas `NOT NULL` car avec l'inscription avec Google on ne récupère pas le mot de passe de l'utilisateur ⚠️
 - `first_name` : Prénom de l'utilisateur
 - `last_name` : Nom de famille de l'utilisateur
-- `phone` : Numéro de téléphone de contact
+- `phone_number` : Numéro de téléphone de contact
 - `profile_picture` : Image de profile
 - `is_active` : Permet de suspendre un compte utilisateur globalement
 - `auth_provider` : Application de connexion
@@ -163,7 +163,7 @@ CREATE TABLE businesses (
     UserId UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     business_type VARCHAR(100) NOT NULL,
-    phone VARCHAR(20),
+    phone_number VARCHAR(20),
     address TEXT,
     city VARCHAR(100),
     zip_code VARCHAR(10),
@@ -204,7 +204,7 @@ ALTER TABLE businesses ADD CONSTRAINT check_business_type CHECK (business_type I
 ALTER TABLE businesses ADD CONSTRAINT check_service_time_positive CHECK (average_service_time > 0);
 ALTER TABLE businesses ADD CONSTRAINT check_max_queue_reasonable CHECK (max_queue_size BETWEEN 1 AND 200);
 ALTER TABLE businesses ADD CONSTRAINT check_timeout_reasonable CHECK (client_timeout_minutes BETWEEN 1 AND 30);
-ALTER TABLE businesses ADD CONSTRAINT check_phone_format_business CHECK (phone IS NULL OR phone ~ '^(\+33|0)[1-9][0-9]{8}$');
+ALTER TABLE businesses ADD CONSTRAINT check_phone_number_format_business CHECK (phone_number IS NULL OR phone_number ~ '^(\+33|0)[1-9][0-9]{8}$');
 ```
 
 **Explications des colonnes :**
@@ -213,7 +213,7 @@ ALTER TABLE businesses ADD CONSTRAINT check_phone_format_business CHECK (phone I
 - `UserId` : Référence vers le propriétaire utilisateur de l'établissement
 - `name` : Nom commercial de l'établissement (ex: "Boulangerie Martin Centre-Ville")
 - `business_type` : Type d'activité utilisé pour les temps de service par défaut
-- `phone` : Numéro de téléphone spécifique à cet établissement
+- `phone_number` : Numéro de téléphone spécifique à cet établissement
 - `address` : Adresse physique complète de l'établissement
 - `city` : Ville où se situe l'établissement
 - `zip_code` : Code postal de l'établissement

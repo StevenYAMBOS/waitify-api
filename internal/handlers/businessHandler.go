@@ -18,14 +18,14 @@ func GetBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Méthode HTTP
 	if r.Method != http.MethodGet {
-		log.Println(`[authHandler.go -> GetBusinessHandler()] -> Mauvaise requête HTTP.`)
+		log.Println(`[businessHandler.go -> GetBusinessHandler()] -> Mauvaise requête HTTP.`)
 		http.Error(w, `Mauvaise requête HTTP.`, http.StatusBadRequest)
 	}
 
 	// Décode JSON de la requête
 	var business models.Business
 	if err := json.NewDecoder(r.Body).Decode(&business); err != nil {
-		log.Println(`[authHandler.go -> GetBusinessHandler()] -> Mauvais corps de requête : `, err)
+		log.Println(`[businessHandler.go -> GetBusinessHandler()] -> Mauvais corps de requête : `, err)
 		http.Error(w, `Mauvais corps de requête.`, http.StatusBadRequest)
 		return
 	}
@@ -37,7 +37,7 @@ func GetBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	err := database.DB.QueryRow("SELECT id FROM businesses WHERE id = $1", IDParam).Scan(&business.ID)
 
 	if err != nil {
-		log.Println(`[authHandler.go -> GetBusinessHandler()] -> Erreur lors de la récupération des informations de l'entreprise : `, err)
+		log.Println(`[businessHandler.go -> GetBusinessHandler()] -> Erreur lors de la récupération des informations de l'entreprise : `, err)
 		http.Error(w, "Erreur lors de la récupération de l'entreprise : "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -51,10 +51,46 @@ func GetBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
+// Récupérer toutes les entreprises d'un utilisateur
+func GetBusinessesHandler(w http.ResponseWriter, r *http.Request) {
+	// Réponse JSON
+	w.Header().Set("Content-Type", "application/json")
+
+	// Méthode HTTP
+	if r.Method != http.MethodGet {
+		log.Println(`[businessHandler.go -> GetBusinessesHandler()] -> Mauvaise requête HTTP.`)
+		http.Error(w, `Mauvaise requête HTTP.`, http.StatusBadRequest)
+	}
+
+	// Décode JSON de la requête
+	var businesses []models.Business
+	// if err := json.NewDecoder(r.Body).Decode(&businesses); err != nil {
+	// 	log.Println(`[businessHandler.go -> GetBusinessesHandler()] -> Mauvais corps de requête : `, err)
+	// 	http.Error(w, `Mauvais corps de requête : `+err.Error(), http.StatusBadRequest)
+	// 	return
+	// }
+	// defer r.Body.Close()
+
+	// Récupérer l'ID de l'entreprise depuis l'URL
+	IDParam := r.PathValue("id")
+	log.Println(IDParam)
+
+	// Récupération dans la base de données
+	err := database.DB.QueryRow("SELECT * FROM businesses WHERE UserId = $1", IDParam).Scan(&businesses)
+	if err != nil {
+		log.Println(`[businessHandler.go -> GetBusinessesHandler()] -> Erreur lors de la récupération des entreprises : `, err)
+		http.Error(w, "Erreur lors de la récupération des entreprises : "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(businesses)
+}
+
 // Créer une entreprise
 func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
-		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> Mauvaise requête HTTP (mauvaise méthode).`, http.StatusBadRequest)
+		http.Error(w, `[businessHandler.go -> AddBusinessHandler()] -> Mauvaise requête HTTP (mauvaise méthode).`, http.StatusBadRequest)
 	}
 
 	w.Header().Set("Content-Type", "application/json")
@@ -62,44 +98,44 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	// Décode JSON de la requête
 	var business models.Business
 	if err := json.NewDecoder(r.Body).Decode(&business); err != nil {
-		log.Println(`[authHandler.go -> AddBusinessHandler()] -> Mauvais corps de requête : `, err)
-		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> Mauvais corps de requête.`, http.StatusBadRequest)
+		log.Println(`[businessHandler.go -> AddBusinessHandler()] -> Mauvais corps de requête : `, err)
+		http.Error(w, `[businessHandler.go -> AddBusinessHandler()] -> Mauvais corps de requête.`, http.StatusBadRequest)
 		return
 	}
 
 	// Validation nom de l'entreprise
 	if business.Name == "" {
-		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> Le nom de l'entreprise doit avoir au moins 1 caractère.`, http.StatusBadRequest)
+		http.Error(w, `[businessHandler.go -> AddBusinessHandler()] -> Le nom de l'entreprise doit avoir au moins 1 caractère.`, http.StatusBadRequest)
 		return
 	}
 
 	if err := business.ValidatePhoneNumber(); err != nil {
-		log.Println("[authHandler.go -> AddBusinessHandler()] -> Erreur format numéro de téléphone : ", err)
-		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> Erreur format de l'email.`, http.StatusBadRequest)
+		log.Println("[businessHandler.go -> AddBusinessHandler()] -> Erreur format numéro de téléphone : ", err)
+		http.Error(w, `[businessHandler.go -> AddBusinessHandler()] -> Erreur format de l'email.`, http.StatusBadRequest)
 		return
 	}
 
 	// Validation du type
 	if err := business.ValidateBusinessType(); err != nil {
-		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> Erreur format du type de commerce : `+err.Error()+"Requête reçue: "+business.BusinessType, http.StatusBadRequest)
+		http.Error(w, `[businessHandler.go -> AddBusinessHandler()] -> Erreur format du type de commerce : `+err.Error()+"Requête reçue: "+business.BusinessType, http.StatusBadRequest)
 		return
 	}
 
 	// Validation de l'adresse
 	if business.Address == "" || len(business.Address) >= 100 {
-		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> L'adresse de l'entreprise doit être comprise 1 et 100 caractères.`, http.StatusBadRequest)
+		http.Error(w, `[businessHandler.go -> AddBusinessHandler()] -> L'adresse de l'entreprise doit être comprise 1 et 100 caractères.`, http.StatusBadRequest)
 		return
 	}
 
 	// Validation de la ville
 	if business.City == "" || len(business.City) >= 100 {
-		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> La ville de l'entreprise doit être comprise 1 et 100 caractères.`, http.StatusBadRequest)
+		http.Error(w, `[businessHandler.go -> AddBusinessHandler()] -> La ville de l'entreprise doit être comprise 1 et 100 caractères.`, http.StatusBadRequest)
 		return
 	}
 
 	// Validation nom de l'entreprise
 	if business.ZipCode == "" || len(business.ZipCode) >= 100 {
-		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> Le code postal de l'entreprise doit être comprise 1 et 100 caractères.`, http.StatusBadRequest)
+		http.Error(w, `[businessHandler.go -> AddBusinessHandler()] -> Le code postal de l'entreprise doit être comprise 1 et 100 caractères.`, http.StatusBadRequest)
 		return
 	}
 
@@ -108,12 +144,12 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	err := database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)",
 		business.UserID).Scan(&exists)
 	if err != nil {
-		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> Erreur vérification si l'utilisateur existe : `+err.Error(), http.StatusInternalServerError)
+		http.Error(w, `[businessHandler.go -> AddBusinessHandler()] -> Erreur vérification si l'utilisateur existe : `+err.Error(), http.StatusInternalServerError)
 		return
 	}
 	if !exists {
 		log.Println("L'utilisateur n'existe pas : ", err)
-		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> ERREUR. L'utilisateur n'existe pas ! `+err.Error(), http.StatusConflict)
+		http.Error(w, `[businessHandler.go -> AddBusinessHandler()] -> ERREUR. L'utilisateur n'existe pas ! `+err.Error(), http.StatusConflict)
 		return
 	}
 
@@ -124,7 +160,7 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	).Scan(&business.ID, &business.UserID, &business.Name, &business.BusinessType, &business.PhoneNumber, &business.Address, &business.City, &business.ZipCode, &business.Country, &business.CreatedAt, &business.UpdatedAt)
 
 	if err != nil {
-		http.Error(w, "[authHandler.go -> AddBusinessHandler()] -> Erreur lors de la création de l'entreprise : "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "[businessHandler.go -> AddBusinessHandler()] -> Erreur lors de la création de l'entreprise : "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

@@ -34,8 +34,9 @@ type Business struct {
 	UpdatedAt               time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// Vérifier le type de commerce
 func (business *Business) ValidateBusinessType() error {
-	var types []string = []string{"bakery", "hairdresser", "pharmacy", "garage", "restaurant",
+	var types [35]string = [35]string{"bakery", "hairdresser", "pharmacy", "garage", "restaurant",
 		"medical_office", "dentist", "veterinary", "optician", "bank",
 		"insurance", "notary", "lawyer", "accountant", "real_estate",
 		"prefecture", "city_hall", "family_allowance", "employment_agency", "public_service",
@@ -44,9 +45,15 @@ func (business *Business) ValidateBusinessType() error {
 		"vehicle_inspection", "gas_station", "auto_body", "tire_service",
 		"other"}
 
-	for _, typeReceived := range types {
-		if business.BusinessType != typeReceived {
-			return errors.New("[user.go -> ValidatePhoneNumber()] -> Le numéro de téléphone contient trop ou pas assez de caractères.")
+	for index, value := range types {
+		if business.BusinessType != value {
+			log.Println(index, value)
+			log.Println("[businessModels.go -> ValidateBusinessType()] -> Le type de commerce n'existe pas.")
+			continue
+			// return errors.New("[businessModels.go -> ValidateBusinessType()] -> Le type de commerce n'existe pas.")
+		} else {
+			log.Println("Le type de commerce EST BON.")
+			break
 		}
 	}
 	return nil
@@ -55,13 +62,13 @@ func (business *Business) ValidateBusinessType() error {
 // Format du numéro de téléphone
 func (business *Business) ValidatePhoneNumber() error {
 	if len(business.PhoneNumber) < 10 || len(business.PhoneNumber) > 13 {
-		return errors.New("[user.go -> ValidatePhoneNumber()] -> Le numéro de téléphone contient trop ou pas assez de caractères.")
+		return errors.New("[businessModels.go -> ValidatePhoneNumber()] -> Le numéro de téléphone contient trop ou pas assez de caractères.")
 	}
 
 	re := regexp.MustCompile(`^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
 	if !re.MatchString(business.PhoneNumber) {
-		log.Println("[user.go] -> Phone number is not valid:", business.PhoneNumber)
-		return errors.New("[user.go -> ValidatePhoneNumber()] -> Le numéro de téléphone n'est pas au format valide.")
+		log.Println("[businessModels.go] -> Phone number is not valid:", business.PhoneNumber)
+		return errors.New("[businessModels.go -> ValidatePhoneNumber()] -> Le numéro de téléphone n'est pas au format valide.")
 	}
 	return nil
 }

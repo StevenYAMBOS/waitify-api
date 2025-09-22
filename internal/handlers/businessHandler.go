@@ -41,24 +41,24 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Validation du type
 	if err := business.ValidateBusinessType(); err != nil {
-		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> Erreur format du type : `+err.Error(), http.StatusBadRequest)
+		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> Erreur format du type de commerce : `+err.Error()+"Requête reçue: "+business.BusinessType, http.StatusBadRequest)
 		return
 	}
 
 	// Validation de l'adresse
-	if business.Address == "" || len(business.Address) < 100 {
+	if business.Address == "" || len(business.Address) >= 100 {
 		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> L'adresse de l'entreprise doit être comprise 1 et 100 caractères.`, http.StatusBadRequest)
 		return
 	}
 
 	// Validation de la ville
-	if business.City == "" || len(business.City) < 100 {
+	if business.City == "" || len(business.City) >= 100 {
 		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> La ville de l'entreprise doit être comprise 1 et 100 caractères.`, http.StatusBadRequest)
 		return
 	}
 
 	// Validation nom de l'entreprise
-	if business.ZipCode == "" || len(business.ZipCode) < 100 {
+	if business.ZipCode == "" || len(business.ZipCode) >= 100 {
 		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> Le code postal de l'entreprise doit être comprise 1 et 100 caractères.`, http.StatusBadRequest)
 		return
 	}
@@ -71,17 +71,17 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> Erreur vérification si l'utilisateur existe : `+err.Error(), http.StatusInternalServerError)
 		return
 	}
-	if exists {
-		log.Println("Erreur email est déjà associé à un compte : ", err)
-		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> ERREUR. Cet email est déjà associé à un compte.`, http.StatusConflict)
+	if !exists {
+		log.Println("L'utilisateur n'existe pas : ", err)
+		http.Error(w, `[authHandler.go -> AddBusinessHandler()] -> ERREUR. L'utilisateur n'existe pas ! `+err.Error(), http.StatusConflict)
 		return
 	}
 
 	// Insertion dans la base de données
 	err = database.DB.QueryRow(
-		"INSERT INTO businesses (id, UserId, name, phone_number, address, city, zip_code, country, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, UserId, name, phone_number, address, city, zip_code, country, created_at, updated_at",
-		uuid.New().String(), business.UserID, business.Name, business.PhoneNumber, business.Address, business.City, business.ZipCode, business.Country, time.Now(), time.Now(),
-	).Scan(&business.ID, &business.UserID, &business.Name, &business.PhoneNumber, &business.Address, &business.City, &business.ZipCode, &business.Country, &business.CreatedAt, &business.UpdatedAt)
+		"INSERT INTO businesses (id, UserId, name, business_type, phone_number, address, city, zip_code, country, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id, UserId, name, business_type, phone_number, address, city, zip_code, country, created_at, updated_at",
+		uuid.New().String(), business.UserID, business.Name, business.BusinessType, business.PhoneNumber, business.Address, business.City, business.ZipCode, business.Country, time.Now(), time.Now(),
+	).Scan(&business.ID, &business.UserID, &business.Name, &business.BusinessType, &business.PhoneNumber, &business.Address, &business.City, &business.ZipCode, &business.Country, &business.CreatedAt, &business.UpdatedAt)
 
 	if err != nil {
 		http.Error(w, "[authHandler.go -> AddBusinessHandler()] -> Erreur lors de la création de l'entreprise : "+err.Error(), http.StatusInternalServerError)

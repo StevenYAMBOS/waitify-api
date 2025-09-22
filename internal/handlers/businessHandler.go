@@ -11,6 +11,46 @@ import (
 	"github.com/google/uuid"
 )
 
+// Récupérer les informations d'une entreprise
+func GetBusinessHandler(w http.ResponseWriter, r *http.Request) {
+	// Réponse JSON
+	w.Header().Set("Content-Type", "application/json")
+
+	// Méthode HTTP
+	if r.Method != http.MethodGet {
+		log.Println(`[authHandler.go -> GetBusinessHandler()] -> Mauvaise requête HTTP.`)
+		http.Error(w, `Mauvaise requête HTTP.`, http.StatusBadRequest)
+	}
+
+	// Décode JSON de la requête
+	var business models.Business
+	if err := json.NewDecoder(r.Body).Decode(&business); err != nil {
+		log.Println(`[authHandler.go -> GetBusinessHandler()] -> Mauvais corps de requête : `, err)
+		http.Error(w, `Mauvais corps de requête.`, http.StatusBadRequest)
+		return
+	}
+
+	// Récupérer l'ID de l'entreprise depuis l'URL
+	IDParam := r.PathValue("id")
+
+	// Récupération dans la base de données
+	err := database.DB.QueryRow("SELECT id FROM businesses WHERE id = $1", IDParam).Scan(&business.ID)
+
+	if err != nil {
+		log.Println(`[authHandler.go -> GetBusinessHandler()] -> Erreur lors de la récupération des informations de l'entreprise : `, err)
+		http.Error(w, "Erreur lors de la récupération de l'entreprise : "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := models.AddBusinessResponse{
+		Response: "Informations de l'entreprise récupérées avec succès.",
+		Business: business,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}
+
 // Créer une entreprise
 func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {

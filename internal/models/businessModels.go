@@ -45,9 +45,8 @@ func (business *Business) ValidateBusinessType() error {
 		"vehicle_inspection", "gas_station", "auto_body", "tire_service",
 		"other"}
 
-	for index, value := range types {
+	for _, value := range types {
 		if business.BusinessType != value {
-			log.Println(index, value)
 			log.Println("[businessModels.go -> ValidateBusinessType()] -> Le type de commerce n'existe pas.")
 			continue
 			// return errors.New("[businessModels.go -> ValidateBusinessType()] -> Le type de commerce n'existe pas.")

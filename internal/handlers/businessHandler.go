@@ -24,14 +24,16 @@ func GetBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Décode JSON de la requête
 	var business models.Business
-	if err := json.NewDecoder(r.Body).Decode(&business); err != nil {
-		log.Println(`[businessHandler.go -> GetBusinessHandler()] -> Mauvais corps de requête : `, err)
-		http.Error(w, `Mauvais corps de requête.`, http.StatusBadRequest)
-		return
-	}
+	IDParam := r.PathValue("id")
+	log.Print(IDParam)
+	// if err := json.NewDecoder(r.Body).Decode(&business); err != nil {
+	// 	log.Println(`[businessHandler.go -> GetBusinessHandler()] -> Mauvais corps de requête : `, err)
+	// 	http.Error(w, `Mauvais corps de requête.`, http.StatusBadRequest)
+	// 	return
+	// }
 
 	// Récupérer l'ID de l'entreprise depuis l'URL
-	IDParam := r.PathValue("id")
+	// IDParam := r.PathValue("id")
 
 	// Récupération dans la base de données
 	err := database.DB.QueryRow("SELECT id FROM businesses WHERE id = $1", IDParam).Scan(&business.ID)
@@ -63,15 +65,8 @@ func GetBusinessesHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Décode JSON de la requête
-	var businesses []models.Business
-	// if err := json.NewDecoder(r.Body).Decode(&businesses); err != nil {
-	// 	log.Println(`[businessHandler.go -> GetBusinessesHandler()] -> Mauvais corps de requête : `, err)
-	// 	http.Error(w, `Mauvais corps de requête : `+err.Error(), http.StatusBadRequest)
-	// 	return
-	// }
-	// defer r.Body.Close()
-
-	// Récupérer l'ID de l'entreprise depuis l'URL
+	var businesses []models.Business = []models.Business{}
+	// Récupérer l'ID de l'utilisateur depuis l'URL
 	IDParam := r.PathValue("id")
 	log.Println(IDParam)
 

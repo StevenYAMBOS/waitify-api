@@ -208,8 +208,10 @@ func UpdateBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Décode JSON de la requête
 	var business *models.Business
+	log.Println(`ÉTAPE 1`)
 
 	if err := json.NewDecoder(r.Body).Decode(&business); err != nil {
+		log.Println(`ÉTAPE 2`)
 		log.Println(`Mauvais corps de requête : `, err)
 		http.Error(w, `Mauvais corps de requête.`, http.StatusBadRequest)
 		return
@@ -217,6 +219,7 @@ func UpdateBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Récupérer l'ID de l'entreprise depuis l'URL
 	IDParam := r.PathValue("id")
+	log.Println(`ÉTAPE 3 : `, IDParam)
 
 	// Vérifier si l'entreprise existe
 	var businessExists bool
@@ -231,6 +234,8 @@ func UpdateBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `ERREUR. L'entreprise n'existe pas ! `+errBusinesses.Error(), http.StatusConflict)
 		return
 	}
+
+	log.Println(`ÉTAPE 4`)
 
 	/*
 		// Vérification des champs
@@ -257,12 +262,10 @@ func UpdateBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		updatedFields["updated_at"] = time.Now()
-
-		initializers.DB.Model(&feedback).Updates(updatedFields)
 	*/
 
 	// Insertion dans la base de données
-	updt, errUptd := database.DB.Exec(`UPDATE businesses SET name=$2 WHERE id=$1`, business.ID, business.Name)
+	updt, errUptd := database.DB.Exec(`UPDATE businesses SET name=$2 WHERE id=$1`, IDParam, business.Name)
 
 	if errUptd != nil {
 		http.Error(w, "Erreur lors de la création de l'entreprise : "+errUptd.Error(), http.StatusInternalServerError)
@@ -271,12 +274,14 @@ func UpdateBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	// check how many rows affected
 	rowsAffected, err := updt.RowsAffected()
+	log.Println(`ÉTAPE 5 : `, rowsAffected)
 
 	if err != nil {
 		log.Fatalf("Error while checking the affected rows. %v", err)
 	}
 
 	fmt.Printf("Total rows/record affected %v", rowsAffected)
+	log.Println(`ÉTAPE 6`, business)
 
 	// response := models.AddBusinessResponse{
 	// 	Response: "L'entreprise a été modifiée avec succès.",

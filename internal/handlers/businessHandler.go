@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -18,30 +19,16 @@ func GetBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Méthode HTTP
 	if r.Method != http.MethodGet {
-		log.Println(`[businessHandler.go -> GetBusinessHandler()] -> Mauvaise requête HTTP.`)
 		http.Error(w, `Mauvaise requête HTTP.`, http.StatusBadRequest)
 	}
 
 	// Décode JSON de la requête
 	var business models.Business
-	IDParam := r.PathValue("id")
-	log.Print(IDParam)
-	// if err := json.NewDecoder(r.Body).Decode(&business); err != nil {
-	// 	log.Println(`[businessHandler.go -> GetBusinessHandler()] -> Mauvais corps de requête : `, err)
-	// 	http.Error(w, `Mauvais corps de requête.`, http.StatusBadRequest)
-	// 	return
-	// }
 
 	// Récupérer l'ID de l'entreprise depuis l'URL
-	// IDParam := r.PathValue("id")
+	IDParam := r.PathValue("id")
 
 	// Récupération dans la base de données
-	// err := database.DB.QueryRow(`
-	// 	SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token,
-	// 		average_service_time, is_queue_active, is_queue_paused, max_queue_size, opening_hours,
-	// 		custom_message, sms_notifications_enabled, auto_advance_enabled, client_timeout_minutes,
-	// 		is_active, created_at, updated_at
-	// 	FROM businesses WHERE id = $1
 	err := database.DB.QueryRow(`
 		SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, created_at, updated_at
 		FROM businesses WHERE id = $1
@@ -55,22 +42,11 @@ func GetBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		&business.City,
 		&business.ZipCode,
 		&business.Country,
-		// string(&business.QRCodeToken),
-		// &business.AverageServiceTime,
-		// &business.IsQueueActive,
-		// &business.IsQueuePaused,
-		// &business.MaxQueueSize,
-		// &business.OpeningHours,
-		// &business.CustomMessage,
-		// &business.SmsNotificationsEnabled,
-		// &business.AutoAdvanceEnabled,
-		// &business.ClientTimeoutMinutes,
-		// &business.IsActive,
 		&business.CreatedAt,
 		&business.UpdatedAt,
 	)
 	if err != nil {
-		log.Println(`[businessHandler.go -> GetBusinessHandler()] -> Erreur lors de la récupération des informations de l'entreprise : `, err)
+		log.Println(`Erreur lors de la récupération des informations de l'entreprise : `, err)
 		http.Error(w, "Erreur lors de la récupération de l'entreprise : "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -91,13 +67,14 @@ func GetBusinessesHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Méthode HTTP
 	if r.Method != http.MethodGet {
-		log.Println(`[businessHandler.go -> GetBusinessesHandler()] -> Mauvaise requête HTTP.`)
+		log.Println(`Mauvaise requête HTTP.`)
 		http.Error(w, `Mauvaise requête HTTP.`, http.StatusBadRequest)
 	}
 
+	// Récupérer l'ID de l'utilisateur depuis l'URL
 	IDParam := r.PathValue("id")
-	log.Println(IDParam)
 
+	// Récupération dans la base de données
 	rows, err := database.DB.Query("SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, created_at, updated_at FROM businesses WHERE UserId=$1", IDParam)
 	if err != nil {
 		log.Println(`Erreur lors de la récupération des entreprises de l'utilisateur : `, err)
@@ -106,6 +83,7 @@ func GetBusinessesHandler(w http.ResponseWriter, r *http.Request) {
 	defer rows.Close()
 
 	businesses := []models.Business{}
+
 	for rows.Next() {
 		var business models.Business
 		if err := rows.Scan(&business.ID,
@@ -129,29 +107,6 @@ func GetBusinessesHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println(`Erreur après le scan : `, err)
 		log.Fatal(err)
 	}
-
-	// Récupérer l'ID de l'utilisateur depuis l'URL
-	// IDParam := r.PathValue("id")
-	// log.Println(IDParam)
-
-	// // Récupération dans la base de données
-	// rows, err := database.DB.Query("SELECT * FROM businesses WHERE id = $1", IDParam)
-	// if err != nil {
-	// 	fmt.Println(err)
-	// } else {
-	// 	fmt.Println("id  name    domain")
-	// 	for rows.Next() {
-	// 		rows.Scan(&businesses)
-	// 		fmt.Printf("%t - %s - %s \n", businesses)
-	// 	}
-
-	// }
-	// err := database.DB.Query("SELECT * FROM businesses WHERE UserId = $1", IDParam).Scan(&businesses)
-	// if err != nil {
-	// 	log.Println(`[businessHandler.go -> GetBusinessesHandler()] -> Erreur lors de la récupération des entreprises : `, err)
-	// 	http.Error(w, "Erreur lors de la récupération des entreprises : "+err.Error(), http.StatusInternalServerError)
-	// 	return
-	// }
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(businesses)
@@ -241,4 +196,93 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
+}
+
+// Mettre à jour l'entreprise
+func UpdateBusinessHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		http.Error(w, `Mauvaise requête HTTP (mauvaise méthode).`, http.StatusBadRequest)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	// Décode JSON de la requête
+	var business *models.Business
+
+	if err := json.NewDecoder(r.Body).Decode(&business); err != nil {
+		log.Println(`Mauvais corps de requête : `, err)
+		http.Error(w, `Mauvais corps de requête.`, http.StatusBadRequest)
+		return
+	}
+
+	// Récupérer l'ID de l'entreprise depuis l'URL
+	IDParam := r.PathValue("id")
+
+	// Vérifier si l'entreprise existe
+	var businessExists bool
+	errBusinesses := database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM businesses WHERE id = $1)",
+		IDParam).Scan(&businessExists)
+	if errBusinesses != nil {
+		http.Error(w, `Erreur vérification de l'existance de l'entreprise : `+errBusinesses.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !businessExists {
+		log.Println("L'entreprise avec cet 'id' n'existe pas : ", errBusinesses)
+		http.Error(w, `ERREUR. L'entreprise n'existe pas ! `+errBusinesses.Error(), http.StatusConflict)
+		return
+	}
+
+	/*
+		// Vérification des champs
+		var updatedFields map[models.Business]models.Business
+
+		if business.Name != "" {
+			updatedFields["name"] = business.Name
+		}
+		if business.Name != "" {
+			updatedFields["name"] = business.Name
+		}
+		if business.Email != "" {
+			updatedFields["email"] = business.Email
+		}
+		if business.Feedback != "" {
+			updatedFields["feedback"] = business.Feedback
+		}
+		if business.Status != "" {
+			updatedFields["status"] = business.Status
+		}
+
+		if business.Rating != nil {
+			updatedFields["rating"] = business.Rating
+		}
+
+		updatedFields["updated_at"] = time.Now()
+
+		initializers.DB.Model(&feedback).Updates(updatedFields)
+	*/
+
+	// Insertion dans la base de données
+	updt, errUptd := database.DB.Exec(`UPDATE businesses SET name=$2 WHERE id=$1`, business.ID, business.Name)
+
+	if errUptd != nil {
+		http.Error(w, "Erreur lors de la création de l'entreprise : "+errUptd.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// check how many rows affected
+	rowsAffected, err := updt.RowsAffected()
+
+	if err != nil {
+		log.Fatalf("Error while checking the affected rows. %v", err)
+	}
+
+	fmt.Printf("Total rows/record affected %v", rowsAffected)
+
+	// response := models.AddBusinessResponse{
+	// 	Response: "L'entreprise a été modifiée avec succès.",
+	// 	Business: business,
+	// }
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(business)
 }

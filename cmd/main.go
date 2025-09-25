@@ -40,16 +40,20 @@ func main() {
 	// Health check
 	r.HandleFunc("/", handlers.HealthCheck)
 	// Routes d'authentification
-	r.HandleFunc("POST /auth/register", middlewares.CORSMiddleware(handlers.RegisterHandler))
-	r.HandleFunc("POST /auth/login", middlewares.CORSMiddleware(handlers.LoginHandler))
 	r.HandleFunc("GET /auth/test", middlewares.CORSMiddleware(handlers.TestHandler))
 	r.HandleFunc("GET /auth/google/login", middlewares.CORSMiddleware(handlers.GoogleLoginHandler))
 	r.HandleFunc("GET /auth/google/callback", middlewares.CORSMiddleware(handlers.GoogleCallback))
+	r.HandleFunc("POST /auth/register", middlewares.CORSMiddleware(handlers.RegisterHandler))
+	r.HandleFunc("POST /auth/login", middlewares.CORSMiddleware(handlers.LoginHandler))
+
 	// Routes utilisateur
-	r.HandleFunc("POST /business", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.AddBusinessHandler)))
+	r.HandleFunc("GET /user/profile", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.ProfileHandler)))
+
+	// Routes entreprises
 	r.HandleFunc("GET /business/{id}", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.GetBusinessHandler)))
 	r.HandleFunc("GET /businesses/user/{id}", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.GetBusinessesHandler)))
-	r.HandleFunc("GET /admin/profile", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.ProfileHandler)))
+	r.HandleFunc("POST /business", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.AddBusinessHandler)))
+	r.HandleFunc("PUT /business/{id}", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.UpdateBusinessHandler)))
 
 	fmt.Print("[main.go] -> Serveur lançé : http://localhost", port)
 	http.ListenAndServe(port, r)

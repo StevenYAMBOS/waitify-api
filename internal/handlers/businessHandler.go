@@ -36,8 +36,39 @@ func GetBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	// IDParam := r.PathValue("id")
 
 	// Récupération dans la base de données
-	err := database.DB.QueryRow("SELECT id FROM businesses WHERE id = $1", IDParam).Scan(&business.ID)
-
+	// err := database.DB.QueryRow(`
+	// 	SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token,
+	// 		average_service_time, is_queue_active, is_queue_paused, max_queue_size, opening_hours,
+	// 		custom_message, sms_notifications_enabled, auto_advance_enabled, client_timeout_minutes,
+	// 		is_active, created_at, updated_at
+	// 	FROM businesses WHERE id = $1
+	err := database.DB.QueryRow(`
+		SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, created_at, updated_at
+		FROM businesses WHERE id = $1
+`, IDParam).Scan(
+		&business.ID,
+		&business.UserID,
+		&business.Name,
+		&business.BusinessType,
+		&business.PhoneNumber,
+		&business.Address,
+		&business.City,
+		&business.ZipCode,
+		&business.Country,
+		// string(&business.QRCodeToken),
+		// &business.AverageServiceTime,
+		// &business.IsQueueActive,
+		// &business.IsQueuePaused,
+		// &business.MaxQueueSize,
+		// &business.OpeningHours,
+		// &business.CustomMessage,
+		// &business.SmsNotificationsEnabled,
+		// &business.AutoAdvanceEnabled,
+		// &business.ClientTimeoutMinutes,
+		// &business.IsActive,
+		&business.CreatedAt,
+		&business.UpdatedAt,
+	)
 	if err != nil {
 		log.Println(`[businessHandler.go -> GetBusinessHandler()] -> Erreur lors de la récupération des informations de l'entreprise : `, err)
 		http.Error(w, "Erreur lors de la récupération de l'entreprise : "+err.Error(), http.StatusInternalServerError)
@@ -64,19 +95,63 @@ func GetBusinessesHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `Mauvaise requête HTTP.`, http.StatusBadRequest)
 	}
 
-	// Décode JSON de la requête
-	var businesses []models.Business = []models.Business{}
-	// Récupérer l'ID de l'utilisateur depuis l'URL
 	IDParam := r.PathValue("id")
 	log.Println(IDParam)
 
-	// Récupération dans la base de données
-	err := database.DB.QueryRow("SELECT * FROM businesses WHERE UserId = $1", IDParam).Scan(&businesses)
+	rows, err := database.DB.Query("SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, created_at, updated_at FROM businesses WHERE UserId=$1", IDParam)
 	if err != nil {
-		log.Println(`[businessHandler.go -> GetBusinessesHandler()] -> Erreur lors de la récupération des entreprises : `, err)
-		http.Error(w, "Erreur lors de la récupération des entreprises : "+err.Error(), http.StatusInternalServerError)
-		return
+		log.Println(`Erreur lors de la récupération des entreprises de l'utilisateur : `, err)
+		http.Error(w, `Erreur lors de la récupération des entreprises de l'utilisateur : `+err.Error(), http.StatusBadRequest)
 	}
+	defer rows.Close()
+
+	businesses := []models.Business{}
+	for rows.Next() {
+		var business models.Business
+		if err := rows.Scan(&business.ID,
+			&business.UserID,
+			&business.Name,
+			&business.BusinessType,
+			&business.PhoneNumber,
+			&business.Address,
+			&business.City,
+			&business.ZipCode,
+			&business.Country,
+			&business.CreatedAt,
+			&business.UpdatedAt,
+		); err != nil {
+			log.Println(`Erreur lors du scan : `, err)
+			log.Fatal(err)
+		}
+		businesses = append(businesses, business)
+	}
+	if err := rows.Err(); err != nil {
+		log.Println(`Erreur après le scan : `, err)
+		log.Fatal(err)
+	}
+
+	// Récupérer l'ID de l'utilisateur depuis l'URL
+	// IDParam := r.PathValue("id")
+	// log.Println(IDParam)
+
+	// // Récupération dans la base de données
+	// rows, err := database.DB.Query("SELECT * FROM businesses WHERE id = $1", IDParam)
+	// if err != nil {
+	// 	fmt.Println(err)
+	// } else {
+	// 	fmt.Println("id  name    domain")
+	// 	for rows.Next() {
+	// 		rows.Scan(&businesses)
+	// 		fmt.Printf("%t - %s - %s \n", businesses)
+	// 	}
+
+	// }
+	// err := database.DB.Query("SELECT * FROM businesses WHERE UserId = $1", IDParam).Scan(&businesses)
+	// if err != nil {
+	// 	log.Println(`[businessHandler.go -> GetBusinessesHandler()] -> Erreur lors de la récupération des entreprises : `, err)
+	// 	http.Error(w, "Erreur lors de la récupération des entreprises : "+err.Error(), http.StatusInternalServerError)
+	// 	return
+	// }
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(businesses)

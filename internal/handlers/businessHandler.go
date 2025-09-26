@@ -237,6 +237,29 @@ func UpdateBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	log.Println(`ÉTAPE 4`)
 
+	// Récupération dans la base de données
+	err := database.DB.QueryRow(`
+		SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, created_at, updated_at
+		FROM businesses WHERE id = $1
+`, IDParam).Scan(
+		&business.ID,
+		&business.UserID,
+		&business.Name,
+		&business.BusinessType,
+		&business.PhoneNumber,
+		&business.Address,
+		&business.City,
+		&business.ZipCode,
+		&business.Country,
+		&business.CreatedAt,
+		&business.UpdatedAt,
+	)
+	if err != nil {
+		log.Println(`Erreur lors de la récupération des informations de l'entreprise : `, err)
+		http.Error(w, "Erreur lors de la récupération de l'entreprise : "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	/*
 		// Vérification des champs
 		var updatedFields map[models.Business]models.Business
@@ -265,7 +288,7 @@ func UpdateBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	*/
 
 	// Insertion dans la base de données
-	updt, errUptd := database.DB.Exec(`UPDATE businesses SET name=$2 WHERE id=$1`, IDParam, business.Name)
+	updt, errUptd := database.DB.Exec(`UPDATE businesses SET name=$2 WHERE id=$1 RETURNING *;`, IDParam, business.Name)
 
 	if errUptd != nil {
 		http.Error(w, "Erreur lors de la création de l'entreprise : "+errUptd.Error(), http.StatusInternalServerError)

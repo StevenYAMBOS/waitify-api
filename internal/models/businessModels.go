@@ -35,6 +35,8 @@ type Business struct {
 }
 
 type UpdatedBusiness struct {
+	ID                      uuid.UUID `json:"id" db:"id"`
+	UserID                  uuid.UUID `json:"UserId" db:"UserId"`
 	Name                    *string   `json:"name" db:"name"`
 	BusinessType            *string   `json:"business_type" db:"business_type"`
 	PhoneNumber             *string   `json:"phone_number" db:"phone_number"`
@@ -99,4 +101,10 @@ func (business *Business) ValidatePhoneNumber() error {
 type AddBusinessResponse struct {
 	Response string   `json:"Response"`
 	Business Business `json:"Business"`
+}
+
+// Format réponse auhtentification
+type UpdateBusinessResponse struct {
+	Response string           `json:"Response"`
+	Business *UpdatedBusiness `json:"Business"`
 }

@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -207,11 +206,9 @@ func UpdateBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	// Décode JSON de la requête
-	var business *models.Business
-	log.Println(`ÉTAPE 1`)
+	var business *models.UpdatedBusiness
 
 	if err := json.NewDecoder(r.Body).Decode(&business); err != nil {
-		log.Println(`ÉTAPE 2`)
 		log.Println(`Mauvais corps de requête : `, err)
 		http.Error(w, `Mauvais corps de requête.`, http.StatusBadRequest)
 		return
@@ -219,7 +216,7 @@ func UpdateBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Récupérer l'ID de l'entreprise depuis l'URL
 	IDParam := r.PathValue("id")
-	log.Println(`ÉTAPE 3 : `, IDParam)
+	log.Println(`ID : `, IDParam)
 
 	// Vérifier si l'entreprise existe
 	var businessExists bool
@@ -235,82 +232,78 @@ func UpdateBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(`ÉTAPE 4`)
-
 	// Récupération dans la base de données
-	err := database.DB.QueryRow(`
-		SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, created_at, updated_at
-		FROM businesses WHERE id = $1
-`, IDParam).Scan(
-		&business.ID,
-		&business.UserID,
-		&business.Name,
-		&business.BusinessType,
-		&business.PhoneNumber,
-		&business.Address,
-		&business.City,
-		&business.ZipCode,
-		&business.Country,
-		&business.CreatedAt,
-		&business.UpdatedAt,
-	)
-	if err != nil {
-		log.Println(`Erreur lors de la récupération des informations de l'entreprise : `, err)
-		http.Error(w, "Erreur lors de la récupération de l'entreprise : "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
 	/*
+		err := database.DB.QueryRow(`
+						SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, created_at, updated_at
+						FROM businesses WHERE id = $1
+				`, IDParam).Scan(
+			&business.ID,
+			&business.UserID,
+			&business.Name,
+			&business.BusinessType,
+			&business.PhoneNumber,
+			&business.Address,
+			&business.City,
+			&business.ZipCode,
+			&business.Country,
+			&business.CreatedAt,
+			&business.UpdatedAt,
+		)
+		if err != nil {
+			log.Println(`Erreur lors de la récupération des informations de l'entreprise : `, err)
+			http.Error(w, "Erreur lors de la récupération de l'entreprise : "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
 		// Vérification des champs
-		var updatedFields map[models.Business]models.Business
-
-		if business.Name != "" {
-			updatedFields["name"] = business.Name
-		}
-		if business.Name != "" {
-			updatedFields["name"] = business.Name
-		}
-		if business.Email != "" {
-			updatedFields["email"] = business.Email
-		}
-		if business.Feedback != "" {
-			updatedFields["feedback"] = business.Feedback
-		}
-		if business.Status != "" {
-			updatedFields["status"] = business.Status
-		}
-
-		if business.Rating != nil {
-			updatedFields["rating"] = business.Rating
-		}
-
-		updatedFields["updated_at"] = time.Now()
+			updatedFields := make(map[string]string)
+			if business.Name != "" {
+				updatedFields["name"] = business.Name
+			}
+			if business.BusinessType != "" {
+				updatedFields["business_type"] = business.BusinessType
+			}
+			if business.PhoneNumber != "" {
+				updatedFields["phone_number"] = business.PhoneNumber
+			}
+			if business.Address != "" {
+				updatedFields["address"] = business.Address
+			}
+			if business.City != "" {
+				updatedFields["city"] = business.City
+			}
+			if business.ZipCode != "" {
+				updatedFields["zip_code"] = business.ZipCode
+			}
+			if business.Country != "" {
+				updatedFields["country"] = business.Country
+			}
+			updatedFields["updated_at"] = time.Now()
 	*/
 
 	// Insertion dans la base de données
-	updt, errUptd := database.DB.Exec(`UPDATE businesses SET name=$2 WHERE id=$1 RETURNING *;`, IDParam, business.Name)
-
-	if errUptd != nil {
-		http.Error(w, "Erreur lors de la création de l'entreprise : "+errUptd.Error(), http.StatusInternalServerError)
+	updt, err := database.DB.Exec(`UPDATE businesses SET name=$2, business_type=$3, phone_number=$4, address=$5, city=$6, zip_code=$7, country=$8, updated_at=$9 WHERE id=$1 RETURNING *;`, IDParam, &business.Name, &business.BusinessType, &business.PhoneNumber, &business.Address, &business.City, &business.ZipCode, &business.Country, time.Now())
+	if err != nil {
+		http.Error(w, "Erreur lors de la création de l'entreprise : "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// check how many rows affected
 	rowsAffected, err := updt.RowsAffected()
-	log.Println(`ÉTAPE 5 : `, rowsAffected)
 
 	if err != nil {
 		log.Fatalf("Error while checking the affected rows. %v", err)
 	}
 
-	fmt.Printf("Total rows/record affected %v", rowsAffected)
-	log.Println(`ÉTAPE 6`, business)
+	log.Println(`Nombre de lignes modifiées : `, rowsAffected)
+	log.Println(`Informations : `, business)
 
-	// response := models.AddBusinessResponse{
-	// 	Response: "L'entreprise a été modifiée avec succès.",
-	// 	Business: business,
-	// }
+	response := models.UpdateBusinessResponse{
+		Response: "L'entreprise a été modifiée avec succès.",
+		Business: business,
+	}
 
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(business)
+	json.NewEncoder(w).Encode(response)
 }

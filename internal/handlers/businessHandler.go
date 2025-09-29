@@ -351,43 +351,22 @@ func DeleteBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	// Méthode HTTP
-	if r.Method != http.MethodGet {
+	if r.Method != http.MethodDelete {
 		http.Error(w, `Mauvaise requête HTTP.`, http.StatusBadRequest)
 	}
-
-	// Décode JSON de la requête
-	var business models.Business
 
 	// Récupérer l'ID de l'entreprise depuis l'URL
 	IDParam := r.PathValue("id")
 
 	// Récupération dans la base de données
-	err := database.DB.QueryRow(`
-		SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, created_at, updated_at
-		FROM businesses WHERE id = $1
-`, IDParam).Scan(
-		&business.ID,
-		&business.UserID,
-		&business.Name,
-		&business.BusinessType,
-		&business.PhoneNumber,
-		&business.Address,
-		&business.City,
-		&business.ZipCode,
-		&business.Country,
-		&business.CreatedAt,
-		&business.UpdatedAt,
-	)
+	_, err := database.DB.Exec(`DELETE FROM businesses WHERE id=$1`, IDParam)
 	if err != nil {
-		log.Println(`Erreur lors de la récupération des informations de l'entreprise : `, err)
-		http.Error(w, "Erreur lors de la récupération de l'entreprise : "+err.Error(), http.StatusInternalServerError)
+		log.Println(`Erreur lors de la suppression de l'entreprise : `, err)
+		http.Error(w, "Erreur lors de la suppression de l'entreprise : "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	response := models.AddBusinessResponse{
-		Response: "Informations de l'entreprise récupérées avec succès.",
-		Business: business,
-	}
+	response := "Entreprise supprimée avec succès."
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)

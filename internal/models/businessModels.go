@@ -35,28 +35,28 @@ type Business struct {
 }
 
 type UpdatedBusiness struct {
-	ID                      uuid.UUID `json:"id" db:"id"`
-	UserID                  uuid.UUID `json:"UserId" db:"UserId"`
-	Name                    *string   `json:"name" db:"name"`
-	BusinessType            *string   `json:"business_type" db:"business_type"`
-	PhoneNumber             *string   `json:"phone_number" db:"phone_number"`
-	Address                 *string   `json:"address" db:"address"`
-	City                    *string   `json:"city" db:"city"`
-	ZipCode                 *string   `json:"zip_code" db:"zip_code"`
-	Country                 *string   `json:"country" db:"country"`
-	QRCodeToken             *string   `json:"qr_code_token" db:"qr_code_token"`
-	AverageServiceTime      *int      `json:"average_service_time" db:"average_service_time"`
-	IsQueueActive           *bool     `json:"is_queue_active" db:"is_queue_active"`
-	IsQueuePaused           *bool     `json:"is_queue_paused" db:"is_queue_paused"`
-	MaxQueueSize            *int      `json:"max_queue_size" db:"max_queue_size"`
-	OpeningHours            *string   `json:"opening_hours" db:"opening_hours"`
-	CustomMessage           *string   `json:"custom_message" db:"custom_message"`
-	SmsNotificationsEnabled *bool     `json:"sms_notifications_enabled" db:"sms_notifications_enabled"`
-	AutoAdvanceEnabled      *bool     `json:"auto_advance_enabled" db:"auto_advance_enabled"`
-	ClientTimeoutMinutes    *int      `json:"client_timeout_minutes" db:"client_timeout_minutes"`
-	IsActive                *int      `json:"is_active" db:"is_active"`
-	CreatedAt               time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt               time.Time `json:"updated_at" db:"updated_at"`
+	ID                      *uuid.UUID `json:"id" db:"id"`
+	UserID                  *uuid.UUID `json:"UserId" db:"UserId"`
+	Name                    *string    `json:"name" db:"name"`
+	BusinessType            *string    `json:"business_type" db:"business_type"`
+	PhoneNumber             *string    `json:"phone_number" db:"phone_number"`
+	Address                 *string    `json:"address" db:"address"`
+	City                    *string    `json:"city" db:"city"`
+	ZipCode                 *string    `json:"zip_code" db:"zip_code"`
+	Country                 *string    `json:"country" db:"country"`
+	QRCodeToken             *string    `json:"qr_code_token" db:"qr_code_token"`
+	AverageServiceTime      *int       `json:"average_service_time" db:"average_service_time"`
+	IsQueueActive           *bool      `json:"is_queue_active" db:"is_queue_active"`
+	IsQueuePaused           *bool      `json:"is_queue_paused" db:"is_queue_paused"`
+	MaxQueueSize            *int       `json:"max_queue_size" db:"max_queue_size"`
+	OpeningHours            *string    `json:"opening_hours" db:"opening_hours"`
+	CustomMessage           *string    `json:"custom_message" db:"custom_message"`
+	SmsNotificationsEnabled *bool      `json:"sms_notifications_enabled" db:"sms_notifications_enabled"`
+	AutoAdvanceEnabled      *bool      `json:"auto_advance_enabled" db:"auto_advance_enabled"`
+	ClientTimeoutMinutes    *int       `json:"client_timeout_minutes" db:"client_timeout_minutes"`
+	IsActive                *int       `json:"is_active" db:"is_active"`
+	CreatedAt               *time.Time `json:"created_at" db:"created_at"`
+	UpdatedAt               *time.Time `json:"updated_at" db:"updated_at"`
 }
 
 // Vérifier le type de commerce

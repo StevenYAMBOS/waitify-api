@@ -53,7 +53,8 @@ func main() {
 	r.HandleFunc("GET /business/{id}", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.GetBusinessHandler)))
 	r.HandleFunc("GET /businesses/user/{id}", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.GetBusinessesHandler)))
 	r.HandleFunc("POST /business", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.AddBusinessHandler)))
-	r.HandleFunc("PUT /business/{id}", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.UpdateBusinessHandler)))
+	r.HandleFunc("PATCH /business/{id}", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.UpdateBusinessHandler)))
+	r.HandleFunc("DELETE /business/{id}", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.DeleteBusinessHandler)))
 
 	fmt.Print("[main.go] -> Serveur lançé : http://localhost", port)
 	http.ListenAndServe(port, r)

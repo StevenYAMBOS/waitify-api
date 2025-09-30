@@ -1,2 +1,4 @@
 /mvnw text eol=lf
 *.cmd text eol=crlf
+*.java linguist-detectable=true
+*.sql linguist-detectable=true

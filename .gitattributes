@@ -1,1 +1,8 @@
+<<<<<<< HEAD
 *.java linguist-detectable=true
+=======
+/mvnw text eol=lf
+*.cmd text eol=crlf
+*.java linguist-detectable=true
+*.sql linguist-detectable=true
+>>>>>>> 4563f6b1509c93d488f1f815f313b6c2126a4fa4

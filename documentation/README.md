@@ -1,6 +1,6 @@
 # Documentation
 
-Mise à jour le : 30-09-2025
+Mise à jour le : 01-10-2025
 
 Par : Steven YAMBOS
 
@@ -11,11 +11,8 @@ L'organisation des branches du dépôt est structurée pour faciliter le dévelo
 - **`main`** :
   Point d'entrée du projet, contient tous les documents nécessaires à la compréhension du projet.
 
-- **`dev`** :
+- **`dev`** (vous vous trouvez ici) :
   La branche principale de développement continu. Elle sert d'environnement bac à sable pour les développeurs où toutes les nouvelles fonctionnalités et corrections de bugs sont intégrées après validation initiale.
-
-- **`refactor`** (vous vous trouvez ici) :
-  Branche temporaire de secour. Elle sert d'environnement bac à sable pour les développeurs où toutes les nouvelles fonctionnalités et corrections de bugs sont intégrées après validation initiale.
 
 - **`pre-prod`** :
   Cette branche est destinée à présenter les fonctionnalités aux clients. Une fois que les développements de la branche `dev` sont stabilisés et validés, ils sont fusionnés dans cette branche pour des démonstrations.

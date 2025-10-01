@@ -3,7 +3,10 @@ package com.stevenyambos.waitify.services;
 import com.stevenyambos.waitify.dto.UserDTO;
 import com.stevenyambos.waitify.models.UserModel;
 import com.stevenyambos.waitify.repositories.UserRepository;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 

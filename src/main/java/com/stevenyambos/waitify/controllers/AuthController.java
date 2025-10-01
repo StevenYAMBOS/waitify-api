@@ -5,6 +5,7 @@ import com.stevenyambos.waitify.models.UserModel;
 import com.stevenyambos.waitify.services.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,9 +13,14 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/auth")
-@RequiredArgsConstructor
+//@RequiredArgsConstructor
 public class AuthController {
     private final UserService userService;
+
+    @Autowired
+    public AuthController(UserService userService) {
+        this.userService = userService;
+    }
 
     /*
     @PostMapping("/login")
@@ -23,6 +29,8 @@ public class AuthController {
     }
     */
 
+
+
     // Inscription
     @PostMapping("/register")
     public ResponseEntity<UserModel> createUser(@Valid @RequestBody UserDTO dto) {
@@ -30,7 +38,7 @@ public class AuthController {
     }
 
     // Liste des utilisateurs
-    @GetMapping("/")
+    @GetMapping("/test")
     public ResponseEntity<List<UserModel>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }

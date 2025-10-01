@@ -1,4 +1,4 @@
-package com.stevenyalbos.waitify;
+package com.stevenyambos.waitify;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

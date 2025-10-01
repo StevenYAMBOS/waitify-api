@@ -1,4 +1,4 @@
-package com.stevenyalbos.waitify;
+package com.stevenyambos.waitify;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

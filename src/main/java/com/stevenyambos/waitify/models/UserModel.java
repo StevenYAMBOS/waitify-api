@@ -17,6 +17,6 @@ public class UserModel {
     private UUID id;
     private String email;
     private String password;
-    @JdbcTypeCode(SqlTypes.JSON)
-    private Set<RoleEnum> roles;
+//    @JdbcTypeCode(SqlTypes.JSON)
+//    private Set<RoleEnum> roles;
 }

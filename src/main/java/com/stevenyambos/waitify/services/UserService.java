@@ -22,7 +22,7 @@ public class UserService {
         final var user = new UserModel();
         user.setEmail(dto.getEmail());
         user.setPassword(new BCryptPasswordEncoder().encode(dto.getPassword()));
-        user.setRoles(dto.getRoles());
+//        user.setRoles(dto.getRoles());
         return userRepository.save(user);
     }
 

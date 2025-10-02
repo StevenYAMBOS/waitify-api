@@ -42,4 +42,10 @@ public class AuthController {
     public ResponseEntity<List<UserModel>> getAllUsers() {
         return ResponseEntity.ok(userService.getAllUsers());
     }
+
+    // Liste des utilisateurs
+    @GetMapping("/v1")
+    public ResponseEntity<String> healthCheck() {
+        return ResponseEntity.ok("Ouais ouais oui");
+    }
 }

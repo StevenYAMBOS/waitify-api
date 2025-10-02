@@ -22,6 +22,6 @@ public class UserDTO {
     @NotBlank
     @Size(min = 1, max = 100)
     private String password;
-    @NotEmpty
-    private Set<RoleEnum> roles;
+//    @NotEmpty
+//    private Set<RoleEnum> roles;
 }

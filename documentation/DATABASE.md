@@ -4,7 +4,6 @@
 
 **Par :** [Steven YAMBOS](https://www.linkedin.com/in/steven-yambos/)
 
-
 [![Postgres](https://img.shields.io/badge/Postgres-%23316192.svg?logo=postgresql&logoColor=white)](#)
 
 ## Bonnes pratiques
@@ -164,7 +163,7 @@ INSERT INTO subscription_plans (name, price_cents, max_businesses, sms_quota_mon
 
 ```sql
 CREATE TABLE businesses (
-    id UUID PRIMARY KEY DEFAULT uuid_generate(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     UserId UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     business_type VARCHAR(100) NOT NULL,

@@ -59,6 +59,14 @@ type UpdatedBusiness struct {
 	UpdatedAt               *time.Time `json:"updated_at" db:"updated_at"`
 }
 
+// État des files d'attente du commerce
+type BusinessQueueStatusRequest struct {
+	IsQueueActive bool `json:"is_queue_active" binding:"required,boolean" db:"is_queue_active"`
+	IsQueuePaused bool `json:"is_queue_paused" binding:"required,boolean" db:"is_queue_paused"`
+}
+
+/* ********************* Vérifications ********************* */
+
 // Vérifier le type de commerce
 func (business *Business) ValidateBusinessType() error {
 	var types [35]string = [35]string{"bakery", "hairdresser", "pharmacy", "garage", "restaurant",

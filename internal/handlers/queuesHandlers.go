@@ -9,7 +9,10 @@ import (
 	"github.com/StevenYAMBOS/waitify-api/internal/models"
 )
 
-// Activer la file d'attente
+/*
+Activer ou désactiver la file d'attente
+Côté Font on va envoyer un booléen (true ou false) pour activer ou désactiver la file d'attente
+*/
 func ActivateQueueHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPut {
 		http.Error(w, `Mauvaise requête HTTP (mauvaise méthode).`, http.StatusMethodNotAllowed)

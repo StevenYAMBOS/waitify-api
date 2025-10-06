@@ -62,7 +62,6 @@ type UpdatedBusiness struct {
 // État des files d'attente du commerce
 type BusinessQueueStatusRequest struct {
 	IsQueueActive *bool `json:"is_queue_active" db:"is_queue_active"`
-	// IsQueuePaused *bool `json:"is_queue_paused" db:"is_queue_paused"`
 }
 
 /* ********************* Vérifications ********************* */

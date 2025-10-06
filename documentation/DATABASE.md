@@ -1,6 +1,6 @@
 # Base de données
 
-**Mise à jour :** 30-09-2025
+**Mise à jour :** 06-10-2025
 
 **Par :** [Steven YAMBOS](https://www.linkedin.com/in/steven-yambos/)
 
@@ -108,54 +108,6 @@ ALTER TABLE users ADD CONSTRAINT check_phone_number_format CHECK (phone_number I
 - `created_at` : Timestamp de création du compte
 - `updated_at` : Timestamp de dernière modification
 - `last_login` : Timestamp de dernière connexion
-
-### Table `subscription_plans`
-
-**Description :** Définit les différents plans tarifaires avec leurs limites et fonctionnalités. Cette table permet une gestion flexible des offres commerciales et une évolution tarifaire sans modification du code.
-
-```sql
-CREATE TABLE subscription_plans (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(100) UNIQUE NOT NULL,
-    price_cents INTEGER NOT NULL,
-    max_businesses INTEGER NOT NULL,
-    sms_quota_monthly INTEGER DEFAULT 1000,
-    features JSONB,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Index pour les requêtes fréquentes
-CREATE INDEX idx_subscription_plans_active ON subscription_plans(is_active);
-CREATE INDEX idx_subscription_plans_name ON subscription_plans(name);
-
--- Contraintes de validation
-ALTER TABLE subscription_plans ADD CONSTRAINT check_price_positive CHECK (price_cents >= 0);
-ALTER TABLE subscription_plans ADD CONSTRAINT check_max_businesses_valid CHECK (max_businesses = -1 OR max_businesses > 0);
-ALTER TABLE subscription_plans ADD CONSTRAINT check_sms_quota_positive CHECK (sms_quota_monthly > 0);
-```
-
-**Plans par défaut :**
-
-```sql
-INSERT INTO subscription_plans (name, price_cents, max_businesses, sms_quota_monthly, features) VALUES
-('basic', 1900, 1, 1000, '{"analytics": "basic", "support": "email", "api_access": false}'),
-('pro', 4900, 5, 2500, '{"analytics": "advanced", "support": "priority", "api_access": true, "custom_branding": true}'),
-('enterprise', 9900, -1, 5000, '{"analytics": "advanced", "support": "phone", "api_access": true, "custom_branding": true, "dedicated_manager": true}');
-```
-
-**Explications des colonnes :**
-
-- `id` : Identifiant unique UUID généré automatiquement
-- `name` : Nom unique du plan affiché à l'utilisateur
-- `price_cents` : Prix mensuel en centimes d'euro
-- `max_businesses` : Nombre maximum d'établissements autorisés (-1 pour illimité)
-- `sms_quota_monthly` : Quota de SMS inclus dans l'abonnement mensuel
-- `features` : Fonctionnalités JSON incluses dans le plan
-- `is_active` : Indique si le plan est proposable aux nouveaux clients
-- `created_at` : Timestamp de création du plan
-- `updated_at` : Timestamp de dernière modification
 
 ### Table `businesses`
 
@@ -318,6 +270,54 @@ ALTER TABLE queue_entries ADD CONSTRAINT check_called_before_served CHECK (calle
 3. `served` : Client servi avec succès
 4. `missed` : Client absent lors de son appel (timeout)
 5. `cancelled` : Client a annulé sa place manuellement
+
+### Table `subscription_plans`
+
+**Description :** Définit les différents plans tarifaires avec leurs limites et fonctionnalités. Cette table permet une gestion flexible des offres commerciales et une évolution tarifaire sans modification du code.
+
+```sql
+CREATE TABLE subscription_plans (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(100) UNIQUE NOT NULL,
+    price_cents INTEGER NOT NULL,
+    max_businesses INTEGER NOT NULL,
+    sms_quota_monthly INTEGER DEFAULT 1000,
+    features JSONB,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Index pour les requêtes fréquentes
+CREATE INDEX idx_subscription_plans_active ON subscription_plans(is_active);
+CREATE INDEX idx_subscription_plans_name ON subscription_plans(name);
+
+-- Contraintes de validation
+ALTER TABLE subscription_plans ADD CONSTRAINT check_price_positive CHECK (price_cents >= 0);
+ALTER TABLE subscription_plans ADD CONSTRAINT check_max_businesses_valid CHECK (max_businesses = -1 OR max_businesses > 0);
+ALTER TABLE subscription_plans ADD CONSTRAINT check_sms_quota_positive CHECK (sms_quota_monthly > 0);
+```
+
+**Plans par défaut :**
+
+```sql
+INSERT INTO subscription_plans (name, price_cents, max_businesses, sms_quota_monthly, features) VALUES
+('basic', 1900, 1, 1000, '{"analytics": "basic", "support": "email", "api_access": false}'),
+('pro', 4900, 5, 2500, '{"analytics": "advanced", "support": "priority", "api_access": true, "custom_branding": true}'),
+('enterprise', 9900, -1, 5000, '{"analytics": "advanced", "support": "phone", "api_access": true, "custom_branding": true, "dedicated_manager": true}');
+```
+
+**Explications des colonnes :**
+
+- `id` : Identifiant unique UUID généré automatiquement
+- `name` : Nom unique du plan affiché à l'utilisateur
+- `price_cents` : Prix mensuel en centimes d'euro
+- `max_businesses` : Nombre maximum d'établissements autorisés (-1 pour illimité)
+- `sms_quota_monthly` : Quota de SMS inclus dans l'abonnement mensuel
+- `features` : Fonctionnalités JSON incluses dans le plan
+- `is_active` : Indique si le plan est proposable aux nouveaux clients
+- `created_at` : Timestamp de création du plan
+- `updated_at` : Timestamp de dernière modification
 
 ### Table `sms_logs`
 
@@ -544,45 +544,116 @@ INSERT INTO system_configs (key, value, data_type, description, is_public) VALUE
 ('default_service_times', '{"bakery": 120, "hairdresser": 2700, "pharmacy": 180, "garage": 1800, "restaurant": 5400, "medical_office": 900, "dentist": 1800, "veterinary": 1200, "optician": 1500, "bank": 600, "insurance": 1200, "notary": 2400, "lawyer": 3600, "accountant": 1800, "real_estate": 1800, "prefecture": 900, "city_hall": 600, "family_allowance": 1200, "employment_agency": 1800, "public_service": 900, "post_office": 300, "dry_cleaning": 180, "cobbler": 600, "watchmaker": 900, "phone_repair": 1200, "beauty_salon": 3600, "massage": 3600, "tattoo": 7200, "nail_salon": 2400, "barber": 1800, "vehicle_inspection": 1800, "gas_station": 300, "auto_body": 3600, "tire_service": 1200, "other": 900}', 'json', 'Temps service par défaut par type', true);
 ```
 
-## Vues utilitaires pour performance
-
-### Vue dénormalisée pour requêtes fréquentes
+## Row Level Security (RLS) pour PostgreSQL
 
 ```sql
--- Vue pour simplifier les requêtes cross-business
-CREATE VIEW queue_entries_with_user AS
-SELECT
-    qe.*,
-    b.UserId,
-    b.name as business_name,
-    b.business_type,
-    u.email as user_email
-FROM queue_entries qe
-JOIN businesses b ON qe.BusinessId = b.id
-JOIN users u ON b.UserId = u.id;
+-- Activation RLS sur toutes les tables
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE businesses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE queue_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE sms_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE analytics_daily ENABLE ROW LEVEL SECURITY;
+ALTER TABLE billings ENABLE ROW LEVEL SECURITY;
 
--- Vue agrégée multi-business par utilisateur
-CREATE VIEW user_business_summary AS
-SELECT
-    u.id as user_id,
-    u.email,
-    sp.name as plan_name,
-    COUNT(b.id) as total_businesses,
-    COUNT(b.id) FILTER (WHERE b.is_active = true) as active_businesses,
-    COALESCE(SUM(today_stats.queue_size), 0) as total_current_queue,
-    COALESCE(SUM(today_stats.served_today), 0) as total_served_today
-FROM users u
-LEFT JOIN subscription_plans sp ON u.SubscriptionPlanId = sp.id
-LEFT JOIN businesses b ON u.id = b.UserId
-LEFT JOIN (
-    SELECT
-        BusinessId,
-        COUNT(*) FILTER (WHERE status = 'waiting') as queue_size,
-        COUNT(*) FILTER (WHERE status = 'served' AND created_at >= CURRENT_DATE) as served_today
-    FROM queue_entries
-    GROUP BY BusinessId
-) today_stats ON b.id = today_stats.BusinessId
-GROUP BY u.id, u.email, sp.name;
+-- Politiques sécurisées multi-business (adapté pour PostgreSQL pur)
+CREATE POLICY "Users manage own data" ON users
+    FOR ALL USING (id = current_setting('app.current_user_id')::UUID);
+
+CREATE POLICY "Users manage own businesses" ON businesses
+    FOR ALL USING (UserId = current_setting('app.current_user_id')::UUID);
+
+CREATE POLICY "Users access queues via businesses" ON queue_entries
+    FOR ALL USING (current_setting('app.current_user_id')::UUID = (SELECT UserId FROM businesses WHERE id = BusinessId));
+
+CREATE POLICY "Users access SMS logs via businesses" ON sms_logs
+    FOR SELECT USING (current_setting('app.current_user_id')::UUID = (SELECT UserId FROM businesses WHERE id = BusinessId));
+
+CREATE POLICY "Users access analytics via businesses" ON analytics_daily
+    FOR SELECT USING (current_setting('app.current_user_id')::UUID = (SELECT UserId FROM businesses WHERE id = BusinessId));
+
+CREATE POLICY "Users access own billing" ON billings
+    FOR SELECT USING (UserId = current_setting('app.current_user_id')::UUID);
+
+-- Accès public via QR code (avec context setting)
+CREATE POLICY "Public queue access via QR token" ON queue_entries
+    FOR SELECT USING (
+        BusinessId IN (
+            SELECT id FROM businesses
+            WHERE qr_code_token = current_setting('app.current_business_token', true)
+        )
+    );
+```
+
+## Triggers et fonctions automatiques
+
+```sql
+-- Mise à jour automatique des timestamps
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$ language 'plpgsql';
+
+-- Application sur toutes les tables avec updated_at
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_businesses_updated_at BEFORE UPDATE ON businesses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_queue_entries_updated_at BEFORE UPDATE ON queue_entries FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_subscription_plans_updated_at BEFORE UPDATE ON subscription_plans FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Recalcul automatique des positions par business
+CREATE OR REPLACE FUNCTION recalculate_queue_positions()
+RETURNS TRIGGER AS $
+BEGIN
+    UPDATE queue_entries
+    SET position = new_position
+    FROM (
+        SELECT id, ROW_NUMBER() OVER (ORDER BY created_at) as new_position
+        FROM queue_entries
+        WHERE BusinessId = COALESCE(NEW.BusinessId, OLD.BusinessId)
+        AND status = 'waiting'
+    ) AS positioned
+    WHERE queue_entries.id = positioned.id;
+
+    RETURN COALESCE(NEW, OLD);
+END;
+$ language 'plpgsql';
+
+CREATE TRIGGER recalculate_positions_after_change
+    AFTER UPDATE OF status OR DELETE ON queue_entries
+    FOR EACH ROW EXECUTE FUNCTION recalculate_queue_positions();
+
+-- Contrainte pour limiter les business selon le plan
+CREATE OR REPLACE FUNCTION validate_business_count_on_plan_change()
+RETURNS TRIGGER AS $
+DECLARE
+    current_businesses INTEGER;
+    new_max_businesses INTEGER;
+BEGIN
+    -- Récupérer le nombre de business actifs
+    SELECT COUNT(*) INTO current_businesses
+    FROM businesses
+    WHERE UserId = NEW.id AND is_active = true;
+
+    -- Récupérer la nouvelle limite
+    SELECT max_businesses INTO new_max_businesses
+    FROM subscription_plans
+    WHERE id = NEW.SubscriptionPlanId;
+
+    -- Vérifier si le changement de plan est valide
+    IF new_max_businesses != -1 AND current_businesses > new_max_businesses THEN
+        RAISE EXCEPTION 'Cannot downgrade: user has % businesses but plan allows only %',
+            current_businesses, new_max_businesses;
+    END IF;
+
+    RETURN NEW;
+END;
+$ language 'plpgsql';
+
+CREATE TRIGGER validate_plan_change_trigger
+    BEFORE UPDATE OF SubscriptionPlanId ON users
+    FOR EACH ROW EXECUTE FUNCTION validate_business_count_on_plan_change();
 ```
 
 ## Contrôles multi-business
@@ -677,482 +748,4 @@ BEGIN
         jsonb_set(sms_usage, '{total}', total_sms_used::text::jsonb);
 END;
 $ language 'plpgsql';
-```
-
-## Triggers et fonctions automatiques
-
-```sql
--- Mise à jour automatique des timestamps
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$ language 'plpgsql';
-
--- Application sur toutes les tables avec updated_at
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_businesses_updated_at BEFORE UPDATE ON businesses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_queue_entries_updated_at BEFORE UPDATE ON queue_entries FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_subscription_plans_updated_at BEFORE UPDATE ON subscription_plans FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- Recalcul automatique des positions par business
-CREATE OR REPLACE FUNCTION recalculate_queue_positions()
-RETURNS TRIGGER AS $
-BEGIN
-    UPDATE queue_entries
-    SET position = new_position
-    FROM (
-        SELECT id, ROW_NUMBER() OVER (ORDER BY created_at) as new_position
-        FROM queue_entries
-        WHERE BusinessId = COALESCE(NEW.BusinessId, OLD.BusinessId)
-        AND status = 'waiting'
-    ) AS positioned
-    WHERE queue_entries.id = positioned.id;
-
-    RETURN COALESCE(NEW, OLD);
-END;
-$ language 'plpgsql';
-
-CREATE TRIGGER recalculate_positions_after_change
-    AFTER UPDATE OF status OR DELETE ON queue_entries
-    FOR EACH ROW EXECUTE FUNCTION recalculate_queue_positions();
-
--- Contrainte pour limiter les business selon le plan
-CREATE OR REPLACE FUNCTION validate_business_count_on_plan_change()
-RETURNS TRIGGER AS $
-DECLARE
-    current_businesses INTEGER;
-    new_max_businesses INTEGER;
-BEGIN
-    -- Récupérer le nombre de business actifs
-    SELECT COUNT(*) INTO current_businesses
-    FROM businesses
-    WHERE UserId = NEW.id AND is_active = true;
-
-    -- Récupérer la nouvelle limite
-    SELECT max_businesses INTO new_max_businesses
-    FROM subscription_plans
-    WHERE id = NEW.SubscriptionPlanId;
-
-    -- Vérifier si le changement de plan est valide
-    IF new_max_businesses != -1 AND current_businesses > new_max_businesses THEN
-        RAISE EXCEPTION 'Cannot downgrade: user has % businesses but plan allows only %',
-            current_businesses, new_max_businesses;
-    END IF;
-
-    RETURN NEW;
-END;
-$ language 'plpgsql';
-
-CREATE TRIGGER validate_plan_change_trigger
-    BEFORE UPDATE OF SubscriptionPlanId ON users
-    FOR EACH ROW EXECUTE FUNCTION validate_business_count_on_plan_change();
-```
-
-## Row Level Security (RLS) pour PostgreSQL
-
-```sql
--- Activation RLS sur toutes les tables
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE businesses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE queue_entries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sms_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE analytics_daily ENABLE ROW LEVEL SECURITY;
-ALTER TABLE billings ENABLE ROW LEVEL SECURITY;
-
--- Politiques sécurisées multi-business (adapté pour PostgreSQL pur)
-CREATE POLICY "Users manage own data" ON users
-    FOR ALL USING (id = current_setting('app.current_user_id')::UUID);
-
-CREATE POLICY "Users manage own businesses" ON businesses
-    FOR ALL USING (UserId = current_setting('app.current_user_id')::UUID);
-
-CREATE POLICY "Users access queues via businesses" ON queue_entries
-    FOR ALL USING (current_setting('app.current_user_id')::UUID = (SELECT UserId FROM businesses WHERE id = BusinessId));
-
-CREATE POLICY "Users access SMS logs via businesses" ON sms_logs
-    FOR SELECT USING (current_setting('app.current_user_id')::UUID = (SELECT UserId FROM businesses WHERE id = BusinessId));
-
-CREATE POLICY "Users access analytics via businesses" ON analytics_daily
-    FOR SELECT USING (current_setting('app.current_user_id')::UUID = (SELECT UserId FROM businesses WHERE id = BusinessId));
-
-CREATE POLICY "Users access own billing" ON billings
-    FOR SELECT USING (UserId = current_setting('app.current_user_id')::UUID);
-
--- Accès public via QR code (avec context setting)
-CREATE POLICY "Public queue access via QR token" ON queue_entries
-    FOR SELECT USING (
-        BusinessId IN (
-            SELECT id FROM businesses
-            WHERE qr_code_token = current_setting('app.current_business_token', true)
-        )
-    );
-```
-
-## Fonctions utilitaires avancées
-
-```sql
--- Fonction pour obtenir les stats temps réel multi-business
-CREATE OR REPLACE FUNCTION get_user_realtime_stats(user_id UUID)
-RETURNS TABLE(
-    business_id UUID,
-    business_name VARCHAR(255),
-    current_queue_size BIGINT,
-    today_served BIGINT,
-    is_active BOOLEAN,
-    is_queue_active BOOLEAN
-) AS $
-BEGIN
-    RETURN QUERY
-    SELECT
-        b.id,
-        b.name,
-        COUNT(qe.id) FILTER (WHERE qe.status = 'waiting'),
-        COUNT(qe.id) FILTER (WHERE qe.status = 'served' AND qe.created_at >= CURRENT_DATE),
-        b.is_active,
-        b.is_queue_active
-    FROM businesses b
-    LEFT JOIN queue_entries qe ON b.id = qe.BusinessId
-    WHERE b.UserId = user_id
-    GROUP BY b.id, b.name, b.is_active, b.is_queue_active
-    ORDER BY b.name;
-END;
-$ language 'plpgsql';
-
--- Vue matérialisée pour les performances multi-business
-CREATE MATERIALIZED VIEW businesses_stats_realtime AS
-SELECT
-    b.id as business_id,
-    b.UserId,
-    b.name as business_name,
-    b.business_type,
-    COUNT(qe.id) FILTER (WHERE qe.status = 'waiting') as current_queue_size,
-    MAX(qe.position) FILTER (WHERE qe.status = 'waiting') as max_position,
-    AVG(qe.estimated_wait_time) FILTER (WHERE qe.status = 'waiting') as avg_estimated_wait,
-    COUNT(qe.id) FILTER (WHERE qe.created_at >= CURRENT_DATE) as today_total_clients,
-    COUNT(qe.id) FILTER (WHERE qe.status = 'served' AND qe.created_at >= CURRENT_DATE) as today_served_clients,
-    b.is_queue_active,
-    b.is_queue_paused
-FROM businesses b
-LEFT JOIN queue_entries qe ON b.id = qe.BusinessId
-WHERE b.is_active = true
-GROUP BY b.id, b.UserId, b.name, b.business_type, b.is_queue_active, b.is_queue_paused;
-
--- Index sur la vue matérialisée
-CREATE INDEX idx_businesses_stats_realtime_user ON businesses_stats_realtime(UserId);
-CREATE INDEX idx_businesses_stats_realtime_business ON businesses_stats_realtime(business_id);
-
--- Rafraîchissement automatique de la vue
-CREATE OR REPLACE FUNCTION refresh_businesses_stats()
-RETURNS void AS $
-BEGIN
-    REFRESH MATERIALIZED VIEW CONCURRENTLY businesses_stats_realtime;
-END;
-$ language 'plpgsql';
-```
-
-## Fonctions de migration et maintenance
-
-```sql
--- Fonction de migration des données mono vers multi-business
-CREATE OR REPLACE FUNCTION migrate_to_multi_business()
-RETURNS void AS $
-DECLARE
-    user_record RECORD;
-    new_business_id UUID;
-    basic_plan_id UUID;
-BEGIN
-    -- Récupérer l'ID du plan basic
-    SELECT id INTO basic_plan_id FROM subscription_plans WHERE name = 'basic';
-
-    -- Traiter chaque utilisateur qui n'a pas encore de business
-    FOR user_record IN
-        SELECT u.* FROM users u
-        LEFT JOIN businesses b ON u.id = b.UserId
-        WHERE b.UserId IS NULL
-    LOOP
-        -- Assigner le plan basic si pas de plan
-        IF user_record.SubscriptionPlanId IS NULL THEN
-            UPDATE users SET SubscriptionPlanId = basic_plan_id WHERE id = user_record.id;
-        END IF;
-
-        -- Créer un business par défaut si les données legacy existent
-        IF user_record.company_name IS NOT NULL THEN
-            INSERT INTO businesses (
-                UserId, name, business_type, phone, address, city, zip_code, country,
-                qr_code_token, average_service_time, is_active
-            ) VALUES (
-                user_record.id,
-                user_record.company_name,
-                'other',
-                user_record.phone,
-                '',
-                '',
-                '',
-                'France',
-                encode(gen_random_bytes(16), 'hex'),
-                300,
-                true
-            ) RETURNING id INTO new_business_id;
-
-            RAISE NOTICE 'Created business % for user %', new_business_id, user_record.email;
-        END IF;
-    END LOOP;
-END;
-$ language 'plpgsql';
-
--- Fonction de nettoyage des données anciennes
-CREATE OR REPLACE FUNCTION cleanup_old_queue_entries(days_old INTEGER DEFAULT 90)
-RETURNS INTEGER AS $
-DECLARE
-    deleted_count INTEGER;
-BEGIN
-    -- Supprimer les entrées de queue anciennes (gardées pour analytics)
-    DELETE FROM queue_entries
-    WHERE created_at < NOW() - INTERVAL '1 day' * days_old
-    AND status IN ('served', 'missed', 'cancelled');
-
-    GET DIAGNOSTICS deleted_count = ROW_COUNT;
-
-    RAISE NOTICE 'Deleted % old queue entries', deleted_count;
-    RETURN deleted_count;
-END;
-$ language 'plpgsql';
-
--- Fonction de calcul des statistiques consolidées utilisateur
-CREATE OR REPLACE FUNCTION calculate_user_consolidated_stats(
-    user_id UUID,
-    start_date DATE,
-    end_date DATE
-)
-RETURNS TABLE(
-    total_businesses INTEGER,
-    total_clients_served BIGINT,
-    total_sms_sent BIGINT,
-    average_abandonment_rate DECIMAL,
-    best_performing_business VARCHAR(255),
-    worst_performing_business VARCHAR(255)
-) AS $
-DECLARE
-    best_business VARCHAR(255);
-    worst_business VARCHAR(255);
-    best_rate DECIMAL := 0;
-    worst_rate DECIMAL := 100;
-    business_rec RECORD;
-BEGIN
-    -- Calculer les performances par business pour trouver le meilleur/pire
-    FOR business_rec IN
-        SELECT b.name,
-               COALESCE(AVG(ad.abandonment_rate), 0) as avg_abandonment
-        FROM businesses b
-        LEFT JOIN analytics_daily ad ON b.id = ad.BusinessId
-            AND ad.date BETWEEN start_date AND end_date
-        WHERE b.UserId = user_id AND b.is_active = true
-        GROUP BY b.name
-    LOOP
-        IF business_rec.avg_abandonment > best_rate THEN
-            best_rate := business_rec.avg_abandonment;
-            worst_business := business_rec.name;
-        END IF;
-
-        IF business_rec.avg_abandonment < worst_rate THEN
-            worst_rate := business_rec.avg_abandonment;
-            best_business := business_rec.name;
-        END IF;
-    END LOOP;
-
-    -- Retourner les statistiques consolidées
-    RETURN QUERY
-    SELECT
-        COUNT(b.id)::INTEGER as total_businesses,
-        COALESCE(SUM(ad.total_clients_served), 0) as total_clients_served,
-        COALESCE(SUM(ad.sms_sent_count), 0) as total_sms_sent,
-        COALESCE(AVG(ad.abandonment_rate), 0) as average_abandonment_rate,
-        best_business,
-        worst_business
-    FROM businesses b
-    LEFT JOIN analytics_daily ad ON b.id = ad.BusinessId
-        AND ad.date BETWEEN start_date AND end_date
-    WHERE b.UserId = user_id AND b.is_active = true;
-END;
-$ language 'plpgsql';
-```
-
-## API Routes multi-business
-
-### Routes de gestion des établissements
-
-```bash
-# Gestion globale des businesses
-GET    /businesses                    # Liste tous les businesses de l'utilisateur
-POST   /businesses                    # Créer un nouveau business
-GET    /businesses/summary            # Vue d'ensemble multi-business
-
-# Gestion d'un business spécifique
-GET    /businesses/:id                # Détails d'un business
-PUT    /businesses/:id                # Modifier un business
-DELETE /businesses/:id                # Supprimer un business (soft delete)
-POST   /businesses/:id/activate       # Activer/désactiver un business
-
-# Configuration spécifique par business
-PUT    /businesses/:id/queue/settings # Paramètres de file d'attente
-POST   /businesses/:id/qr-code/regenerate # Regénérer QR code
-```
-
-### Routes de gestion des files par business
-
-```bash
-# File d'attente par business
-GET    /businesses/:id/queue          # État de la file d'un business
-POST   /businesses/:id/queue/open     # Ouvrir la file d'attente
-POST   /businesses/:id/queue/close    # Fermer la file d'attente
-POST   /businesses/:id/queue/pause    # Mettre en pause
-POST   /businesses/:id/queue/resume   # Reprendre
-
-# Gestion des clients par business
-POST   /businesses/:id/queue/next     # Appeler le client suivant
-PUT    /businesses/:id/queue/clients/:clientId/serve   # Marquer comme servi
-PUT    /businesses/:id/queue/clients/:clientId/miss    # Marquer comme manqué
-```
-
-### Routes analytics multi-business
-
-```bash
-# Analytics consolidées utilisateur
-GET    /analytics/dashboard           # Vue d'ensemble tous businesses
-GET    /analytics/comparison          # Comparaison entre businesses
-GET    /analytics/consolidated/:period # Stats consolidées (day/week/month)
-
-# Analytics par business
-GET    /businesses/:id/analytics/dashboard    # Métriques temps réel business
-GET    /businesses/:id/analytics/daily       # Historique quotidien
-GET    /businesses/:id/analytics/export      # Export CSV business spécifique
-```
-
-## Exemples de réponses API multi-business
-
-### GET /businesses - Liste des établissements
-
-```json
-{
-  "user": {
-    "id": "uuid",
-    "email": "user@example.com",
-    "plan": "pro",
-    "max_businesses": 5,
-    "active_businesses": 3
-  },
-  "businesses": [
-    {
-      "id": "uuid",
-      "name": "Boulangerie Centre-Ville",
-      "business_type": "bakery",
-      "is_active": true,
-      "is_queue_active": true,
-      "current_queue_size": 5,
-      "today_served": 42,
-      "qr_code_url": "https://app.waitify.com/q/abc123"
-    },
-    {
-      "id": "uuid",
-      "name": "Boulangerie Quartier Gare",
-      "business_type": "bakery",
-      "is_active": true,
-      "is_queue_active": false,
-      "current_queue_size": 0,
-      "today_served": 28,
-      "qr_code_url": "https://app.waitify.com/q/def456"
-    }
-  ]
-}
-```
-
-### GET /analytics/comparison - Comparaison entre établissements
-
-```json
-{
-  "period": "last_7_days",
-  "comparison": [
-    {
-      "business_id": "uuid",
-      "business_name": "Boulangerie Centre-Ville",
-      "metrics": {
-        "total_clients": 294,
-        "clients_served": 267,
-        "abandonment_rate": 9.2,
-        "average_wait_time": 8,
-        "peak_hours": ["08:00", "17:00"],
-        "sms_sent": 687
-      }
-    },
-    {
-      "business_id": "uuid",
-      "business_name": "Boulangerie Quartier Gare",
-      "metrics": {
-        "total_clients": 186,
-        "clients_served": 172,
-        "abandonment_rate": 7.5,
-        "average_wait_time": 12,
-        "peak_hours": ["07:30", "18:30"],
-        "sms_sent": 445
-      }
-    }
-  ],
-  "consolidated": {
-    "total_clients": 480,
-    "total_served": 439,
-    "overall_abandonment_rate": 8.5,
-    "total_sms_sent": 1132,
-    "best_performer": "Boulangerie Quartier Gare",
-    "improvement_suggestions": [
-      "Réduire le temps d'attente à Centre-Ville aux heures de pointe",
-      "Optimiser la gestion de file le matin"
-    ]
-  }
-}
-```
-
-## Monitoring et maintenance
-
-### Tâches cron recommandées
-
-```bash
-# Nettoyage quotidien des anciennes entrées (garde 90 jours)
-0 2 * * * psql -d waitify -c "SELECT cleanup_old_queue_entries(90);"
-
-# Rafraîchissement de la vue matérialisée (toutes les 5 minutes)
-*/5 * * * * psql -d waitify -c "SELECT refresh_businesses_stats();"
-
-# Génération des analytics quotidiennes (chaque matin à 1h)
-0 1 * * * psql -d waitify -c "CALL generate_daily_analytics();"
-
-# Backup automatique (chaque jour à 3h)
-0 3 * * * pg_dump waitify | gzip > /backups/waitify_$(date +%Y%m%d).sql.gz
-```
-
-### Monitoring des performances
-
-```sql
--- Requête pour identifier les tables les plus sollicitées
-SELECT
-    schemaname,
-    tablename,
-    n_tup_ins + n_tup_upd + n_tup_del as total_operations,
-    n_tup_ins as inserts,
-    n_tup_upd as updates,
-    n_tup_del as deletes
-FROM pg_stat_user_tables
-ORDER BY total_operations DESC;
-
--- Monitoring des index inutilisés
-SELECT
-    schemaname,
-    tablename,
-    indexname,
-    idx_scan
-FROM pg_stat_user_indexes
-WHERE idx_scan = 0
-ORDER BY schemaname, tablename;
 ```

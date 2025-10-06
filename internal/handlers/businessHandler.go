@@ -29,7 +29,7 @@ func GetBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Récupération dans la base de données
 	err := database.DB.QueryRow(`
-		SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, created_at, updated_at
+		SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, is_queue_active, is_queue_paused, created_at, updated_at
 		FROM businesses WHERE id = $1
 `, IDParam).Scan(
 		&business.ID,
@@ -41,6 +41,8 @@ func GetBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		&business.City,
 		&business.ZipCode,
 		&business.Country,
+		&business.IsQueueActive,
+		&business.IsQueuePaused,
 		&business.CreatedAt,
 		&business.UpdatedAt,
 	)

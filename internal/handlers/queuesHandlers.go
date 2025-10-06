@@ -15,17 +15,13 @@ func ActivateQueueHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, `Mauvaise requête HTTP (mauvaise méthode).`, http.StatusMethodNotAllowed)
 	}
 
-	var statusRequest models.BusinessQueueStatusRequest
-	/*
-	   if err := json.NewDecoder(r.Body).Decode(&statusRequest); err != nil {
-	   		log.Println(`Mauvais corps de requête : `, err)
-	   		http.Error(w, `Corps de la requête invalide.`, http.StatusBadRequest)
-	   		return
-	   	}
-	*/
+	var statusRequest *models.BusinessQueueStatusRequest
 
-	statusRequest.IsQueueActive = true
-	statusRequest.IsQueuePaused = false
+	if err := json.NewDecoder(r.Body).Decode(&statusRequest); err != nil {
+		log.Println(`Mauvais corps de requête : `, err)
+		http.Error(w, `Corps de la requête invalide.`, http.StatusBadRequest)
+		return
+	}
 
 	// Récupérer l'ID de l'entreprise depuis l'URL
 	IDParam := r.PathValue("id")
@@ -46,13 +42,13 @@ func ActivateQueueHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Query base de données
-	updt, err := database.DB.Exec(`UPDATE businesses SET is_queue_active=$2, is_queue_paused=$3 WHERE id=$1 RETURNING *;`, IDParam, statusRequest.IsQueueActive, statusRequest.IsQueuePaused)
+	updt, err := database.DB.Exec(`UPDATE businesses SET is_queue_active=$2 WHERE id=$1 RETURNING *;`, IDParam, &statusRequest.IsQueueActive)
 	if err != nil {
 		http.Error(w, "Erreur lors de la modification de l'entreprise : "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	log.Println(`Informations récupérées : `, statusRequest.IsQueueActive, statusRequest.IsQueuePaused)
+	log.Println(`Informations récupérées : `, *statusRequest.IsQueueActive)
 
 	rowsAffected, err := updt.RowsAffected()
 	if err != nil {
@@ -62,6 +58,6 @@ func ActivateQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 	response := []string{"File d'attente ouverte !"}
 
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(response)
 }

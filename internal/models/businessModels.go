@@ -91,6 +91,20 @@ func (business *Business) ValidateBusinessType() error {
 }
 
 // Format du numéro de téléphone
+func ValidatePhoneNumber2(phoneNumber string) error {
+	if len(phoneNumber) < 10 || len(phoneNumber) > 13 {
+		return errors.New("[businessModels.go -> ValidatePhoneNumber()] -> Le numéro de téléphone contient trop ou pas assez de caractères.")
+	}
+
+	re := regexp.MustCompile(`^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
+	if !re.MatchString(phoneNumber) {
+		log.Println("[businessModels.go] -> Phone number is not valid:", phoneNumber)
+		return errors.New("[businessModels.go -> ValidatePhoneNumber()] -> Le numéro de téléphone n'est pas au format valide.")
+	}
+	return nil
+}
+
+// Format du numéro de téléphone
 func (business *Business) ValidatePhoneNumber() error {
 	if len(business.PhoneNumber) < 10 || len(business.PhoneNumber) > 13 {
 		return errors.New("[businessModels.go -> ValidatePhoneNumber()] -> Le numéro de téléphone contient trop ou pas assez de caractères.")

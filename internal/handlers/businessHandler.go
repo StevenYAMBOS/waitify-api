@@ -32,7 +32,7 @@ func GetBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Récupération dans la base de données
 	err := database.DB.QueryRow(`
-		SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, is_queue_active, is_queue_paused, created_at, updated_at
+		SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token, is_queue_active, is_queue_paused, created_at, updated_at
 		FROM businesses WHERE id = $1
 `, IDParam).Scan(
 		&business.ID,
@@ -44,6 +44,7 @@ func GetBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		&business.City,
 		&business.ZipCode,
 		&business.Country,
+		&business.QRCodeToken,
 		&business.IsQueueActive,
 		&business.IsQueuePaused,
 		&business.CreatedAt,
@@ -79,7 +80,7 @@ func GetBusinessesHandler(w http.ResponseWriter, r *http.Request) {
 	IDParam := r.PathValue("id")
 
 	// Récupération dans la base de données
-	rows, err := database.DB.Query("SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, created_at, updated_at FROM businesses WHERE UserId=$1", IDParam)
+	rows, err := database.DB.Query("SELECT id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at FROM businesses WHERE UserId=$1", IDParam)
 	if err != nil {
 		log.Println(`Erreur lors de la récupération des entreprises de l'utilisateur : `, err)
 		http.Error(w, `Erreur lors de la récupération des entreprises de l'utilisateur : `+err.Error(), http.StatusBadRequest)
@@ -99,6 +100,7 @@ func GetBusinessesHandler(w http.ResponseWriter, r *http.Request) {
 			&business.City,
 			&business.ZipCode,
 			&business.Country,
+			&business.QRCodeToken,
 			&business.CreatedAt,
 			&business.UpdatedAt,
 		); err != nil {
@@ -116,6 +118,104 @@ func GetBusinessesHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(businesses)
 }
 
+// Créer une entreprise
+func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, `Mauvaise requête HTTP (mauvaise méthode).`, http.StatusBadRequest)
+	}
+
+	err := r.ParseMultipartForm(32 << 10) // 32 MB
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	size := r.FormValue("size")
+	content := r.FormValue("content")
+	var codeData []byte
+
+	name := r.FormValue("name")
+	UserID := r.FormValue("UserID")
+	businessType := r.FormValue("business_type")
+	phoneNumber := r.FormValue("phone_number")
+	address := r.FormValue("address")
+	city := r.FormValue("city")
+	zipCode := r.FormValue("zip_code")
+	country := r.FormValue("country")
+	createdAt := r.FormValue("created_at")
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if content == "" {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(
+			"Impossible de déterminer le contenu souhaité du code QR.",
+		)
+		return
+	}
+
+	qrCodeSize, err := strconv.Atoi(size)
+	if err != nil || size == "" {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode("Impossible de déterminer la taille souhaitée du code QR.")
+		return
+	}
+
+	qrCode := utils.QRCode{Content: content, Size: qrCodeSize}
+	codeData, err = qrCode.Generate()
+	if err != nil {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(
+			fmt.Sprintf("Impossible de générer le code QR. %v", err),
+		)
+		return
+	}
+
+	/* 	// Validation nom de l'entreprise
+	   	if name == "" {
+	   		http.Error(w, `Le nom de l'entreprise doit avoir au moins 1 caractère.`, http.StatusBadRequest)
+	   		return
+	   	}
+
+	   	if err := models.ValidatePhoneNumber2(phoneNumber); err != nil {
+	   		log.Println("Erreur format numéro de téléphone : ", err)
+	   		http.Error(w, `Erreur format de l'email.`, http.StatusBadRequest)
+	   		return
+	   	}
+	*/
+	// Vérifier si l'utilisateur existe
+	var exists bool
+	err = database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)",
+		UserID).Scan(&exists)
+	if err != nil {
+		http.Error(w, `Erreur vérification si l'utilisateur existe : `+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if !exists {
+		log.Println("L'utilisateur n'existe pas : ", err)
+		http.Error(w, `ERREUR. L'utilisateur n'existe pas ! `+err.Error(), http.StatusConflict)
+		return
+	}
+
+	// Insertion dans la base de données
+	err = database.DB.QueryRow(
+		"INSERT INTO businesses (id, UserId, name, business_type, phone_number, address, city, zip_code, qr_code_token, country, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at",
+		uuid.New().String(), UserID, name, businessType, phoneNumber, address, city, zipCode, country, uuid.New().String(), time.Now(), time.Now(),
+	).Scan(&UserID, &name, &businessType, &phoneNumber, &address, &city, &zipCode, &country, &createdAt)
+
+	if err != nil {
+		http.Error(w, "Erreur lors de la création de l'entreprise : "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	response := []any{"L'entreprise a été créée avec succès."}
+
+	w.WriteHeader(http.StatusCreated)
+	w.Header().Set("Content-Type", "image/png")
+	w.Write(codeData)
+	json.NewEncoder(w).Encode(response)
+}
+
+/*
 // Créer une entreprise
 func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
@@ -201,6 +301,7 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
+*/
 
 // Mettre à jour l'entreprise
 func UpdateBusinessHandler(w http.ResponseWriter, r *http.Request) {

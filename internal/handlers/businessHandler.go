@@ -377,7 +377,10 @@ func DeleteBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-// Générer un QR Code
+/*
+Générer un QR Code
+"content" = côté Front on récupère le lien de l'app (exemple : https://waitify.fr/q/) + le token du QR code (table `businesses` colonne `qr_code_token`). Donc le paramètre `content` = https://waitify.fr/q/{qr_code_token}.
+*/
 func GenerateQRCodeHandler(w http.ResponseWriter, r *http.Request) {
 	r.ParseMultipartForm(10 << 20)
 	var size, content string = r.FormValue("size"), r.FormValue("content")

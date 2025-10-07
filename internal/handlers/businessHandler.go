@@ -2,12 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/StevenYAMBOS/waitify-api/internal/database"
 	"github.com/StevenYAMBOS/waitify-api/internal/models"
+	"github.com/StevenYAMBOS/waitify-api/internal/utils"
 	"github.com/google/uuid"
 )
 
@@ -372,4 +375,42 @@ func DeleteBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(response)
+}
+
+// Générer un QR Code
+func GenerateQRCodeHandler(w http.ResponseWriter, r *http.Request) {
+	r.ParseMultipartForm(10 << 20)
+	var size, content string = r.FormValue("size"), r.FormValue("content")
+	var codeData []byte
+
+	w.Header().Set("Content-Type", "application/json")
+
+	if content == "" {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(
+			"Impossible de déterminer le contenu souhaité du code QR.",
+		)
+		return
+	}
+
+	qrCodeSize, err := strconv.Atoi(size)
+	if err != nil || size == "" {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode("Impossible de déterminer la taille souhaitée du code QR.")
+		return
+	}
+
+	qrCode := utils.QRCode{Content: content, Size: qrCodeSize}
+	codeData, err = qrCode.Generate()
+	if err != nil {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(
+			fmt.Sprintf("Impossible de générer le code QR. %v", err),
+		)
+		return
+	}
+
+	log.Println("INFORMATIONS QR CODE : ", qrCode)
+	w.Header().Set("Content-Type", "image/png")
+	w.Write(codeData)
 }

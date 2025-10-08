@@ -129,19 +129,18 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 
-	size := r.FormValue("size")
-	content := r.FormValue("content")
+	var size, content string = r.FormValue("size"), r.FormValue("content")
 	var codeData []byte
 
 	name := r.FormValue("name")
-	UserID := r.FormValue("UserID")
+	UserID := r.FormValue("UserId")
 	businessType := r.FormValue("business_type")
 	phoneNumber := r.FormValue("phone_number")
 	address := r.FormValue("address")
 	city := r.FormValue("city")
 	zipCode := r.FormValue("zip_code")
 	country := r.FormValue("country")
-	createdAt := r.FormValue("created_at")
+	// createdAt := r.FormValue("created_at")
 
 	w.Header().Set("Content-Type", "application/json")
 
@@ -182,6 +181,7 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	   		return
 	   	}
 	*/
+
 	// Vérifier si l'utilisateur existe
 	var exists bool
 	err = database.DB.QueryRow("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)",
@@ -196,19 +196,33 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Insertion dans la base de données
-	err = database.DB.QueryRow(
-		"INSERT INTO businesses (id, UserId, name, business_type, phone_number, address, city, zip_code, qr_code_token, country, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at",
-		uuid.New().String(), UserID, name, businessType, phoneNumber, address, city, zipCode, country, uuid.New().String(), time.Now(), time.Now(),
-	).Scan(&UserID, &name, &businessType, &phoneNumber, &address, &city, &zipCode, &country, &createdAt)
-
+	_, err = database.DB.Exec("INSERT INTO businesses (id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", uuid.New().String(), UserID, name, businessType, phoneNumber, address, city, zipCode, country, uuid.New().String(), time.Now(), time.Now())
 	if err != nil {
 		http.Error(w, "Erreur lors de la création de l'entreprise : "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	response := []any{"L'entreprise a été créée avec succès."}
+	/*
+		// Insertion dans la base de données
+		err = database.DB.QueryRow(
+			"INSERT INTO businesses (id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at",
+			uuid.New().String(), UserID, name, businessType, phoneNumber, address, city, zipCode, country, uuid.New().String(), time.Now(), time.Now(),
+		).Scan(&UserID, &name, &businessType, &phoneNumber, &address, &city, &zipCode, &country)
 
+		if err != nil {
+			http.Error(w, "Erreur lors de la création de l'entreprise : "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+	*/
+
+	response := models.AddBusinessResponse2{
+		Response: "Entreprise créé avec succès !",
+		QRCode:   codeData,
+	}
+	// response := []any{"L'entreprise a été créée avec succès."}
+
+	log.Println("INFORMATIONS QR CODE : ", qrCode)
+	log.Println("INFORMATIONS ENTREPRISE : ", response)
 	w.WriteHeader(http.StatusCreated)
 	w.Header().Set("Content-Type", "image/png")
 	w.Write(codeData)

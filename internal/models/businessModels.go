@@ -118,10 +118,16 @@ func (business *Business) ValidatePhoneNumber() error {
 	return nil
 }
 
-// Format réponse auhtentification
 type AddBusinessResponse struct {
 	Response string   `json:"Response"`
 	Business Business `json:"Business"`
+}
+
+// Format réponse auhtentification
+type AddBusinessResponse2 struct {
+	Response string `json:"Response"`
+	QRCode   []byte `json:"QRCode"`
+	// Business Business `json:"Business"`
 }
 
 // Format réponse auhtentification

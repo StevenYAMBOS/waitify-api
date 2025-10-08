@@ -118,7 +118,7 @@ func GetBusinessesHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(businesses)
 }
 
-// Créer une entreprise
+// Créer une entreprise + QR Code
 func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, `Mauvaise requête HTTP (mauvaise méthode).`, http.StatusBadRequest)
@@ -140,22 +140,45 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	city := r.FormValue("city")
 	zipCode := r.FormValue("zip_code")
 	country := r.FormValue("country")
-	// createdAt := r.FormValue("created_at")
 
-	w.Header().Set("Content-Type", "application/json")
+	/* -------------- Vérifications -------------- */
 
-	/* 	// Validation nom de l'entreprise
-	   	if name == "" {
-	   		http.Error(w, `Le nom de l'entreprise doit avoir au moins 1 caractère.`, http.StatusBadRequest)
-	   		return
-	   	}
+	// Nom de l'entreprise
+	if name == "" {
+		http.Error(w, `Le nom de l'entreprise doit avoir au moins 1 caractère.`, http.StatusBadRequest)
+		return
+	}
 
-	   	if err := models.ValidatePhoneNumber2(phoneNumber); err != nil {
-	   		log.Println("Erreur format numéro de téléphone : ", err)
-	   		http.Error(w, `Erreur format de l'email.`, http.StatusBadRequest)
-	   		return
-	   	}
-	*/
+	// Numéro de téléphone
+	if err := models.ValidateBusinessPhoneNumber(phoneNumber); err != nil {
+		log.Println("Erreur format numéro de téléphone : ", err)
+		http.Error(w, `Erreur format numéro de téléphone.`, http.StatusBadRequest)
+		return
+	}
+
+	// Validation du type
+	if err := models.ValidateBusinessType(businessType); err != nil {
+		http.Error(w, `Erreur format du type de commerce : `+err.Error()+"Requête reçue: "+businessType, http.StatusBadRequest)
+		return
+	}
+
+	// Validation de l'adresse
+	if address == "" || len(address) >= 100 {
+		http.Error(w, `L'adresse de l'entreprise doit être comprise 1 et 100 caractères.`, http.StatusBadRequest)
+		return
+	}
+
+	// Validation de la ville
+	if city == "" || len(city) >= 100 {
+		http.Error(w, `La ville de l'entreprise doit être comprise 1 et 100 caractères.`, http.StatusBadRequest)
+		return
+	}
+
+	// Validation nom de l'entreprise
+	if zipCode == "" || len(zipCode) >= 100 {
+		http.Error(w, `Le code postal de l'entreprise doit être comprise 1 et 100 caractères.`, http.StatusBadRequest)
+		return
+	}
 
 	// Vérifier si l'utilisateur existe
 	var exists bool
@@ -171,6 +194,7 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Insertion en base de données
 	rows, err := database.DB.Query("INSERT INTO businesses (id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", uuid.New().String(), UserID, name, businessType, phoneNumber, address, city, zipCode, country, uuid.New().String(), time.Now(), time.Now())
 	if err != nil {
 		http.Error(w, "Erreur lors de la création de l'entreprise : "+err.Error(), http.StatusInternalServerError)
@@ -178,18 +202,7 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	/*
-		// Insertion dans la base de données
-		err = database.DB.QueryRow(
-			"INSERT INTO businesses (id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at",
-			uuid.New().String(), UserID, name, businessType, phoneNumber, address, city, zipCode, country, uuid.New().String(), time.Now(), time.Now(),
-		).Scan(&UserID, &name, &businessType, &phoneNumber, &address, &city, &zipCode, &country)
-
-		if err != nil {
-			http.Error(w, "Erreur lors de la création de l'entreprise : "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-	*/
+	/* -------------- Génération du QR Code -------------- */
 
 	if content == "" {
 		w.WriteHeader(400)
@@ -216,17 +229,9 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// response := models.AddBusinessResponse2{
-	// 	Response: "Entreprise créé avec succès !",
-	// 	QRCode:   codeData,
-	// }
-
-	log.Println("INFORMATIONS QR CODE : ", qrCode)
-	// log.Println("INFORMATIONS ENTREPRISE : ", response)
 	w.Header().Set("Content-Type", "image/png")
 	w.Write(codeData)
 	w.WriteHeader(http.StatusCreated)
-	// json.NewEncoder(w).Encode(response)
 }
 
 /*

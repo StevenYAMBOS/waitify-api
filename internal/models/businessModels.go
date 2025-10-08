@@ -67,7 +67,31 @@ type BusinessQueueStatusRequest struct {
 /* ********************* Vérifications ********************* */
 
 // Vérifier le type de commerce
-func (business *Business) ValidateBusinessType() error {
+func ValidateBusinessType(businessType string) error {
+	var types [35]string = [35]string{"bakery", "hairdresser", "pharmacy", "garage", "restaurant",
+		"medical_office", "dentist", "veterinary", "optician", "bank",
+		"insurance", "notary", "lawyer", "accountant", "real_estate",
+		"prefecture", "city_hall", "family_allowance", "employment_agency", "public_service",
+		"post_office", "dry_cleaning", "cobbler", "watchmaker", "phone_repair",
+		"beauty_salon", "massage", "tattoo", "nail_salon", "barber",
+		"vehicle_inspection", "gas_station", "auto_body", "tire_service",
+		"other"}
+
+	for _, value := range types {
+		if businessType != value {
+			log.Println("Le type de commerce n'existe pas.")
+			continue
+			// return errors.New("Le type de commerce n'existe pas.")
+		} else {
+			log.Println("Le type de commerce EST BON.")
+			break
+		}
+	}
+	return nil
+}
+
+// Vérifier le type de commerce
+func (business *Business) ValidateType() error {
 	var types [35]string = [35]string{"bakery", "hairdresser", "pharmacy", "garage", "restaurant",
 		"medical_office", "dentist", "veterinary", "optician", "bank",
 		"insurance", "notary", "lawyer", "accountant", "real_estate",
@@ -91,15 +115,15 @@ func (business *Business) ValidateBusinessType() error {
 }
 
 // Format du numéro de téléphone
-func ValidatePhoneNumber2(phoneNumber string) error {
+func ValidateBusinessPhoneNumber(phoneNumber string) error {
 	if len(phoneNumber) < 10 || len(phoneNumber) > 13 {
-		return errors.New("[businessModels.go -> ValidatePhoneNumber()] -> Le numéro de téléphone contient trop ou pas assez de caractères.")
+		return errors.New("Le numéro de téléphone contient trop ou pas assez de caractères.")
 	}
 
 	re := regexp.MustCompile(`^(?:(?:\(?(?:00|\+)([1-4]\d\d|[1-9]\d?)\)?)?[\-\.\ \\\/]?)?((?:\(?\d{1,}\)?[\-\.\ \\\/]?){0,})(?:[\-\.\ \\\/]?(?:#|ext\.?|extension|x)[\-\.\ \\\/]?(\d+))?$`)
 	if !re.MatchString(phoneNumber) {
-		log.Println("[businessModels.go] -> Phone number is not valid:", phoneNumber)
-		return errors.New("[businessModels.go -> ValidatePhoneNumber()] -> Le numéro de téléphone n'est pas au format valide.")
+		log.Println("Le numéro de téléphone n'est pas au format valide : ", phoneNumber)
+		return errors.New("Le numéro de téléphone n'est pas au format valide.")
 	}
 	return nil
 }
@@ -123,14 +147,12 @@ type AddBusinessResponse struct {
 	Business Business `json:"Business"`
 }
 
-// Format réponse auhtentification
-type AddBusinessResponse2 struct {
-	Response string `json:"Response"`
-	QRCode   []byte `json:"QRCode"`
-	// Business Business `json:"Business"`
+type AddBusinessQRCodeResponse struct {
+	Response string   `json:"Response"`
+	QRCode   []byte   `json:"QRCode"`
+	Business Business `json:"Business"`
 }
 
-// Format réponse auhtentification
 type UpdateBusinessResponse struct {
 	Response string           `json:"Response"`
 	Business *UpdatedBusiness `json:"Business"`

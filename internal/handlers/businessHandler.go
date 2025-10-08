@@ -144,31 +144,6 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	if content == "" {
-		w.WriteHeader(400)
-		json.NewEncoder(w).Encode(
-			"Impossible de déterminer le contenu souhaité du code QR.",
-		)
-		return
-	}
-
-	qrCodeSize, err := strconv.Atoi(size)
-	if err != nil || size == "" {
-		w.WriteHeader(400)
-		json.NewEncoder(w).Encode("Impossible de déterminer la taille souhaitée du code QR.")
-		return
-	}
-
-	qrCode := utils.QRCode{Content: content, Size: qrCodeSize}
-	codeData, err = qrCode.Generate()
-	if err != nil {
-		w.WriteHeader(400)
-		json.NewEncoder(w).Encode(
-			fmt.Sprintf("Impossible de générer le code QR. %v", err),
-		)
-		return
-	}
-
 	/* 	// Validation nom de l'entreprise
 	   	if name == "" {
 	   		http.Error(w, `Le nom de l'entreprise doit avoir au moins 1 caractère.`, http.StatusBadRequest)
@@ -196,11 +171,12 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = database.DB.Exec("INSERT INTO businesses (id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", uuid.New().String(), UserID, name, businessType, phoneNumber, address, city, zipCode, country, uuid.New().String(), time.Now(), time.Now())
+	rows, err := database.DB.Query("INSERT INTO businesses (id, UserId, name, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)", uuid.New().String(), UserID, name, businessType, phoneNumber, address, city, zipCode, country, uuid.New().String(), time.Now(), time.Now())
 	if err != nil {
 		http.Error(w, "Erreur lors de la création de l'entreprise : "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+	defer rows.Close()
 
 	/*
 		// Insertion dans la base de données
@@ -215,18 +191,42 @@ func AddBusinessHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	*/
 
-	response := models.AddBusinessResponse2{
-		Response: "Entreprise créé avec succès !",
-		QRCode:   codeData,
+	if content == "" {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(
+			"Impossible de déterminer le contenu souhaité du code QR.",
+		)
+		return
 	}
-	// response := []any{"L'entreprise a été créée avec succès."}
+
+	qrCodeSize, err := strconv.Atoi(size)
+	if err != nil || size == "" {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode("Impossible de déterminer la taille souhaitée du code QR.")
+		return
+	}
+
+	qrCode := utils.QRCode{Content: content, Size: qrCodeSize}
+	codeData, err = qrCode.Generate()
+	if err != nil {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(
+			fmt.Sprintf("Impossible de générer le code QR. %v", err),
+		)
+		return
+	}
+
+	// response := models.AddBusinessResponse2{
+	// 	Response: "Entreprise créé avec succès !",
+	// 	QRCode:   codeData,
+	// }
 
 	log.Println("INFORMATIONS QR CODE : ", qrCode)
-	log.Println("INFORMATIONS ENTREPRISE : ", response)
-	w.WriteHeader(http.StatusCreated)
+	// log.Println("INFORMATIONS ENTREPRISE : ", response)
 	w.Header().Set("Content-Type", "image/png")
 	w.Write(codeData)
-	json.NewEncoder(w).Encode(response)
+	w.WriteHeader(http.StatusCreated)
+	// json.NewEncoder(w).Encode(response)
 }
 
 /*

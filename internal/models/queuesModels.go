@@ -22,3 +22,25 @@ type Queue struct {
 	CreatedAt         time.Time `json:"created_at" db:"created_at"`
 	UpdatedAt         time.Time `json:"updated_at" db:"updated_at"`
 }
+
+type JoinQueueRequest struct {
+	BusinessID uuid.UUID `json:"business_id"`
+	Phone      string    `json:"phone"`
+	ClientName string    `json:"client_name"`
+}
+
+type JoinQueueResponse struct {
+	Message string     `json:"message"`
+	Entry   QueueEntry `json:"entry"`
+}
+
+type QueueEntry struct {
+	ID                uuid.UUID `json:"id"`
+	BusinessID        uuid.UUID `json:"business_id"`
+	Phone             string    `json:"phone"`
+	ClientName        string    `json:"client_name"`
+	Position          int       `json:"position"`
+	EstimatedWaitTime int       `json:"estimated_wait_time"` // en minutes
+	Status            string    `json:"status"`
+	CreatedAt         time.Time `json:"created_at"`
+}

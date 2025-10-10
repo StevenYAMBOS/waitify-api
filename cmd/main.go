@@ -58,6 +58,9 @@ func main() {
 	r.HandleFunc("PUT /businesses/{id}/queue/status", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.ActivateQueueHandler)))
 	r.HandleFunc("DELETE /business/{id}", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.DeleteBusinessHandler)))
 
+	// Routes files d'attentes
+	r.HandleFunc("POST /queue/join", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.JoinQueueHandler)))
+
 	fmt.Print("[main.go] -> Serveur lançé : http://localhost", port)
 	http.ListenAndServe(port, r)
 }

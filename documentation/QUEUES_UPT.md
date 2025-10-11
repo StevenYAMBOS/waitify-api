@@ -16,7 +16,7 @@
 
 ## Vue d'ensemble
 
-Le système de file d'attente virtuelle de Waitify repose sur une **architecture hybride PostgreSQL + Golang** pour garantir l'intégrité des données et la performance des opérations en temps réel.
+Le système de file d'attente virtuelle est un mixte avec une **architecture PostgreSQL** + **Golang** pour "garantir l'intégrité des données et la performance des opérations en temps réel". L'idée c'est d'automatisé certaines tâches en base de données (exemple le recalcule des positions des clients).
 
 ### Principe de fonctionnement
 
@@ -85,9 +85,9 @@ queue_entries
 
 Les positions sont **entièrement automatisées** via des triggers PostgreSQL. Cela garantit que :
 
-- ✅ Les positions sont **toujours cohérentes**
-- ✅ Aucune race condition possible (concurrence)
-- ✅ Pas besoin de logique manuelle dans le code applicatif
+- Les positions sont **toujours cohérentes**
+- Aucune race condition possible (concurrence)
+- Pas besoin de logique manuelle dans le code
 
 #### Règles de calcul
 
@@ -196,7 +196,7 @@ CREATE TRIGGER recalculate_positions_on_delete
     EXECUTE FUNCTION recalculate_queue_positions();
 ```
 
-### Index recommandés
+### Index
 
 ```sql
 -- Performances pour les requêtes fréquentes
@@ -214,7 +214,9 @@ CREATE INDEX idx_queue_entries_waiting_by_business
 
 ---
 
-## Implémentation Golang
+## Code Go
+
+⚠️ Le code actuel a peut-être changé entre temps (je ferai en sorte de le mettre à jour si j'y pense lol).
 
 ### Handler : Rejoindre la file
 
@@ -363,28 +365,24 @@ T=10:00:00
 ├─ POST /queue/join { phone: "+33612345678", name: "Alice" }
 ├─ Golang calcule : position = 1, temps = 0 min
 ├─ INSERT queue_entries
-└─ Trigger recalcule : Alice position = 1 ✅
-
+└─ Trigger recalcule : Alice position = 1 
 T=10:01:30
 ├─ Bob scanne QR Code
 ├─ POST /queue/join { phone: "+33698765432", name: "Bob" }
 ├─ Golang calcule : position = 2, temps = 2 min
 ├─ INSERT queue_entries
-└─ Trigger recalcule : Alice=1, Bob=2 ✅
-
+└─ Trigger recalcule : Alice=1, Bob=2 
 T=10:02:15
 ├─ Charlie scanne QR Code
 ├─ POST /queue/join { phone: "+33687654321", name: "Charlie" }
 ├─ Golang calcule : position = 3, temps = 4 min
 ├─ INSERT queue_entries
-└─ Trigger recalcule : Alice=1, Bob=2, Charlie=3 ✅
-
+└─ Trigger recalcule : Alice=1, Bob=2, Charlie=3 
 T=10:05:00
 ├─ Commerçant appelle Alice
 ├─ PUT /queue/{alice_id}/status { status: "called" }
 ├─ SMS envoyé à Alice : "C'est votre tour !"
-└─ Trigger recalcule : Bob=1, Charlie=2 ✅
-
+└─ Trigger recalcule : Bob=1, Charlie=2 
 T=10:07:00
 ├─ Commerçant confirme service Alice
 ├─ PUT /queue/{alice_id}/status { status: "served" }
@@ -420,10 +418,10 @@ T=10:07:00
 
 | De | Vers | Action | Trigger recalcul |
 |----|------|--------|------------------|
-| waiting | called | Commerçant appelle | ✅ Oui |
-| called | served | Client servi | ✅ Oui |
-| called | missed | Timeout 5 min | ✅ Oui |
-| waiting | cancelled | Client annule | ✅ Oui |
+| waiting | called | Commerçant appelle | Oui |
+| called | served | Client servi | Oui |
+| called | missed | Timeout 5 min | Oui |
+| waiting | cancelled | Client annule | Oui |
 
 ### États finaux (ne recalculent plus)
 
@@ -523,11 +521,11 @@ func GetQueueStatusHandler(w http.ResponseWriter, r *http.Request) {
 
 **Validations Golang :**
 
-- ✅ Business existe et est actif
-- ✅ File d'attente ouverte (`is_queue_active = true`)
-- ✅ File non pleine (`COUNT(*) < max_queue_size`)
-- ✅ Client pas déjà inscrit (même phone + BusinessId + status='waiting')
-- ✅ Format téléphone valide
+- Business existe et est actif
+- File d'attente ouverte (`is_queue_active = true`)
+- File non pleine (`COUNT(*) < max_queue_size`)
+- Client pas déjà inscrit (même phone + BusinessId + status='waiting')
+- Format téléphone valide
 
 **Actions :**
 
@@ -796,5 +794,5 @@ WHERE id = 'business-id';
 ---
 
 **Auteur :** Steven YAMBOS  
-**Dernière mise à jour :** 10 octobre 2025  
+**Dernière mise à jour :** 11 octobre 2025  
 **Version :** 1.0.0

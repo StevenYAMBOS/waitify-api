@@ -77,7 +77,7 @@ func JoinQueueHandler(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 
-	// 1. Décoder la requête
+	// Décoder la requête
 	var req models.JoinQueueRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Println("Erreur parsing JSON:", err)
@@ -85,7 +85,7 @@ func JoinQueueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 2. Validation des champs obligatoires
+	// Validation des champs obligatoires
 	if req.BusinessID == uuid.Nil {
 		http.Error(w, `BusinessID requis`, http.StatusBadRequest)
 		return
@@ -103,7 +103,7 @@ func JoinQueueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 3. Vérifier que le business existe ET que la file est active
+	// Vérifier que le commerce existe ET que la file d'attente est active
 	var business struct {
 		IsQueueActive      bool
 		MaxQueueSize       int
@@ -121,7 +121,7 @@ func JoinQueueHandler(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err == sql.ErrNoRows {
-		http.Error(w, `Business introuvable ou inactif`, http.StatusNotFound)
+		http.Error(w, `Entreprise introuvable ou inactive`, http.StatusNotFound)
 		return
 	}
 	if err != nil {
@@ -130,13 +130,13 @@ func JoinQueueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 4. Vérifier que la file est active
+	// Vérifier que la file d'attente de l'entreprise est active
 	if !business.IsQueueActive {
 		http.Error(w, `La file d'attente est fermée`, http.StatusForbidden)
 		return
 	}
 
-	// 5. Vérifier que le client n'est pas déjà dans la file
+	// Vérifier que le client n'est pas déjà dans la file
 	var alreadyInQueue bool
 	err = database.DB.QueryRow(`
 		SELECT EXISTS(
@@ -155,7 +155,7 @@ func JoinQueueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 6. Vérifier que la file n'est pas pleine
+	// Vérifier que la file n'est pas pleine
 	var currentQueueSize int
 	err = database.DB.QueryRow(`
 		SELECT COUNT(*) FROM queue_entries
@@ -172,43 +172,41 @@ func JoinQueueHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 7. Calculer la position (sera recalculée par le trigger, mais on l'initialise)
+	// Calculer la position (sera recalculée par le trigger SQL, mais on l'initialise)
 	nextPosition := currentQueueSize + 1
 
-	// 8. Calculer le temps d'attente estimé
+	// Calculer le temps d'attente estimé
 	estimatedWaitMinutes := (currentQueueSize * business.AverageServiceTime) / 60
 
-	// 9. Insérer dans la base (le trigger recalculera automatiquement les positions)
+	// Insérer dans la base (le trigger SQL recalculera automatiquement les positions)
+	query := `INSERT INTO queue_entries (id, BusinessId, phone, client_name, position, estimated_wait_time, status, created_at, updated_at) ($1, $2,$3, $4, $5, $6, $7, $8, $9)`
 	entryID := uuid.New()
 	now := time.Now()
+	status := "waiting"
 
-	_, err = database.DB.Exec(`
-		INSERT INTO queue_entries (
-			id, BusinessId, phone, client_name, position, 
-			estimated_wait_time, status, created_at, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-	`,
+	_, err = database.DB.Exec(
+		query,
 		entryID,
 		req.BusinessID,
 		req.Phone,
 		req.ClientName,
 		nextPosition,
 		estimatedWaitMinutes,
-		"waiting",
+		status,
 		now,
 		now,
 	)
 
 	if err != nil {
 		log.Println("Erreur insertion queue_entries:", err)
-		http.Error(w, `Impossible de rejoindre la file`, http.StatusInternalServerError)
+		http.Error(w, `Impossible de rejoindre la file : `+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	// 10. TODO : Envoyer SMS de confirmation (à implémenter plus tard)
+	// TODO : Envoyer SMS de confirmation (à implémenter plus tard)
 	// sendSMS(req.Phone, fmt.Sprintf("Vous êtes en position %d. Temps d'attente: ~%d min", nextPosition, estimatedWaitMinutes))
 
-	// 11. Réponse succès
+	// Réponse succès
 	response := models.JoinQueueResponse{
 		Message: "Vous avez été ajouté à la file d'attente",
 		Entry: models.QueueEntry{
@@ -218,7 +216,7 @@ func JoinQueueHandler(w http.ResponseWriter, r *http.Request) {
 			ClientName:        req.ClientName,
 			Position:          nextPosition,
 			EstimatedWaitTime: estimatedWaitMinutes,
-			Status:            "waiting",
+			Status:            status,
 			CreatedAt:         now,
 		},
 	}

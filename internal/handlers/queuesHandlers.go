@@ -224,3 +224,84 @@ func JoinQueueHandler(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(response)
 }
+
+// Récupérer les informations d'une file d'attente
+func GetQueueHandler(w http.ResponseWriter, r *http.Request) {
+	// Réponse JSON
+	w.Header().Set("Content-Type", "application/json")
+
+	// Méthode HTTP
+	if r.Method != http.MethodGet {
+		http.Error(w, `Mauvaise requête HTTP.`, http.StatusBadRequest)
+	}
+
+	// Récupérer l'ID de l'entreprise depuis l'URL
+	IDParam := r.PathValue("id")
+
+	query := `SELECT id, BusinessId, phone, client_name, position, estimated_wait_time, status, called_at, served_at, actual_service_time, sms_sent_count, last_sms_sent_at, created_at, updated_at FROM queue_entries WHERE BusinessId = $1 AND status = 'waiting' ORDER BY position ASC`
+
+	// Récupération dans la base de données
+	rows, err := database.DB.Query(query, IDParam)
+	if err != nil {
+		log.Println(`Erreur lors de la récupération de la file d'attente : `, err)
+		http.Error(w, "Erreur lors de la récupération de la file d'attente : "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var queueEntries []models.Queue
+	for rows.Next() {
+		var entry models.Queue
+		var calledAt, servedAt, lastSmsSentAt sql.NullTime
+
+		err := rows.Scan(
+			&entry.ID,
+			&entry.BusinessID,
+			&entry.Phone,
+			&entry.ClientName,
+			&entry.Position,
+			&entry.EstimatedWaitTime,
+			&entry.Status,
+			&calledAt,
+			&servedAt,
+			&entry.ActualServiceTime,
+			&entry.SmsSentCount,
+			&lastSmsSentAt,
+			&entry.CreatedAt,
+			&entry.UpdatedAt,
+		)
+		if err != nil {
+			log.Println(`Erreur lors du scan de l'entrée : `, err)
+			http.Error(w, "Erreur lors du traitement des données", http.StatusInternalServerError)
+			return
+		}
+
+		// Gérer les NULL timestamps
+		if calledAt.Valid {
+			entry.CalledAt = calledAt.Time
+		}
+		if servedAt.Valid {
+			entry.ServedAt = servedAt.Time
+		}
+		if lastSmsSentAt.Valid {
+			entry.LastSmsSentAt = lastSmsSentAt.Time
+		}
+
+		queueEntries = append(queueEntries, entry)
+	}
+
+	if err = rows.Err(); err != nil {
+		log.Println(`Erreur lors de l'itération des résultats : `, err)
+		http.Error(w, "Erreur lors du traitement des données", http.StatusInternalServerError)
+		return
+	}
+
+	response := models.GetQueueResponse{
+		Message:     "File d'attente récupérée avec succès.",
+		QueueLength: len(queueEntries),
+		Queue:       queueEntries,
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(response)
+}

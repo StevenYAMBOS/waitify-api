@@ -34,6 +34,12 @@ type JoinQueueResponse struct {
 	Entry   QueueEntry `json:"entry"`
 }
 
+type GetQueueResponse struct {
+	Message     string  `json:"message"`
+	QueueLength int     `json:"queue_length"`
+	Queue       []Queue `json:"queue"`
+}
+
 type QueueEntry struct {
 	ID                uuid.UUID `json:"id"`
 	BusinessID        uuid.UUID `json:"business_id"`

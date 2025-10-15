@@ -52,6 +52,7 @@ func main() {
 	// Routes entreprises
 	r.HandleFunc("GET /business/{id}", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.GetBusinessHandler)))
 	r.HandleFunc("GET /businesses/user/{id}", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.GetBusinessesHandler)))
+	r.HandleFunc("GET /businesses/{id}/queue/infos", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.GetQueueHandler)))
 	r.HandleFunc("POST /business", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.AddBusinessHandler)))
 	r.HandleFunc("POST /business/{id}/qrcode/generate", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.GenerateQRCodeHandler)))
 	r.HandleFunc("PATCH /business/{id}", middlewares.CORSMiddleware(middlewares.AuthMiddleware(handlers.UpdateBusinessHandler)))

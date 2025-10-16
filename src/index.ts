@@ -1,17 +1,11 @@
-import express from "express";
 import dotenv from "dotenv";
+import express from "express";
 
 dotenv.config();
 
+const port = process.env.SERVER_PORT || 3000;
 const app = express();
-const port = process.env.SERVER_PORT;
-
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
 
 app.listen(port, () => {
-  return console.log(
-    `L'application est lançé à l'adresse : http://localhost:${port}`
-  );
+  console.log(`L'application est lançé à l'adresse : http://localhost:${port}`);
 });

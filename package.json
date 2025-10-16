@@ -5,15 +5,18 @@
   "main": "index.ts",
   "scripts": {
     "start": "tsc && node dist/index.js",
+    "dev": "tsc -w & nodemon -q dist/index.js",
     "lint": "eslint . --ext .ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Steven YAMBOS",
   "license": "ISC",
   "dependencies": {
+    "@supabase/supabase-js": "^2.75.0",
     "@types/express": "^5.0.3",
     "dotenv": "^17.2.3",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "nodemon": "^3.1.10"
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",

@@ -2,7 +2,8 @@
 
 <div align="center">
 
-[![Go](https://img.shields.io/badge/Go-%2300ADD8.svg?logo=go&logoColor=white)](#)
+[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff)](#)
+[![Node.js](https://img.shields.io/badge/Node.js-6DA55F?logo=node.js&logoColor=white)](#)
 [![Postgres](https://img.shields.io/badge/Postgres-%23316192.svg?logo=postgresql&logoColor=white)](#)
 [![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff)](#)
 [![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?logo=amazon-aws&logoColor=white)](#)
@@ -26,8 +27,9 @@ Waitify est un SaaS français de gestion de files d'attente virtuelles par QR co
 
 | Composant | Technologie | Version |
 |-----------|-------------|---------|
-| Runtime | Go | 1.24.3 |
-| Framework | Aucun | Aucune |
+| Runtime | Node.js | > 20.0 |
+| Langage | TypeScript | 5.x |
+| Framework | Express.js | 5.1.0 |
 | Base de données | PostgreSQL | 15+ |
 | Infrastructure | AWS | RDS/Lambda/ECS |
 | Paiements | Stripe | API v2023 |
@@ -38,7 +40,7 @@ Waitify est un SaaS français de gestion de files d'attente virtuelles par QR co
 
 ### Prérequis
 
-- Go 1.21 ou supérieur
+- Node 20.0 ou supérieur
 - PostgreSQL 15 ou supérieur
 - Compte AWS configuré
 - Clés API Stripe (test/prod)
@@ -47,19 +49,19 @@ Waitify est un SaaS français de gestion de files d'attente virtuelles par QR co
 
 ```bash
 # Installation des dépendances
-go mod download
+npm install
 
 # Développement
-go run cmd/main.go
+npm run dev
 
 # Build
-go build -o cmd/waitify-api
+npm run build
 
 # Production
-./waitify-api
+npm start
 ```
 
-L'API sera accessible sur `http://localhost:3000`
+L'API sera accessible sur `http://localhost:{port}`
 
 ## Modèles de données
 
@@ -96,7 +98,6 @@ Chaque utilisateur ne peut accéder qu'à ses propres données via les politique
 
 ### Validation des données
 
-- Validation struct avec tags Go
 - Nettoyage des numéros de téléphone
 - Rate limiting avec middleware
 - Protection CSRF et XSS

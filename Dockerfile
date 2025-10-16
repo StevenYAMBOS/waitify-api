@@ -21,3 +21,4 @@ EXPOSE 3000
 
 # Lancer l'application
 CMD ["/app/waitify_exec"]
+

@@ -27,8 +27,7 @@ go.work.sum
 # env file
 .env
 
-/aws
-
 # Editor/IDE
-# .idea/
-# .vscode/
+.idea/
+.vscode/
+.zed

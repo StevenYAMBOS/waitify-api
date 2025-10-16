@@ -1,23 +1,17 @@
-FROM golang:1.24.3
+FROM node:22
 
-# Travailler dans le dossier `/app`
-# Dans le conteneur le dossier `/app` va contenir le code du projet
-WORKDIR /app
+RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
 
-# Copier les fichiers des dépendances (go.mod, go.sum) dans le dossier `/app`
-COPY go.mod go.sum ./
+WORKDIR /home/node/app
 
-# Installer les dépendances
-RUN go mod download
+COPY package*.json ./
 
-# Copier le code entier dans le conteneur
-COPY . /app
+USER node
 
-# Build l'app
-RUN cd cmd go build -o waitify_exec
+RUN npm install
 
-# Port
-EXPOSE 3000
+COPY --chown=node:node . .
 
-# Lancer l'application
-CMD ["/app/waitify_exec"]
+EXPOSE 8080
+
+CMD [ "node", "app.js" ]

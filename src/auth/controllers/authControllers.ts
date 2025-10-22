@@ -95,6 +95,7 @@ export const LoginController = async (req: Request, res: Response) => {
     const loginDate = new Date();
     // Query
     const loginQuery: string = `SELECT * FROM users WHERE email=$1`;
+    const updateDateQuery: string = `UPDATE users SET last_login = $1 WHERE email=$2`;
 
     if (
       !email ||
@@ -122,6 +123,9 @@ export const LoginController = async (req: Request, res: Response) => {
     if (!userFetched) {
       return res.status(401).json({ error: "L'utilisateur n'existe pas" });
     }
+
+    // Mise à jour date de connexion
+    await pool.query(updateDateQuery, [loginDate, email]);
 
     const token = jwt.sign({ id: userId }, SECRET_KEY, {
       expiresIn: "1h",

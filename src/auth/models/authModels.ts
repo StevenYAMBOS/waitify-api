@@ -12,9 +12,14 @@ type RegisterResponse = {
 };
 
 type LoginRequest = {
-  username: string;
   email: string;
   password: string;
 };
 
-export { RegisterRequest, RegisterResponse, LoginRequest };
+interface LoginResponse {
+  message: string;
+  token: string;
+  User: User;
+}
+
+export { RegisterRequest, RegisterResponse, LoginRequest, LoginResponse };

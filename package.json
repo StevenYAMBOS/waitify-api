@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.37.0",
+    "@types/jsonwebtoken": "^9.0.10",
     "globals": "^16.4.0",
     "typescript-eslint": "^8.46.1"
   }

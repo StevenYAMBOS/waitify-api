@@ -1,3 +1,4 @@
+import { JwtPayload } from "jsonwebtoken";
 import { User } from "../../users/models/userModels";
 
 type RegisterRequest = {
@@ -16,10 +17,25 @@ type LoginRequest = {
   password: string;
 };
 
+type LoginEntry = {
+  email: string;
+  password: string;
+};
+
 interface LoginResponse {
   message: string;
   token: string;
   User: User;
 }
 
-export { RegisterRequest, RegisterResponse, LoginRequest, LoginResponse };
+interface CustomRequest extends Request {
+  token: string | JwtPayload;
+}
+
+export {
+  RegisterRequest,
+  RegisterResponse,
+  LoginRequest,
+  LoginResponse,
+  CustomRequest,
+};

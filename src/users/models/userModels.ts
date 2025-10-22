@@ -1,8 +1,9 @@
 type User = {
   id?: string;
-  username: string;
   email: string;
   password: string;
+  profile_picture: string;
+  auth_provider: string;
   createdAt: string;
   updatedAt: string;
   lastLogin: string;

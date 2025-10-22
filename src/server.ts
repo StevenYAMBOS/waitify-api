@@ -1,7 +1,7 @@
 import express, { Request, Response } from "express";
 import bodyParser from "body-parser";
-import dotenv from "dotenv";
 import authRouter from "./auth/routes/authRouter";
+import dotenv from "dotenv";
 dotenv.config();
 
 const port = process.env.SERVER_PORT;

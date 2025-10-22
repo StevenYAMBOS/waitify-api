@@ -93,8 +93,9 @@ export const LoginController = async (req: Request, res: Response) => {
 
     // Date du jour
     const loginDate = new Date();
-    // Query
+    // Query connexion
     const loginQuery: string = `SELECT * FROM users WHERE email=$1`;
+    // Query MAJ date de connexion
     const updateDateQuery: string = `UPDATE users SET last_login = $1 WHERE email=$2`;
 
     if (
@@ -112,10 +113,12 @@ export const LoginController = async (req: Request, res: Response) => {
 
     // Requête de connexion
     const user = await pool.query(loginQuery, [email]);
+    // Utilisateur récupéré
     const userFetched: User = user.rows[0];
     const userId: string = userFetched.id;
     const hashedPassword: string = userFetched.password;
 
+    // Comparaison mot de passe
     if (!password || !(await bcrypt.compare(password, hashedPassword))) {
       return res.status(401).send("Le mot de passe entré est incorrect");
     }
@@ -131,6 +134,7 @@ export const LoginController = async (req: Request, res: Response) => {
       expiresIn: "1h",
     });
 
+    // Réponse
     const loginResponse: LoginResponse = {
       message: "L'utilisateur est connecté",
       token: token,
@@ -147,71 +151,11 @@ export const LoginController = async (req: Request, res: Response) => {
   }
 };
 
-/* 
-// Connexion
-export const Login = async (req: Request, res: Response) => {
-  if (req.method !== "POST") {
-    res.status(400).send("Mauvaise méthode HTTP.");
-  }
-
-  const { email, password } = req.body;
-  // Date du jour
-  const date = new Date();
-  // Query
-  const query: string = `SELECT * FROM users WHERE id=$1`;
-
-  if (
-    !email ||
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-    !password ||
-    password.length == 0
-  ) {
-    return res.status(401).json({
-      status: "Mauvaise requête",
-      message: "Erreur lors de la connexion",
-      statusCode: 401,
-    });
-  }
-
-  if (!password || !(await bcrypt.compare(password, req.body.password))) {
-    return res.status(401).send("Mauvais identifiants de connexion");
-  }
-
-  const user = await pool.query(query, [email]);
-
-  /*
-if (user.rowCount > 0) {
-    let { email, password } = user.rows[0];
-    return res.status(200).json({
-      status: "Succès",
-      message: "Connexion réussie",
-      data: {
-        accessToken: await jwt.generateToken({
-          userId: userid,
-        }),
-        user: {
-          userId: "" + userid,
-          firstName: firstname,
-          lastName: lastname,
-          email: email,
-          phone: phone,
-        },
-      },
-    });
-  } else {
-    return res.status(401).json({
-      status: "Bad request",
-      message: "Authentication failed",
-      statusCode: 401,
-    });
-  }
-    
-
-  const message: string = "Connexion réussie !";
-
-  res.status(200).send(message);
+// Route protégée
+export const ProtectedController = async (req: Request, res: Response) => {
+  res.status(200).json(`Accès à la route protégé !`);
 };
- */
+
 /* 
 export const getUsers = async (
   req: Request,

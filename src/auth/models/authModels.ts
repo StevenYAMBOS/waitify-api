@@ -17,21 +17,10 @@ type LoginRequest = {
   password: string;
 };
 
-type LoginEntry = {
-  id?: string;
-  email: string;
-  password: string;
-  profile_picture: string;
-  auth_provider: string;
-  createdAt: string;
-  updatedAt: string;
-  lastLogin: string;
-};
-
 interface LoginResponse {
   message: string;
   token: string;
-  User: LoginEntry;
+  User: User;
 }
 
 interface CustomRequest extends Request {

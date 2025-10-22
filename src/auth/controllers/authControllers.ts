@@ -128,7 +128,7 @@ export const LoginController = async (req: Request, res: Response) => {
     // Mise à jour date de connexion
     await pool.query(updateDateQuery, [loginDate, email]);
 
-    const token = jwt.sign({ id: userId }, SECRET_KEY, {
+    const token = jwt.sign({ user: userFetched }, SECRET_KEY, {
       expiresIn: "1h",
     });
 

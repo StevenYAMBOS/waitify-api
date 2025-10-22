@@ -1,12 +1,25 @@
-type User = {
+interface User {
   id?: string;
   email: string;
   password: string;
-  profile_picture: string;
-  auth_provider: string;
-  createdAt: string;
-  updatedAt: string;
-  lastLogin: string;
-};
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
+  companyName: string;
+  isActive: boolean;
+  subscriptionStatus: string;
+  trialEndsAt: Date | string;
+  subscriptionPlanId: string;
+  googleId: string;
+  profilePicture: string;
+  authProvider: string;
+  createdAt: Date;
+  updatedAt: Date;
+  lastLogin: Date;
+}
 
-export { User };
+interface GetUser {
+  User: User;
+}
+
+export { User, GetUser };

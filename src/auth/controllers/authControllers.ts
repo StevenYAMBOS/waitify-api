@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { LoginResponse } from "../models/authModels.js";
 import { User } from "../../users/models/userModels.js";
+import { SECRET_KEY } from "../../config/variables.js";
 
 // Inscription
 export const RegisterController = async (req: Request, res: Response) => {
@@ -88,9 +89,6 @@ export const LoginController = async (req: Request, res: Response) => {
 
   try {
     const { email, password } = req.body;
-    // CLé secrète
-    const SECRET_KEY = process.env.JWT_SECRET;
-
     // Date du jour
     const loginDate = new Date();
     // Query connexion

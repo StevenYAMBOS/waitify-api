@@ -18,7 +18,7 @@ export const Register = async (req: Request, res: Response) => {
   // Hash password
   const hashedPassword = await bcrypt.hash(password, 10);
   const hardCodedProfilePicture: string =
-    "https://s1.qwant.com/thumbr/474x474/2/8/592dfd498dc2ad4f9171c77dbd60d95525c81b69e1773b6a1e1965cfd3b03d/OIP.kP4L729KY5ve4Tj54TvGcAHaHa.jpg?u=https%3A%2F%2Fthvnext.bing.com%2Fth%2Fid%2FOIP.kP4L729KY5ve4Tj54TvGcAHaHa%3Fcb%3D12%26pid%3DApi%26ucfimg%3D1&q=0&b=1&p=0&a=0";
+    "https://media.istockphoto.com/id/985915172/fr/vectoriel/%C3%A9checs-de-checker-vecteur-abstrait-sans-soudure.jpg?s=612x612&w=0&k=20&c=4BLWcNYZe9uykbirGZHc2_0zZC0pIIKS4Tvt19oj8TQ=";
 
   // Insetion en base de données
   const query: string = `INSERT INTO users (id, email, password, profile_picture, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)`;
@@ -51,7 +51,7 @@ export const Register = async (req: Request, res: Response) => {
     });
   }
 
-  const response = await pool.query(query, [
+  await pool.query(query, [
     uuid,
     email,
     hashedPassword,
@@ -69,7 +69,7 @@ export const Register = async (req: Request, res: Response) => {
 
   const message: string = "Utilisateur créé avec succès";
 
-  console.log("UTILISATEUR : ", response);
+  console.log("UTILISATEUR : ", user);
 
   res.status(201).json({ message, user });
 };

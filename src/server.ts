@@ -14,7 +14,7 @@ app.get("/health", (req: Request, res: Response) => {
   res.status(200);
 });
 
-app.use(authRouter);
+app.use("/auth", authRouter);
 
 app.listen(port, () => {
   console.log(

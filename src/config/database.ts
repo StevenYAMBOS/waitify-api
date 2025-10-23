@@ -5,7 +5,7 @@ import {
   DATABASE_PORT,
   DATABASE_PASSWORD,
   DATABASE_NAME,
-} from "./variables";
+} from "./envVariables";
 
 const { Pool } = pg;
 

@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import { LoginResponse } from "../models/authModels.js";
 import { User } from "../../users/models/userModels.js";
-import { SECRET_KEY } from "../../config/variables.js";
+import { SECRET_KEY } from "../../config/envVariables.js";
 
 // Inscription
 export const RegisterController = async (req: Request, res: Response) => {
@@ -113,7 +113,6 @@ export const LoginController = async (req: Request, res: Response) => {
     const user = await pool.query(loginQuery, [email]);
     // Utilisateur récupéré
     const userFetched: User = user.rows[0];
-    const userId: string = userFetched.id;
     const hashedPassword: string = userFetched.password;
 
     // Comparaison mot de passe

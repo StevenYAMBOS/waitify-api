@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import jwt, { Secret, JwtPayload } from "jsonwebtoken";
-import { SECRET_KEY } from "../../config/variables";
+import { SECRET_KEY } from "../../config/envVariables";
 import { User } from "../../users/models/userModels";
 
 // let assignToken: string | JwtPayload;

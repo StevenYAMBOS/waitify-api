@@ -11,7 +11,6 @@ export const GetUserProfileController = async (req: Request, res: Response) => {
   try {
     // Récupération de l'utilisateur via requête client (la requête est de type `Request` de base + étendue avec `User`)
     const response: User = req.user;
-    console.log("RÉPONSE : ", response);
 
     res.status(200).send(response);
   } catch (error: unknown) {

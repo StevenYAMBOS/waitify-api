@@ -32,6 +32,7 @@ export const IMAGE: string =
   "https://media.istockphoto.com/id/985915172/fr/vectoriel/%C3%A9checs-de-checker-vecteur-abstrait-sans-soudure.jpg?s=612x612&w=0&k=20&c=4BLWcNYZe9uykbirGZHc2_0zZC0pIIKS4Tvt19oj8TQ=";
 
 /* ++++++++++++++ Routes ++++++++++++++ */
+export const WAITIFY_URL: string = `https://waitify.fr`;
 export const ID_PARAM: string = "/:id";
 // Authentification
 export const AUTH_PATH: string = "/auth";
@@ -43,3 +44,5 @@ export const USER_PATH: string = "/user";
 export const PROFILE_PATH: string = "/profile";
 // Entreprises
 export const BUSINESS_PATH: string = "/businesses";
+// Files d'attentes
+export const QRCODE_TOKEN_PATH: string = "/q";

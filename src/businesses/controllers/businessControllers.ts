@@ -1,21 +1,20 @@
 import { Request, Response } from "express";
-import {
-  AddBusinessResponse,
-  Business,
-  BusinessEntry,
-} from "../models/businessModels";
+import { Business } from "../models/businessModels";
 import { pool } from "../../config/database";
 import {
   BAD_HTTP_METHOD,
   BAD_REQUEST,
-  BUSINESS_NOT_FOUND,
   GET_METHOD,
   INTERNAL_SERVER_ERROR,
+  INTERNAL_SERVER_ERROR_MESSAGE,
   OK,
   POST_METHOD,
+  QRCODE_TOKEN_PATH,
+  WAITIFY_URL,
 } from "../../config/constants";
 import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
+import { PassThrough } from "stream";
 
 // Récupérer les informations d'une entreprise
 export const GetBusinessController = async (req: Request, res: Response) => {
@@ -37,7 +36,7 @@ export const GetBusinessController = async (req: Request, res: Response) => {
     res.status(OK).send(businessFetched);
   } catch (error: unknown) {
     res.status(INTERNAL_SERVER_ERROR).json({
-      message: BUSINESS_NOT_FOUND,
+      message: INTERNAL_SERVER_ERROR_MESSAGE,
       error: error,
     });
   }
@@ -52,18 +51,36 @@ export const AddBusinessController = async (req: Request, res: Response) => {
 
   try {
     // Corps de la requête
-    const { name, businessType, phoneNumber, address, city, zipCode, country } =
-      req?.body;
-
+    const {
+      name,
+      UserId,
+      businessType,
+      phoneNumber,
+      address,
+      city,
+      zipCode,
+      country,
+    } = req?.body;
     // Générer l'id de l'entreprise + le token du QR Code
     const uuid: string = uuidv4();
+    console.log("Initialisation de l'Id", uuid);
+
+    // Générer l'id de l'entreprise + le token du QR Code
+    const qrCodeToken: string = uuidv4();
+    console.log("Initialisation du token", qrCodeToken);
+
     // Date du jour
     const now: Date = new Date();
+
+    /*
     // Id de l'utilisateur connecté
-    const UserId: string = req?.user?.id;
+    const user: User = req.user;
+    const UserId: string = user.id;
+    console.log("ID USER : ", UserId);
+    */
 
     // Query
-    const query: string = `INSERT INTO businesses (name, UserId, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`;
+    const query: string = `INSERT INTO businesses (id, name, UserId, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`;
     // Valeurs
     const values: string[] = [
       uuid,
@@ -75,33 +92,68 @@ export const AddBusinessController = async (req: Request, res: Response) => {
       city,
       zipCode,
       country,
-      uuid,
+      qrCodeToken,
       now,
       now,
     ];
 
     // Insérer les informations de l'entreprise en base de données
-    const business = await pool.query(query, values);
+    await pool.query(query, values);
 
+    /*
     // Information de l'entreprise créé
+    const business = await pool.query(query, values);
     const businessCreated: Business = business.rows[0];
+    */
 
-    // QRCode
-    const url = "https://stevenyambos.fr";
-    const qrCodeImage = await QRCode.toDataURL(url);
-    const qrCodeData: string = `<img src="${qrCodeImage}" alt="QR Code"/>`;
+    // Contenu du du QRCode
+    const content: string = WAITIFY_URL + QRCODE_TOKEN_PATH + `${qrCodeToken}`;
+    // Taille de l'image du QRCode
+    const size: number = 256;
+    // Type d'image du QRCode
+    const imgExt = "png";
+    const errType = "H";
+    // Envoie des données (bytes) vers la réponse
+    const qrStream = new PassThrough();
 
-    // Réponse entreprise créé
-    const response: AddBusinessResponse = {
-      Business: businessCreated,
-      QRCode: qrCodeData,
-    };
+    // Génération du QRCode
+    await QRCode.toFileStream(qrStream, content, {
+      type: imgExt,
+      width: size,
+      errorCorrectionLevel: errType,
+    });
 
-    res.status(OK).send(response);
+    // Renvoi l'image du QRCode
+    qrStream.pipe(res);
   } catch (error: unknown) {
+    console.error(INTERNAL_SERVER_ERROR_MESSAGE, error);
     res.status(INTERNAL_SERVER_ERROR).json({
-      message: BUSINESS_NOT_FOUND,
+      message: INTERNAL_SERVER_ERROR_MESSAGE,
       error: error,
     });
+  }
+};
+
+// Test
+export const TestController = async (req: Request, res: Response) => {
+  try {
+    const content: string = "https://stevenyambos.fr";
+    const size: number = 256;
+    const imgExt = "png";
+    const errType = "H";
+    // Envoie des données (bytes) vers la réponse
+    const qrStream = new PassThrough();
+
+    // Génération du QRCode
+    await QRCode.toFileStream(qrStream, content, {
+      type: imgExt,
+      width: size,
+      errorCorrectionLevel: errType,
+    });
+
+    const qrcodeGenerated = qrStream.pipe(res);
+    res.write(qrcodeGenerated);
+  } catch (err) {
+    console.error("Failed to return content", err);
   }
 };

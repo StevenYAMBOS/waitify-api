@@ -25,7 +25,7 @@ export interface Business {
 
 export interface BusinessEntry {
   id?: string;
-  UserId: string;
+  UserId?: string;
   name: string;
   businessType: string;
   phoneNumber: string;
@@ -35,4 +35,9 @@ export interface BusinessEntry {
   country: string;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface AddBusinessResponse {
+  Business: BusinessEntry;
+  QRCode: string;
 }

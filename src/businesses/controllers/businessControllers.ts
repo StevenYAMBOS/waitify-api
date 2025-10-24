@@ -1,5 +1,9 @@
 import { Request, Response } from "express";
-import { Business, BusinessEntry } from "../models/businessModels";
+import {
+  AddBusinessResponse,
+  Business,
+  BusinessEntry,
+} from "../models/businessModels";
 import { pool } from "../../config/database";
 import {
   BAD_HTTP_METHOD,
@@ -11,6 +15,7 @@ import {
   POST_METHOD,
 } from "../../config/constants";
 import { v4 as uuidv4 } from "uuid";
+import QRCode from "qrcode";
 
 // Récupérer les informations d'une entreprise
 export const GetBusinessController = async (req: Request, res: Response) => {
@@ -38,7 +43,7 @@ export const GetBusinessController = async (req: Request, res: Response) => {
   }
 };
 
-// Récupérer les informations d'une entreprise
+//  Créer une entreprise + générer le QR Code
 export const AddBusinessController = async (req: Request, res: Response) => {
   // Vérification méthode HTTP
   if (req.method !== POST_METHOD) {
@@ -47,26 +52,18 @@ export const AddBusinessController = async (req: Request, res: Response) => {
 
   try {
     // Corps de la requête
-    const {
-      name,
-      UserId,
-      businessType,
-      phoneNumber,
-      address,
-      city,
-      zipCode,
-      country,
-    } = req?.body;
+    const { name, businessType, phoneNumber, address, city, zipCode, country } =
+      req?.body;
 
-    // Générer l'id
+    // Générer l'id de l'entreprise + le token du QR Code
     const uuid: string = uuidv4();
     // Date du jour
     const now: Date = new Date();
-    /* Id de l'utilisateur connecté
-    const userConnectedId: string = req?.user?.id;
-    */
+    // Id de l'utilisateur connecté
+    const UserId: string = req?.user?.id;
+
     // Query
-    const query: string = `INSERT INTO businesses (name, UserId, business_type, phone_number, address, city, zip_code, country, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`;
+    const query: string = `INSERT INTO businesses (name, UserId, business_type, phone_number, address, city, zip_code, country, qr_code_token, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`;
     // Valeurs
     const values: string[] = [
       uuid,
@@ -78,29 +75,29 @@ export const AddBusinessController = async (req: Request, res: Response) => {
       city,
       zipCode,
       country,
+      uuid,
       now,
       now,
     ];
 
     // Insérer les informations de l'entreprise en base de données
-    await pool.query(query, values);
+    const business = await pool.query(query, values);
 
-    // Entreprise créé
-    const business: BusinessEntry = {
-      id: uuid,
-      UserId: UserId,
-      name: name,
-      businessType: businessType,
-      phoneNumber: phoneNumber,
-      address: address,
-      city: city,
-      zipCode: zipCode,
-      country: country,
-      createdAt: now,
-      updatedAt: now,
+    // Information de l'entreprise créé
+    const businessCreated: Business = business.rows[0];
+
+    // QRCode
+    const url = "https://stevenyambos.fr";
+    const qrCodeImage = await QRCode.toDataURL(url);
+    const qrCodeData: string = `<img src="${qrCodeImage}" alt="QR Code"/>`;
+
+    // Réponse entreprise créé
+    const response: AddBusinessResponse = {
+      Business: businessCreated,
+      QRCode: qrCodeData,
     };
 
-    res.status(OK).send(business);
+    res.status(OK).send(response);
   } catch (error: unknown) {
     res.status(INTERNAL_SERVER_ERROR).json({
       message: BUSINESS_NOT_FOUND,

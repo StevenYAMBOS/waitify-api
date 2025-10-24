@@ -4,17 +4,18 @@ import authRouter from "./auth/routes/authRouter";
 import userRouter from "./users/routes/userRouter";
 import businessRouter from "./businesses/routes/businessRouter";
 import { SERVER_PORT } from "./config/envVariables";
+import { AUTH_PATH, BUSINESS_PATH, USER_PATH } from "./config/constants";
 
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Routes d'authentification
-app.use("/auth", authRouter);
+app.use(AUTH_PATH, authRouter);
 // Routes utilisateurs
-app.use("/user", userRouter);
+app.use(USER_PATH, userRouter);
 // Routes entreprises
-app.use("/business", businessRouter);
+app.use(BUSINESS_PATH, businessRouter);
 
 app.listen(SERVER_PORT, () => {
   console.log(

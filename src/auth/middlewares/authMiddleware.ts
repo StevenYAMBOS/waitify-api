@@ -1,9 +1,16 @@
 import { NextFunction, Request, Response } from "express";
-import jwt, { Secret, JwtPayload } from "jsonwebtoken";
+import jwt from "jsonwebtoken";
 import { SECRET_KEY } from "../../config/envVariables";
 import { User } from "../../users/models/userModels";
-
-// let assignToken: string | JwtPayload;
+import {
+  AUTHORIZATION_HEADER,
+  BEARER_STRING,
+  EMPTY_STRING,
+  FORBIDDEN,
+  INVALID_TOKEN,
+  UNAUTHORIZED,
+  UNAUTHORIZED_RESOURCE,
+} from "../../config/constants";
 
 export const authMiddleware = async (
   req: Request,
@@ -11,23 +18,20 @@ export const authMiddleware = async (
   next: NextFunction
 ) => {
   try {
-    const token = req.header("Authorization")?.replace("Bearer ", "");
+    const token = req
+      .header(AUTHORIZATION_HEADER)
+      ?.replace(BEARER_STRING, EMPTY_STRING);
 
     if (!token) {
       throw new Error();
     }
 
     jwt.verify(token, SECRET_KEY, (err: unknown, user: User) => {
-      if (err) return res.status(403).send("Invalid or expired token");
+      if (err) return res.status(FORBIDDEN).send(INVALID_TOKEN);
       req.user = user;
       next();
     });
-
-    // const decoded = jwt.verify(token, SECRET_KEY);
-    // assignToken = decoded;
-
-    // next();
   } catch (err) {
-    res.status(401).send("Accès non autorisé");
+    res.status(UNAUTHORIZED).send(UNAUTHORIZED_RESOURCE);
   }
 };

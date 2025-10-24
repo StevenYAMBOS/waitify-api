@@ -83,7 +83,7 @@ export const AddBusinessController = async (req: Request, res: Response) => {
     ];
 
     // Insérer les informations de l'entreprise en base de données
-    const response = await pool.query(query, values);
+    await pool.query(query, values);
 
     // Entreprise créé
     const business: BusinessEntry = {
@@ -99,9 +99,6 @@ export const AddBusinessController = async (req: Request, res: Response) => {
       createdAt: now,
       updatedAt: now,
     };
-
-    console.log("RÉPONSE : ", response.rows[0]);
-    console.log("ENTREPRISE : ", business);
 
     res.status(OK).send(business);
   } catch (error: unknown) {

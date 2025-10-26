@@ -46,5 +46,6 @@ export const USER_PATH: string = "/user";
 export const PROFILE_PATH: string = "/profile";
 // Entreprises
 export const BUSINESS_PATH: string = "/businesses";
+export const QRCODE_PATH: string = "/generate";
 // Files d'attentes
 export const QRCODE_TOKEN_PATH: string = "/q";

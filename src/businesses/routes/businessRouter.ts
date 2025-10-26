@@ -4,13 +4,15 @@ const businessRouter = Router();
 import {
   AddBusinessController,
   GetBusinessController,
-  TestController,
+  GenerateQRCodeController,
   GetUserBusinessesController,
 } from "../controllers/businessControllers";
 import { authMiddleware } from "../../auth/middlewares/authMiddleware";
 import {
   ID_PARAM,
   NEUTRAL_PATH,
+  QRCODE_PATH,
+  QRCODE_TOKEN_PATH,
   TEST_PATH,
   USER_PATH,
 } from "../../config/constants";
@@ -21,7 +23,7 @@ businessRouter.get(
   authMiddleware,
   GetUserBusinessesController
 );
+businessRouter.post(QRCODE_PATH, authMiddleware, GenerateQRCodeController);
 businessRouter.post(NEUTRAL_PATH, authMiddleware, AddBusinessController);
-businessRouter.get(TEST_PATH, authMiddleware, TestController);
 
 export default businessRouter;

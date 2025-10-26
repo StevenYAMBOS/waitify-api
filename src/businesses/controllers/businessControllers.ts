@@ -94,11 +94,9 @@ export const AddBusinessController = async (req: Request, res: Response) => {
     } = req?.body;
     // Générer l'id de l'entreprise + le token du QR Code
     const uuid: string = uuidv4();
-    console.log("Initialisation de l'Id", uuid);
 
     // Générer l'id de l'entreprise + le token du QR Code
     const qrCodeToken: string = uuidv4();
-    console.log("Initialisation du token", qrCodeToken);
 
     // Date du jour
     const now: Date = new Date();
@@ -165,10 +163,22 @@ export const AddBusinessController = async (req: Request, res: Response) => {
   }
 };
 
-// Test
-export const TestController = async (req: Request, res: Response) => {
+// Générer un nouveau QRCode
+// Le client (front) envoie le `qrCodeToken` dans sa requête pour générer le QRCode
+export const GenerateQRCodeController = async (req: Request, res: Response) => {
+  // Vérification méthode HTTP
+  if (req.method !== POST_METHOD) {
+    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  }
+
   try {
-    const content: string = "https://stevenyambos.fr";
+    // Corps de la requête
+    const { qrCodeToken } = req?.body;
+
+    // Contenu du du QRCode
+    const content: string = WAITIFY_URL + QRCODE_TOKEN_PATH + `/${qrCodeToken}`;
+    console.log("URL : ", content);
+
     const size: number = 256;
     const imgExt = "png";
     const errType = "H";
@@ -182,9 +192,13 @@ export const TestController = async (req: Request, res: Response) => {
       errorCorrectionLevel: errType,
     });
 
-    const qrcodeGenerated = qrStream.pipe(res);
-    res.write(qrcodeGenerated);
-  } catch (err) {
-    console.error("Failed to return content", err);
+    // Envoie du QRCode dans la réponse (image `png` du QRCode)
+    qrStream.pipe(res);
+  } catch (error: unknown) {
+    console.error(INTERNAL_SERVER_ERROR_MESSAGE, error);
+    res.status(INTERNAL_SERVER_ERROR).json({
+      message: INTERNAL_SERVER_ERROR_MESSAGE,
+      error: error,
+    });
   }
 };

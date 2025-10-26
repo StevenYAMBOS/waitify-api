@@ -34,6 +34,8 @@ export const IMAGE: string =
 /* ++++++++++++++ Routes ++++++++++++++ */
 export const WAITIFY_URL: string = `https://waitify.fr`;
 export const ID_PARAM: string = "/:id";
+export const NEUTRAL_PATH: string = "/";
+export const TEST_PATH: string = "/";
 // Authentification
 export const AUTH_PATH: string = "/auth";
 export const REGISTER_PATH: string = "/register";

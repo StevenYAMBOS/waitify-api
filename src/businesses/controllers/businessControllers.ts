@@ -42,6 +42,37 @@ export const GetBusinessController = async (req: Request, res: Response) => {
   }
 };
 
+// Récupérer les entreprises d'un utilisateur
+export const GetUserBusinessesController = async (
+  req: Request,
+  res: Response
+) => {
+  // Vérification méthode HTTP
+  if (req.method !== GET_METHOD) {
+    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  }
+
+  try {
+    // id récupéré depuis les paramètres de l'URL
+    const idParam: string = req.params?.id;
+    // Query
+    const query: string = `SELECT * FROM businesses WHERE UserId = $1`;
+    // Valeur
+    const value: string[] = [idParam];
+    // Récupérer les informations de l'entreprise
+    const response = await pool.query(query, value);
+
+    // Entreprise récupérée
+    const businessesFetched: Business[] = response?.rows;
+    res.status(OK).send(businessesFetched);
+  } catch (error: unknown) {
+    res.status(INTERNAL_SERVER_ERROR).json({
+      message: INTERNAL_SERVER_ERROR_MESSAGE,
+      error: error,
+    });
+  }
+};
+
 //  Créer une entreprise + générer le QR Code
 export const AddBusinessController = async (req: Request, res: Response) => {
   // Vérification méthode HTTP

@@ -149,8 +149,6 @@ export const LoginController = async (req: Request, res: Response) => {
       User: userFetched,
     };
 
-    console.log(loginResponse);
-
     res.status(200).json({ loginResponse });
   } catch (error: unknown) {
     res

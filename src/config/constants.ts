@@ -5,6 +5,7 @@ Constantes qu'on va réutiliser dans toute l'app
 /* ++++++++++++++ Status codes ++++++++++++++ */
 export const OK: number = 200;
 export const CREATED: number = 201;
+export const NO_CONTENT: number = 204;
 export const BAD_REQUEST: number = 400;
 export const UNAUTHORIZED: number = 401;
 export const FORBIDDEN: number = 403;

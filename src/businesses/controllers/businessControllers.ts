@@ -8,9 +8,11 @@ import { pool } from "../../config/database";
 import {
   BAD_HTTP_METHOD,
   BAD_REQUEST,
+  DELETE_METHOD,
   GET_METHOD,
   INTERNAL_SERVER_ERROR,
   INTERNAL_SERVER_ERROR_MESSAGE,
+  NO_CONTENT,
   OK,
   PATCH_METHOD,
   POST_METHOD,
@@ -226,6 +228,39 @@ export const UpdateBusinessController = async (req: Request, res: Response) => {
 
     // Réponse
     res.status(OK).json(response);
+  } catch (error: unknown) {
+    console.error(INTERNAL_SERVER_ERROR_MESSAGE, error);
+    res.status(INTERNAL_SERVER_ERROR).json({
+      message: INTERNAL_SERVER_ERROR_MESSAGE,
+      error: error,
+    });
+  }
+};
+
+//  Supprimer une entreprise existante
+export const DeleteBusinessController = async (req: Request, res: Response) => {
+  // Vérification méthode HTTP
+  if (req.method !== DELETE_METHOD) {
+    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  }
+
+  try {
+    // id récupéré depuis les paramètres de l'URL
+    const idParam: string = req.params?.id;
+    // Message
+    const message: string = `Entreprise supprimée avec succès`;
+
+    // Query
+    const query: string = `DELETE FROM businesses WHERE id = $1`;
+
+    // Valeurs
+    const values: string[] = [idParam];
+
+    // Supprimer l'entreprise de la base de données
+    await pool.query(query, values);
+
+    // Réponse
+    res.status(NO_CONTENT).json(message);
   } catch (error: unknown) {
     console.error(INTERNAL_SERVER_ERROR_MESSAGE, error);
     res.status(INTERNAL_SERVER_ERROR).json({

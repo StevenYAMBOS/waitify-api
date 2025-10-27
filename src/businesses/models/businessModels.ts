@@ -37,6 +37,22 @@ export interface BusinessEntry {
   updatedAt: Date;
 }
 
+export interface UpdateBusinessEntry {
+  name: string;
+  businessType: string;
+  phoneNumber: string;
+  address: string;
+  city: string;
+  zipCode: string;
+  country: string;
+  updatedAt: Date;
+}
+
+export interface UpdateBusinessResponse {
+  message: string;
+  Business: UpdateBusinessEntry;
+}
+
 export interface AddBusinessResponse {
   Business: BusinessEntry;
   QRCode: string;

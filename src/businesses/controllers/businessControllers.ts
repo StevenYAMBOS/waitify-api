@@ -1,5 +1,9 @@
 import { Request, Response } from "express";
-import { Business } from "../models/businessModels";
+import {
+  Business,
+  UpdateBusinessEntry,
+  UpdateBusinessResponse,
+} from "../models/businessModels";
 import { pool } from "../../config/database";
 import {
   BAD_HTTP_METHOD,
@@ -8,6 +12,7 @@ import {
   INTERNAL_SERVER_ERROR,
   INTERNAL_SERVER_ERROR_MESSAGE,
   OK,
+  PATCH_METHOD,
   POST_METHOD,
   QRCODE_TOKEN_PATH,
   WAITIFY_URL,
@@ -163,8 +168,75 @@ export const AddBusinessController = async (req: Request, res: Response) => {
   }
 };
 
+//  Modifier les informations d'une entreprise existante
+export const UpdateBusinessController = async (req: Request, res: Response) => {
+  // Vérification méthode HTTP
+  if (req.method !== PATCH_METHOD) {
+    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  }
+
+  try {
+    // Corps de la requête
+    const { name, businessType, phoneNumber, address, city, zipCode, country } =
+      req?.body;
+    // id récupéré depuis les paramètres de l'URL
+    const idParam: string = req.params?.id;
+    // Date du jour
+    const now: Date = new Date();
+    // Message
+    const message: string =
+      "Informations de l'entreprise mise à jour avec succès !";
+
+    // Query
+    const query: string = `UPDATE businesses SET name = $2, business_type = $3, phone_number = $4, address = $5, city = $6, zip_code = $7, country = $8, updated_at = $9 WHERE id = $1`;
+
+    // Valeurs
+    const values: string[] = [
+      idParam,
+      name,
+      businessType,
+      phoneNumber,
+      address,
+      city,
+      zipCode,
+      country,
+      now,
+    ];
+
+    // Insérer les informations de l'entreprise en base de données
+    await pool.query(query, values);
+
+    // Informations récupérées
+    const businessUpdated: UpdateBusinessEntry = {
+      name: name,
+      businessType: businessType,
+      phoneNumber: phoneNumber,
+      address: address,
+      city: city,
+      zipCode: zipCode,
+      country: country,
+      updatedAt: now,
+    };
+
+    // Réponse envoyé au client
+    const response: UpdateBusinessResponse = {
+      message: message,
+      Business: businessUpdated,
+    };
+
+    // Réponse
+    res.status(OK).json(response);
+  } catch (error: unknown) {
+    console.error(INTERNAL_SERVER_ERROR_MESSAGE, error);
+    res.status(INTERNAL_SERVER_ERROR).json({
+      message: INTERNAL_SERVER_ERROR_MESSAGE,
+      error: error,
+    });
+  }
+};
+
 // Générer un nouveau QRCode
-// Le client (front) envoie le `qrCodeToken` dans sa requête pour générer le QRCode
+// Le client (front) envoie le `qrCodeToken` dans sa requête (body) pour générer le QRCode
 export const GenerateQRCodeController = async (req: Request, res: Response) => {
   // Vérification méthode HTTP
   if (req.method !== POST_METHOD) {

@@ -6,14 +6,13 @@ import {
   GetBusinessController,
   GenerateQRCodeController,
   GetUserBusinessesController,
+  UpdateBusinessController,
 } from "../controllers/businessControllers";
 import { authMiddleware } from "../../auth/middlewares/authMiddleware";
 import {
   ID_PARAM,
   NEUTRAL_PATH,
   QRCODE_PATH,
-  QRCODE_TOKEN_PATH,
-  TEST_PATH,
   USER_PATH,
 } from "../../config/constants";
 
@@ -25,5 +24,6 @@ businessRouter.get(
 );
 businessRouter.post(QRCODE_PATH, authMiddleware, GenerateQRCodeController);
 businessRouter.post(NEUTRAL_PATH, authMiddleware, AddBusinessController);
+businessRouter.patch(ID_PARAM, authMiddleware, UpdateBusinessController);
 
 export default businessRouter;

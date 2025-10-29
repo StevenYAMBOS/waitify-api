@@ -22,3 +22,5 @@ app.listen(SERVER_PORT, () => {
     `L'application est lançée à l'adresse : http://localhost:${SERVER_PORT}`
   );
 });
+
+export default app;

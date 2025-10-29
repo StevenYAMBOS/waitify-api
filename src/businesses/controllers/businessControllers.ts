@@ -62,6 +62,9 @@ export const GetUserBusinessesController = async (
   try {
     // id récupéré depuis les paramètres de l'URL
     const idParam: string = req.params?.id;
+    // Pagination
+    // const { page, size } = req.query;
+    // const query: string = `SELECT * FROM businesses ORDER BY "businesses"."id" LIMIT $2 OFFSET (($1 - 1) * $2) WHERE UserId = $1`;
     // Query
     const query: string = `SELECT * FROM businesses WHERE UserId = $1`;
     // Valeur

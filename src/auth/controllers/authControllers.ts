@@ -13,6 +13,7 @@ import {
   IMAGE,
   INTERNAL_SERVER_ERROR,
   INTERNAL_SERVER_ERROR_MESSAGE,
+  OK,
   POST_METHOD,
   UNAUTHORIZED,
 } from "../../config/constants.js";
@@ -159,5 +160,5 @@ export const LoginController = async (req: Request, res: Response) => {
 
 // Route protégée
 export const ProtectedController = async (req: Request, res: Response) => {
-  res.status(200).json(`Accès à la route protégé !`);
+  res.status(OK).json(`Accès à la route protégé !`);
 };

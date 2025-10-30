@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { pool } from "../../config/database.js";
+import { pool } from "../../config/database";
 import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { LoginResponse } from "../models/authModels.js";
-import { User } from "../../users/models/userModels.js";
-import { SECRET_KEY } from "../../config/envVariables.js";
+import { LoginResponse } from "../models/authModels";
+import { User } from "../../users/models/userModels";
+import { SECRET_KEY } from "../../config/envVariables";
 import {
   BAD_HTTP_METHOD,
   BAD_REQUEST,
@@ -16,7 +16,7 @@ import {
   OK,
   POST_METHOD,
   UNAUTHORIZED,
-} from "../../config/constants.js";
+} from "../../config/constants";
 
 // Inscription
 export const RegisterController = async (req: Request, res: Response) => {

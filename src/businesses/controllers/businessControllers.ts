@@ -52,7 +52,7 @@ export const GetBusinessController = async (req: Request, res: Response) => {
 // Récupérer les entreprises d'un utilisateur
 export const GetUserBusinessesController = async (
   req: Request,
-  res: Response
+  res: Response,
 ) => {
   // Vérification méthode HTTP
   if (req.method !== GET_METHOD) {
@@ -101,7 +101,7 @@ export const AddBusinessController = async (req: Request, res: Response) => {
       city,
       zipCode,
       country,
-    } = req?.body;
+    } = req.body;
     // Générer l'id de l'entreprise + le token du QR Code
     const uuid: string = uuidv4();
 
@@ -183,7 +183,7 @@ export const UpdateBusinessController = async (req: Request, res: Response) => {
   try {
     // Corps de la requête
     const { name, businessType, phoneNumber, address, city, zipCode, country } =
-      req?.body;
+      req.body;
     // id récupéré depuis les paramètres de l'URL
     const idParam: string = req.params?.id;
     // Date du jour
@@ -283,7 +283,7 @@ export const GenerateQRCodeController = async (req: Request, res: Response) => {
 
   try {
     // Corps de la requête
-    const { qrCodeToken } = req?.body;
+    const { qrCodeToken } = req.body;
 
     // Contenu du du QRCode
     const content: string = WAITIFY_URL + QRCODE_TOKEN_PATH + `/${qrCodeToken}`;

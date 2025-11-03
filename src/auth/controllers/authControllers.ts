@@ -37,7 +37,7 @@ export const RegisterController = async (req: Request, res: Response) => {
 
     /* ------ Restrictions ------ */
 
-    let errors = [];
+    const errors = [];
 
     if (
       !email ||
@@ -83,6 +83,7 @@ export const RegisterController = async (req: Request, res: Response) => {
 
     res.status(CREATED).json({ message, user });
   } catch (error: unknown) {
+    console.log(error);
     res
       .status(INTERNAL_SERVER_ERROR)
       .json({ error: INTERNAL_SERVER_ERROR_MESSAGE });
@@ -152,6 +153,7 @@ export const LoginController = async (req: Request, res: Response) => {
 
     res.status(200).json({ loginResponse });
   } catch (error: unknown) {
+    console.log(error);
     res
       .status(500)
       .json({ error: "La connexion a échouée, une erreur est survenue" });

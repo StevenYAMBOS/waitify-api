@@ -1,4 +1,4 @@
-/* 
+/*
 Constantes qu'on va réutiliser dans toute l'app
 */
 
@@ -50,3 +50,5 @@ export const BUSINESS_PATH: string = "/businesses";
 export const QRCODE_PATH: string = "/generate";
 // Files d'attentes
 export const QRCODE_TOKEN_PATH: string = "/q";
+export const QUEUES_PATH: string = "/queues";
+export const QUEUE_STATUS_PATH: string = "/status";

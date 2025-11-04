@@ -61,3 +61,4 @@ export const QRCODE_PATH: string = "/generate";
 export const QRCODE_TOKEN_PATH: string = "/q";
 export const QUEUES_PATH: string = "/queues";
 export const QUEUE_STATUS_PATH: string = "/status";
+export const JOIN_QUEUE_PATH: string = "/join";

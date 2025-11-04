@@ -34,7 +34,12 @@ export const IMAGE: string =
 export const ALREADY_IN_QUEUE: string = `Vous êtes déjà dans la file d'attente`;
 export const QUEUE_CLOSED: string = `La file d'attente est fermée`;
 export const QUEUE_FULL: string = `File d'attente complète`;
-export const JOIN_QUEUE_SUCCESS: string = `File d'attente complète`;
+export const JOIN_QUEUE_SUCCESS: string = `Vous avez été inscrit dans la file d'attente avec succès`;
+export const BUSINESS_ID_REQUIRED: string = `L'identifiant du commerce est requis`;
+export const PHONE_REQUIRED: string = `Le numéro de téléphone est requis`;
+export const BUSINESS_NOT_FOUND_OR_INACTIVE: string = `Le commerce est introuvable ou inactif`;
+export const INVALID_PHONE_FORMAT: string = `Le format du numéro de téléphone est invalide`;
+export const QUEUE_STATUS_WAITING: string = `waiting`;
 
 /* ++++++++++++++ Routes ++++++++++++++ */
 export const WAITIFY_URL: string = `https://waitify.fr`;

@@ -57,3 +57,9 @@ export interface AddBusinessResponse {
   Business: BusinessEntry;
   QRCode: string;
 }
+
+export interface BusinessQueue {
+  isQueueActive: boolean;
+  maxQueueSize: number;
+  averageServiceTime: number;
+}

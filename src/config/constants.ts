@@ -31,6 +31,10 @@ export const UNAUTHORIZED_RESOURCE: string = `Accès non autorisé`;
 export const INTERNAL_SERVER_ERROR_MESSAGE: string = `Une erreur interne est survenue`;
 export const IMAGE: string =
   "https://media.istockphoto.com/id/985915172/fr/vectoriel/%C3%A9checs-de-checker-vecteur-abstrait-sans-soudure.jpg?s=612x612&w=0&k=20&c=4BLWcNYZe9uykbirGZHc2_0zZC0pIIKS4Tvt19oj8TQ=";
+export const ALREADY_IN_QUEUE: string = `Vous êtes déjà dans la file d'attente`;
+export const QUEUE_CLOSED: string = `La file d'attente est fermée`;
+export const QUEUE_FULL: string = `File d'attente complète`;
+export const JOIN_QUEUE_SUCCESS: string = `File d'attente complète`;
 
 /* ++++++++++++++ Routes ++++++++++++++ */
 export const WAITIFY_URL: string = `https://waitify.fr`;

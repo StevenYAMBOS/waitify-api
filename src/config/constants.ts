@@ -40,6 +40,7 @@ export const PHONE_REQUIRED: string = `Le numéro de téléphone est requis`;
 export const BUSINESS_NOT_FOUND_OR_INACTIVE: string = `Le commerce est introuvable ou inactif`;
 export const INVALID_PHONE_FORMAT: string = `Le format du numéro de téléphone est invalide`;
 export const QUEUE_STATUS_WAITING: string = `waiting`;
+export const QUEUE_STATUS_MESSAGE: string = `Le status de la file d'attente est à présent à jour`;
 
 /* ++++++++++++++ Routes ++++++++++++++ */
 export const WAITIFY_URL: string = `https://waitify.fr`;

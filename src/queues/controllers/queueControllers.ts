@@ -19,21 +19,25 @@ import {
   QUEUE_FULL,
   QUEUE_STATUS_WAITING,
   UNAUTHORIZED,
+  PATCH_METHOD,
+  QUEUE_STATUS_MESSAGE,
 } from "../../config/constants";
 import {
   GetQueueResponse,
   JoinQueueResponse,
   Queue,
+  StatusQueueResponse,
 } from "../models/queueModels";
 import { v4 as uuidv4 } from "uuid";
 
 /*
 Activer ou désactiver la file d'attente
 Côté Font on va envoyer un booléen (true ou false) pour activer ou désactiver la file d'attente
+On utilise le token QR Code pour identifier l'entreprise plutôt que l'id
 */
 export const ActivateQueueController = async (req: Request, res: Response) => {
   // Vérification méthode HTTP
-  if (req.method !== POST_METHOD) {
+  if (req.method !== PATCH_METHOD) {
     res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
   }
 
@@ -41,23 +45,27 @@ export const ActivateQueueController = async (req: Request, res: Response) => {
     // Corps de la requête
     const { isQueueActive } = req.body;
 
-    // id récupéré depuis les paramètres de l'URL
+    // QR Code token récupéré depuis les paramètres de l'URL
     const idParam: string = req.params.id;
 
     // Date du jour
-    const now: Date = new Date();
+    // const now: Date = new Date();
 
     // Query
-    const query: string = `UPDATE businesses SET is_queue_active=$2 WHERE id=$1 RETURNING *;`;
+    const query: string = `UPDATE businesses SET is_queue_active=$2 WHERE qr_code_token=$1;`;
+
     // Valeurs
-    const values: string[] = [idParam, isQueueActive, now];
+    const values: string[] = [idParam, isQueueActive];
 
     // Modifier les informations de la file d'attente en base de données
-    const queue = await pool.query(query, values);
-    const queueCreated: Queue = queue.rows[0];
+    await pool.query(query, values);
+
+    const response: StatusQueueResponse = {
+      message: QUEUE_STATUS_MESSAGE,
+    };
 
     // Réponse
-    res.status(OK).json(queueCreated);
+    res.status(OK).json(response);
   } catch (error: unknown) {
     console.error(INTERNAL_SERVER_ERROR_MESSAGE, error);
     res.status(INTERNAL_SERVER_ERROR).json({

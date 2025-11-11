@@ -10,10 +10,11 @@ import {
   BUSINESS_PATH,
   ID_PARAM,
   JOIN_QUEUE_PATH,
+  QUEUE_STATUS_PATH,
 } from "../../config/constants";
 
-queueRouter.get(
-  BUSINESS_PATH + ID_PARAM,
+queueRouter.patch(
+  BUSINESS_PATH + ID_PARAM + QUEUE_STATUS_PATH,
   authMiddleware,
   ActivateQueueController
 );

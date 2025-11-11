@@ -26,6 +26,10 @@ type JoinQueueResponse = {
   Entry: QueueEntry;
 };
 
+type StatusQueueResponse = {
+  message: string;
+};
+
 type GetQueueResponse = {
   message: string;
   queueLength: number;
@@ -49,4 +53,5 @@ export {
   JoinQueueResponse,
   GetQueueResponse,
   QueueEntry,
+  StatusQueueResponse,
 };

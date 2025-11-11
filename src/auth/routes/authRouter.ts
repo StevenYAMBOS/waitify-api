@@ -6,7 +6,7 @@ import {
   ProtectedController,
   RegisterController,
 } from "../controllers/authControllers";
-import { authMiddleware } from "../middlewares/authMiddleware";
+// import { authMiddleware } from "../middlewares/authMiddleware";
 import {
   LOGIN_PATH,
   PROTECTED_PATH,

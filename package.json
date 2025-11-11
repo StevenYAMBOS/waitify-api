@@ -7,7 +7,7 @@
     "start": "tsc && node dist/server.js",
     "dev": "tsc -w & nodemon -q dist/server.js",
     "lint": "eslint . --ext .ts",
-    "test": "jest"
+    "test": "jest --watch"
   },
   "author": "Steven YAMBOS",
   "license": "ISC",

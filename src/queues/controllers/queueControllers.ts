@@ -24,6 +24,7 @@ import {
 } from "../../config/constants";
 import {
   GetQueueResponse,
+  GetQueueStatusResponse,
   JoinQueueResponse,
   Queue,
   StatusQueueResponse,
@@ -255,6 +256,54 @@ export const GetQueueController = async (req: Request, res: Response) => {
       message: successMessage,
       queueLength: queueFetched.length,
       Queue: queueFetched,
+    };
+
+    res.status(OK).send(response);
+  } catch (error: unknown) {
+    res.status(INTERNAL_SERVER_ERROR).json({
+      message: INTERNAL_SERVER_ERROR_MESSAGE,
+      error: error,
+    });
+  }
+};
+
+// Recalculer le temps d'attente en temps réel
+export const GetQueueStatusController = async (req: Request, res: Response) => {
+  // Vérification méthode HTTP
+  if (req.method !== POST_METHOD) {
+    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  }
+
+  try {
+    // Corps de la requête
+    const { position, BusinessId, originalEstimate } = req.body;
+
+    // Récupérer l'ID de l'entreprise depuis l'URL
+    const idParam: string = req.params.id;
+
+    // Valeurs
+    const values: string[] = [idParam, position, BusinessId, originalEstimate];
+
+    // Query
+    const query: string = `SELECT position, BusinessId, estimated_wait_time FROM queue_entries WHERE id = $1 AND status = 'waiting';`;
+
+    // // Récupérer l'entrée
+    await pool.query(query, values);
+
+    // Recalculer en temps réel
+    let avgServiceTime: number;
+    const queryCalculateRealTime: string = `SELECT average_service_time FROM businesses WHERE id = $1;`;
+    const valuesCalculateRealTime: number[] = [avgServiceTime];
+    await pool.query(queryCalculateRealTime, valuesCalculateRealTime);
+
+    const currentEstimate: number = Math.ceil(
+      ((position - 1) * avgServiceTime) / 60
+    );
+
+    // Réponse
+    const response: GetQueueStatusResponse = {
+      position: position,
+      estimatedWaitMinutes: currentEstimate,
     };
 
     res.status(OK).send(response);

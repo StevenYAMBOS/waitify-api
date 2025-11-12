@@ -36,6 +36,11 @@ type GetQueueResponse = {
   Queue: Queue[];
 };
 
+type GetQueueStatusResponse = {
+  position: number;
+  estimatedWaitMinutes: number;
+};
+
 type QueueEntry = {
   id: string;
   BusinessID: string;
@@ -54,4 +59,5 @@ export {
   GetQueueResponse,
   QueueEntry,
   StatusQueueResponse,
+  GetQueueStatusResponse,
 };

@@ -3,6 +3,7 @@ const queueRouter = Router();
 
 import {
   ActivateQueueController,
+  GetQueueStatusController,
   JoinQueueController,
 } from "../controllers/queueControllers";
 import { authMiddleware } from "../../auth/middlewares/authMiddleware";
@@ -22,5 +23,10 @@ queueRouter.post(
   BUSINESS_PATH + ID_PARAM + JOIN_QUEUE_PATH,
   authMiddleware,
   JoinQueueController
+);
+queueRouter.get(
+  QUEUE_STATUS_PATH + ID_PARAM,
+  authMiddleware,
+  GetQueueStatusController
 );
 export default queueRouter;

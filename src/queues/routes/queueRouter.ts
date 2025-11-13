@@ -6,10 +6,12 @@ import {
   GetQueueStatusController,
   JoinQueueController,
   CallNextClientController,
+  CancelQueueEntryController,
 } from "../controllers/queueControllers";
 import { authMiddleware } from "../../auth/middlewares/authMiddleware";
 import {
   BUSINESS_PATH,
+  CANCEL_CLIENT_PATH,
   ID_PARAM,
   JOIN_QUEUE_PATH,
   NEXT_CLIENT_PATH,
@@ -35,5 +37,10 @@ queueRouter.post(
   ID_PARAM + NEXT_CLIENT_PATH,
   authMiddleware,
   CallNextClientController
+);
+queueRouter.delete(
+  ID_PARAM + CANCEL_CLIENT_PATH,
+  authMiddleware,
+  CancelQueueEntryController
 );
 export default queueRouter;

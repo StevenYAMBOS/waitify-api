@@ -22,6 +22,8 @@ import {
   PATCH_METHOD,
   QUEUE_STATUS_MESSAGE,
   NEXT_CLIENT_MESSAGE,
+  CANCELLED_CLIENT_STATUS,
+  NO_CONTENT,
 } from "../../config/constants";
 import {
   GetQueueResponse,
@@ -326,7 +328,7 @@ export const CallNextClientController = async (req: Request, res: Response) => {
 
   try {
     // Corps de la requête
-    const { id, phone, clientName } = req.body;
+    const { id, phone, clientName } = req.body; // ici c'est l'id du client
 
     // Récupérer l'ID de la file d'attente depuis l'URL
     const idParam: string = req.params.id;
@@ -372,6 +374,63 @@ export const CallNextClientController = async (req: Request, res: Response) => {
     };
 
     res.status(OK).send(response);
+  } catch (error: unknown) {
+    res.status(INTERNAL_SERVER_ERROR).json({
+      message: INTERNAL_SERVER_ERROR_MESSAGE,
+      error: error,
+    });
+  }
+};
+
+// LE client annule sa place
+export const CancelQueueEntryController = async (
+  req: Request,
+  res: Response
+) => {
+  // Vérification méthode HTTP
+  if (req.method !== POST_METHOD) {
+    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  }
+
+  try {
+    // Récupérer l'ID de la file d'attente depuis l'URL
+    const idParam: string = req.params.id;
+
+    /* ****** Vérifier que l'entrée existe et est en attente ****** */
+
+    // Query
+    const clientQuery: string = `SELECT EXISTS(SELECT 1 FROM queue_entries WHERE id = $1 AND status = 'waiting');`;
+
+    // Valeurs
+    const clientValues: string[] = [idParam];
+
+    // // Récupérer l'entrée
+    await pool.query(clientQuery, clientValues);
+
+    /* ******  Annuler sa place ****** */
+
+    // Query
+    const statusQuery: string = `UPDATE queue_entries SET status = $2, updated_at = $3 WHERE id = $1;`;
+
+    // Date à l'instant T
+    const now: Date = new Date();
+
+    // Valeurs
+    const statusValues: (string | Date)[] = [
+      idParam,
+      CANCELLED_CLIENT_STATUS,
+      now,
+    ];
+
+    // Annuler
+    await pool.query(statusQuery, statusValues);
+
+    /* ******  Les triggers implémenter côté PostgreSQL vont recalculés automatiquement les positions restantes ****** */
+
+    // Envoyer le SMS "C'est votre tour !"
+    // sendSMS(phone, "C'est votre tour chez ...")
+
+    res.status(NO_CONTENT);
   } catch (error: unknown) {
     res.status(INTERNAL_SERVER_ERROR).json({
       message: INTERNAL_SERVER_ERROR_MESSAGE,

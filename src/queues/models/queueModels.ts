@@ -1,4 +1,4 @@
-type Queue = {
+export interface Queue {
   id: string;
   BusinessID: string;
   phone: string;
@@ -13,35 +13,35 @@ type Queue = {
   lastSmsSentAt: Date;
   createdAt: Date;
   updatedAt: Date;
-};
+}
 
-type JoinQueueRequest = {
+export interface JoinQueueRequest {
   id: string;
   phone: string;
   clientName: string;
-};
+}
 
-type JoinQueueResponse = {
+export interface JoinQueueResponse {
   message: string;
   Entry: QueueEntry;
-};
+}
 
-type StatusQueueResponse = {
+export interface StatusQueueResponse {
   message: string;
-};
+}
 
-type GetQueueResponse = {
+export interface GetQueueResponse {
   message: string;
   queueLength: number;
   Queue: Queue[];
-};
+}
 
-type GetQueueStatusResponse = {
+export interface GetQueueStatusResponse {
   position: number;
   estimatedWaitMinutes: number;
-};
+}
 
-type QueueEntry = {
+export interface QueueEntry {
   id: string;
   BusinessID: string;
   phone: string;
@@ -50,14 +50,9 @@ type QueueEntry = {
   estimatedWaitTime: number;
   status: string;
   createdAt: Date;
-};
+}
 
-export {
-  Queue,
-  JoinQueueRequest,
-  JoinQueueResponse,
-  GetQueueResponse,
-  QueueEntry,
-  StatusQueueResponse,
-  GetQueueStatusResponse,
-};
+export interface NextClientResponse {
+  message: string;
+  Client: JoinQueueRequest;
+}

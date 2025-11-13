@@ -41,6 +41,7 @@ export const BUSINESS_NOT_FOUND_OR_INACTIVE: string = `Le commerce est introuvab
 export const INVALID_PHONE_FORMAT: string = `Le format du numéro de téléphone est invalide`;
 export const QUEUE_STATUS_WAITING: string = `waiting`;
 export const QUEUE_STATUS_MESSAGE: string = `Le status de la file d'attente est à présent à jour`;
+export const NEXT_CLIENT_MESSAGE: string = `Le client est appelé`;
 
 /* ++++++++++++++ Routes ++++++++++++++ */
 export const WAITIFY_URL: string = `https://waitify.fr`;
@@ -63,3 +64,4 @@ export const QRCODE_TOKEN_PATH: string = "/q";
 export const QUEUES_PATH: string = "/queues";
 export const QUEUE_STATUS_PATH: string = "/status";
 export const JOIN_QUEUE_PATH: string = "/join";
+export const NEXT_CLIENT_PATH: string = "/next";

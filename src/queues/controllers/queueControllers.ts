@@ -21,11 +21,13 @@ import {
   UNAUTHORIZED,
   PATCH_METHOD,
   QUEUE_STATUS_MESSAGE,
+  NEXT_CLIENT_MESSAGE,
 } from "../../config/constants";
 import {
   GetQueueResponse,
   GetQueueStatusResponse,
   JoinQueueResponse,
+  NextClientResponse,
   Queue,
   StatusQueueResponse,
 } from "../models/queueModels";
@@ -304,6 +306,69 @@ export const GetQueueStatusController = async (req: Request, res: Response) => {
     const response: GetQueueStatusResponse = {
       position: position,
       estimatedWaitMinutes: currentEstimate,
+    };
+
+    res.status(OK).send(response);
+  } catch (error: unknown) {
+    res.status(INTERNAL_SERVER_ERROR).json({
+      message: INTERNAL_SERVER_ERROR_MESSAGE,
+      error: error,
+    });
+  }
+};
+
+// Appeller le client suivant
+export const CallNextClientController = async (req: Request, res: Response) => {
+  // Vérification méthode HTTP
+  if (req.method !== POST_METHOD) {
+    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  }
+
+  try {
+    // Corps de la requête
+    const { id, phone, clientName } = req.body;
+
+    // Récupérer l'ID de la file d'attente depuis l'URL
+    const idParam: string = req.params.id;
+
+    /* ****** Récupérer le premier client en attente ****** */
+
+    // Query
+    const clientQuery: string = `SELECT id, phone, client_name FROM queue_entries WHERE BusinessId = $1 AND status = 'waiting' ORDER BY position ASC LIMIT 1;`;
+
+    // Valeurs
+    const clientValues: string[] = [idParam, id, phone, clientName];
+
+    // // Récupérer l'entrée
+    await pool.query(clientQuery, clientValues);
+
+    /* ******  Mettre à jour le status ****** */
+
+    // Query
+    const statusQuery: string = `UPDATE queue_entries SET status = 'called', called_at = $2, updated_at = $3 WHERE id = $1;`;
+
+    // Date à l'instant T
+    const now: Date = new Date();
+
+    // Valeurs
+    const statusValues: string[] = [id, now, now];
+
+    // Récupérer l'entrée
+    await pool.query(statusQuery, statusValues);
+
+    /* ******  Les triggers implémenter côté PostgreSQL vont recalculés automatiquement les positions restantes ****** */
+
+    // Envoyer le SMS "C'est votre tour !"
+    // sendSMS(phone, "C'est votre tour chez ...")
+
+    // Réponse
+    const response: NextClientResponse = {
+      message: NEXT_CLIENT_MESSAGE,
+      Client: {
+        id: id,
+        phone: phone,
+        clientName: clientName,
+      },
     };
 
     res.status(OK).send(response);

@@ -16,11 +16,11 @@
 
 ## Vue d'ensemble
 
-Le système de file d'attente virtuelle est un mixte avec une **architecture PostgreSQL** + **Golang** pour "garantir l'intégrité des données et la performance des opérations en temps réel". L'idée c'est d'automatisé certaines tâches en base de données (exemple le recalcule des positions des clients).
+Le système de file d'attente virtuelle est un mixte avec une **architecture PostgreSQL** + **Node.js** pour "garantir l'intégrité des données et la performance des opérations en temps réel". L'idée c'est d'automatisé certaines tâches en base de données (exemple le recalcule des positions des clients).
 
 ### Principe de fonctionnement
 
-```
+```shell
 Client scanne QR Code
       ↓
 Formulaire web (nom + téléphone)
@@ -121,7 +121,7 @@ Si Bob est servi → Trigger recalcule :
 
 ### 2. Calcul du temps d'attente
 
-Le temps d'attente estimé est calculé **par Golang** au moment de l'insertion :
+Le temps d'attente estimé est calculé **par Node.js** au moment de l'insertion :
 
 ```go
 estimatedWaitMinutes = (currentQueueSize * averageServiceTime) / 60

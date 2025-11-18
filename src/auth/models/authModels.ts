@@ -1,36 +1,28 @@
 import { JwtPayload } from "jsonwebtoken";
 import { User } from "../../users/models/userModels";
 
-type RegisterRequest = {
+export interface RegisterRequest {
   username: string;
   email: string;
   password: string;
-};
+}
 
-type RegisterResponse = {
+export interface RegisterResponse {
   message: string;
   user: User;
-};
+}
 
-type LoginRequest = {
+export interface LoginRequest {
   email: string;
   password: string;
-};
+}
 
-interface LoginResponse {
+export interface LoginResponse {
   message: string;
   token: string;
   User: User;
 }
 
-interface CustomRequest extends Request {
+export interface CustomRequest extends Request {
   token: string | JwtPayload;
 }
-
-export {
-  RegisterRequest,
-  RegisterResponse,
-  LoginRequest,
-  LoginResponse,
-  CustomRequest,
-};

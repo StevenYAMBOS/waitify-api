@@ -43,6 +43,7 @@ export const QUEUE_STATUS_WAITING: string = `waiting`;
 export const QUEUE_STATUS_MESSAGE: string = `Le status de la file d'attente est à présent à jour`;
 export const NEXT_CLIENT_MESSAGE: string = `Le client est appelé`;
 export const CANCELLED_CLIENT_STATUS: string = `cancelled`;
+export const LOGIN_MESSAGE: string = `L'utilisateur est connecté !`;
 
 /* ++++++++++++++ Routes ++++++++++++++ */
 export const WAITIFY_URL: string = `https://waitify.fr`;
@@ -67,3 +68,11 @@ export const QUEUE_STATUS_PATH: string = "/status";
 export const JOIN_QUEUE_PATH: string = "/join";
 export const NEXT_CLIENT_PATH: string = "/next";
 export const CANCEL_CLIENT_PATH: string = "/cancel";
+
+/* ++++++++++++++ Tests ++++++++++++++ */
+// Messages
+export const TEST_LOGIN_RULE_MESSAGE: string = `Le test devrait connecter l'utilisateur et renvoyer un code 200`;
+export const TEST_LOGIN_MESSAGE: string = `L'utilisateur est connecté`;
+// Valeurs
+export const TEST_LOGIN_EMAIL: string = `usertest@yopmail.com`;
+export const TEST_LOGIN_PASSWORD: string = `@Password1`;

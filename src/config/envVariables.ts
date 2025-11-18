@@ -13,3 +13,4 @@ export const DATABASE_NAME = process.env.DB_NAME;
 
 // JWT
 export const SECRET_KEY = process.env.JWT_SECRET;
+export const TOKEN = process.env.TOKEN_TEST;

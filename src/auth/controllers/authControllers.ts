@@ -151,11 +151,11 @@ export const LoginController = async (req: Request, res: Response) => {
       User: userFetched,
     };
 
-    res.status(200).json({ loginResponse });
+    res.status(OK).json({ loginResponse });
   } catch (error: unknown) {
     console.log(error);
     res
-      .status(500)
+      .status(INTERNAL_SERVER_ERROR)
       .json({ error: "La connexion a échouée, une erreur est survenue" });
   }
 };

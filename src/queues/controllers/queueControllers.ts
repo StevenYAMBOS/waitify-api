@@ -24,6 +24,8 @@ import {
   NEXT_CLIENT_MESSAGE,
   CANCELLED_CLIENT_STATUS,
   NO_CONTENT,
+  ID_IS_MISSING,
+  ENTRY_IS_MISSING,
 } from "../../config/constants";
 import {
   GetQueueResponse,
@@ -183,10 +185,10 @@ export const JoinQueueController = async (req: Request, res: Response) => {
     );
 
     // Insérer dans la base (le trigger SQL recalculera automatiquement les positions)
-    const entryId: string = uuidv4();
+    const id: string = uuidv4();
     const insertQuery: string = `INSERT INTO queue_entries (id, BusinessId, phone, client_name, position, estimated_wait_time, status, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *;`;
     const insertValues: (string | number | Date)[] = [
-      entryId,
+      id,
       businessId,
       phone,
       clientName || null,
@@ -271,50 +273,69 @@ export const GetQueueController = async (req: Request, res: Response) => {
   }
 };
 
-// Recalculer le temps d'attente en temps réel
-export const GetQueueStatusController = async (req: Request, res: Response) => {
-  // Vérification méthode HTTP
-  if (req.method !== POST_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
-  }
-
+/**
+ * Récupère le statut en temps réel d'un client dans la file d'attente
+ * Recalcule l'estimation de temps d'attente basée sur sa position actuelle
+ * Paramètres URL: id (UUID du client dans la queue)
+ */
+export const GetQueueStatusController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    // Corps de la requête
-    const { position, BusinessId, originalEstimate } = req.body;
+    const { id } = req.params;
 
-    // Récupérer l'ID de l'entreprise depuis l'URL
-    const idParam: string = req.params.id;
+    // Validation du paramètre
+    if (!id || id.trim() === "") {
+      res.status(BAD_REQUEST).json({
+        error: ID_IS_MISSING,
+      });
+      return;
+    }
 
-    // Valeurs
-    const values: string[] = [idParam, position, BusinessId, originalEstimate];
+    // Récupérer l'entrée et ses infos de business en une seule requête
+    const query = `
+      SELECT 
+        qe.id,
+        qe.position,
+        qe.BusinessId,
+        qe.estimated_wait_time,
+        qe.status,
+        b.average_service_time
+      FROM queue_entries qe
+      JOIN businesses b ON qe.BusinessId = b.id
+      WHERE qe.id = $1 AND qe.status = 'waiting'
+    `;
 
-    // Query
-    const query: string = `SELECT position, BusinessId, estimated_wait_time FROM queue_entries WHERE id = $1 AND status = 'waiting';`;
+    const result = await pool.query(query, [id]);
 
-    // // Récupérer l'entrée
-    await pool.query(query, values);
+    if (result.rows.length === 0) {
+      res.status(NOT_FOUND).json({
+        error: ENTRY_IS_MISSING,
+      });
+      return;
+    }
 
-    // Recalculer en temps réel
-    let avgServiceTime: number;
-    const queryCalculateRealTime: string = `SELECT average_service_time FROM businesses WHERE id = $1;`;
-    const valuesCalculateRealTime: number[] = [avgServiceTime];
-    await pool.query(queryCalculateRealTime, valuesCalculateRealTime);
+    const { position, average_service_time } = result.rows[0];
 
-    const currentEstimate: number = Math.ceil(
-      ((position - 1) * avgServiceTime) / 60
+    // Recalcul du temps d'attente en temps réel
+    // Formule: (position - 1) * temps moyen d'un service / 60 pour convertir en minutes
+    const currentEstimateMinutes = Math.ceil(
+      ((position - 1) * average_service_time) / 60
     );
 
-    // Réponse
     const response: GetQueueStatusResponse = {
-      position: position,
-      estimatedWaitMinutes: currentEstimate,
+      position,
+      estimatedWaitMinutes: currentEstimateMinutes,
+      status: QUEUE_STATUS_WAITING,
     };
 
-    res.status(OK).send(response);
+    res.status(OK).json(response);
   } catch (error: unknown) {
+    console.error("Erreur GetQueueStatus : ", error);
     res.status(INTERNAL_SERVER_ERROR).json({
       message: INTERNAL_SERVER_ERROR_MESSAGE,
-      error: error,
+      error: error instanceof Error ? error.message : "Erreur inconnue",
     });
   }
 };
@@ -382,7 +403,7 @@ export const CallNextClientController = async (req: Request, res: Response) => {
   }
 };
 
-// LE client annule sa place
+// LE client annule sa propre place
 export const CancelQueueEntryController = async (
   req: Request,
   res: Response

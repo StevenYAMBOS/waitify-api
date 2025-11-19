@@ -44,6 +44,8 @@ export const QUEUE_STATUS_MESSAGE: string = `Le status de la file d'attente est 
 export const NEXT_CLIENT_MESSAGE: string = `Le client est appelé`;
 export const CANCELLED_CLIENT_STATUS: string = `cancelled`;
 export const LOGIN_MESSAGE: string = `L'utilisateur est connecté !`;
+export const ID_IS_MISSING: string = `ID requis`;
+export const ENTRY_IS_MISSING: string = `Entrée non trouvée ou déjà traitée`;
 
 /* ++++++++++++++ Routes ++++++++++++++ */
 export const WAITIFY_URL: string = `https://waitify.fr`;

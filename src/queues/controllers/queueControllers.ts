@@ -28,6 +28,7 @@ import {
   ENTRY_IS_MISSING,
   NO_CLIENT,
   UNKNOWN_ERROR,
+  NOW,
 } from "../../config/constants";
 import {
   GetQueueResponse,
@@ -58,7 +59,7 @@ export const ActivateQueueController = async (req: Request, res: Response) => {
     const idParam: string = req.params.id;
 
     // Date du jour
-    // const now: Date = new Date();
+    //
 
     // Query
     const query: string = `UPDATE businesses SET is_queue_active=$2 WHERE qr_code_token=$1;`;
@@ -120,7 +121,6 @@ export const JoinQueueController = async (req: Request, res: Response) => {
     }
 
     // Date du jour
-    const now: Date = new Date();
 
     // Vérifier que le commerce existe ET que la file d'attente est active
     const businessQuery: string = `SELECT is_queue_active, max_queue_size, average_service_time FROM businesses WHERE id = $1 AND is_active = true;`;
@@ -197,8 +197,8 @@ export const JoinQueueController = async (req: Request, res: Response) => {
       nextPosition,
       estimatedWaitMinutes,
       QUEUE_STATUS_WAITING,
-      now,
-      now,
+      NOW,
+      NOW,
     ];
 
     // Insertion des informations de l'utilisateur dans la file d'attente en base de données
@@ -426,59 +426,71 @@ export const CallNextClientController = async (
   }
 };
 
-// LE client annule sa propre place
+/**
+ * Annule la place d'un client dans la file d'attente
+ * Change le statut de 'waiting' à 'cancelled'
+ * Les triggers PostgreSQL recalculent automatiquement les positions
+ * Paramètres URL: id (UUID du client)
+ */
 export const CancelQueueEntryController = async (
   req: Request,
   res: Response
-) => {
-  // Vérification méthode HTTP
-  if (req.method !== POST_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
-  }
-
+): Promise<void> => {
   try {
-    // Récupérer l'ID de la file d'attente depuis l'URL
-    const idParam: string = req.params.id;
+    const { id } = req.params;
 
-    /* ****** Vérifier que l'entrée existe et est en attente ****** */
+    // Validation du paramètre
+    if (!id || id.trim() === "") {
+      res.status(BAD_REQUEST).json({
+        error: ID_IS_MISSING,
+      });
+      return;
+    }
 
-    // Query
-    const clientQuery: string = `SELECT EXISTS(SELECT 1 FROM queue_entries WHERE id = $1 AND status = 'waiting');`;
+    // Vérifier que l'entrée existe et est en attente
+    const selectQuery = `
+      SELECT id, phone, client_name, position, BusinessId
+      FROM queue_entries
+      WHERE id = $1 AND status = 'waiting'
+    `;
 
-    // Valeurs
-    const clientValues: string[] = [idParam];
+    const selectResult = await pool.query(selectQuery, [id]);
 
-    // // Récupérer l'entrée
-    await pool.query(clientQuery, clientValues);
+    if (selectResult.rows.length === 0) {
+      res.status(NOT_FOUND).json({
+        error: ENTRY_IS_MISSING,
+      });
+      return;
+    }
 
-    /* ******  Annuler sa place ****** */
+    // const { phone, client_name } = selectResult.rows[0];
 
-    // Query
-    const statusQuery: string = `UPDATE queue_entries SET status = $2, updated_at = $3 WHERE id = $1;`;
+    // Annuler la place du client
+    const cancelQuery = `
+      UPDATE queue_entries
+      SET status = $2, updated_at = $3
+      WHERE id = $1
+      RETURNING id, status
+    `;
 
-    // Date à l'instant T
-    const now: Date = new Date();
+    const values: (string | Date)[] = [id, CANCELLED_CLIENT_STATUS, NOW];
 
-    // Valeurs
-    const statusValues: (string | Date)[] = [
-      idParam,
-      CANCELLED_CLIENT_STATUS,
-      now,
-    ];
+    await pool.query(cancelQuery, values);
 
-    // Annuler
-    await pool.query(statusQuery, statusValues);
+    // Les triggers PostgreSQL recalculent automatiquement les positions des autres clients
 
-    /* ******  Les triggers implémenter côté PostgreSQL vont recalculés automatiquement les positions restantes ****** */
+    // TODO: Envoyer SMS de confirmation d'annulation
+    // await sendSMS(phone, `Votre place chez [Business] a été annulée.`);
 
-    // Envoyer le SMS "C'est votre tour !"
-    // sendSMS(phone, "C'est votre tour chez ...")
+    // TODO: Enregistrer l'SMS dans sms_logs
+    // await logSMSSent(id, phone, 'cancelled', ...);
 
-    res.status(NO_CONTENT);
+    res.status(NO_CONTENT).send();
   } catch (error: unknown) {
+    console.error("Erreur CancelQueueEntry : ", error);
     res.status(INTERNAL_SERVER_ERROR).json({
       message: INTERNAL_SERVER_ERROR_MESSAGE,
-      error: error,
+      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
     });
   }
 };

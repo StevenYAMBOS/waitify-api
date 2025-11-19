@@ -48,6 +48,7 @@ export const ID_IS_MISSING: string = `ID requis`;
 export const ENTRY_IS_MISSING: string = `Entrée non trouvée ou déjà traitée`;
 export const NO_CLIENT: string = `Aucun client en attente`;
 export const UNKNOWN_ERROR: string = `Erreur inconnue`;
+export const NOW: Date = new Date();
 
 /* ++++++++++++++ Routes ++++++++++++++ */
 export const WAITIFY_URL: string = `https://waitify.fr`;

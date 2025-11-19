@@ -39,7 +39,7 @@ export interface GetQueueResponse {
 
 export interface GetQueueStatusResponse {
   position: number;
-  estimatedWaitMinutes: number;
+  estimatedWaitTime: number;
   status: string;
 }
 

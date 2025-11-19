@@ -29,6 +29,10 @@ import {
   NO_CLIENT,
   UNKNOWN_ERROR,
   NOW,
+  CALLED_CLIENT_STATUS,
+  ENTRY_NOT_CALLED,
+  SERVED_CLIENT_STATUS,
+  SERVED_CLIENT_MESSAGE,
 } from "../../config/constants";
 import {
   GetQueueResponse,
@@ -488,6 +492,87 @@ export const CancelQueueEntryController = async (
     res.status(NO_CONTENT).send();
   } catch (error: unknown) {
     console.error("Erreur CancelQueueEntry : ", error);
+    res.status(INTERNAL_SERVER_ERROR).json({
+      message: INTERNAL_SERVER_ERROR_MESSAGE,
+      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
+    });
+  }
+};
+
+/**
+ * Confirme que le client a été servi avec succès
+ * Change le statut de 'called' à 'served' et enregistre l'heure de fin
+ * Enregistre le temps de service réel pour améliorer les estimations futures
+ * Les triggers PostgreSQL recalculent automatiquement les positions
+ * Route: PATCH /queues/:id/served
+ * Paramètres URL: id (UUID du client)
+ * Body: { actualServiceTime?: number } (optionnel, en secondes)
+ */
+export const MarkClientAsServedController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { actualServiceTime } = req.body;
+
+    // Validation du paramètre
+    if (!id || id.trim() === "") {
+      res.status(BAD_REQUEST).json({
+        error: ID_IS_MISSING,
+      });
+      return;
+    }
+
+    // Vérifier que l'entrée existe et est en statut 'called'
+    const selectQuery = `
+      SELECT id, called_at, BusinessId
+      FROM queue_entries
+      WHERE id = $1 AND status = $2
+    `;
+
+    const values: string[] = [id, CALLED_CLIENT_STATUS];
+
+    const selectResult = await pool.query(selectQuery, values);
+
+    if (selectResult.rows.length === 0) {
+      res.status(NOT_FOUND).json({
+        error: ENTRY_NOT_CALLED,
+      });
+      return;
+    }
+
+    // Calculer le temps de service réel si fourni, sinon NULL
+    const serviceTime =
+      actualServiceTime && actualServiceTime > 0 ? actualServiceTime : null;
+
+    // Marquer le client comme servi
+    const updateQuery = `
+      UPDATE queue_entries
+      SET status = $3, served_at = $4, 
+          actual_service_time = $2, updated_at = $5
+      WHERE id = $1
+      RETURNING id, status
+    `;
+
+    const updatedValues: string[] = [
+      id,
+      serviceTime,
+      SERVED_CLIENT_STATUS,
+      NOW,
+      NOW,
+    ];
+
+    await pool.query(updateQuery, updatedValues);
+
+    // Les triggers PostgreSQL recalculent automatiquement les positions des autres clients
+
+    res.status(OK).json({
+      message: SERVED_CLIENT_MESSAGE,
+      id,
+    });
+  } catch (error: unknown) {
+    console.error("Erreur MarkClientAsServed : ", error);
     res.status(INTERNAL_SERVER_ERROR).json({
       message: INTERNAL_SERVER_ERROR_MESSAGE,
       error: error instanceof Error ? error.message : UNKNOWN_ERROR,

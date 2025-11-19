@@ -43,9 +43,12 @@ export const QUEUE_STATUS_WAITING: string = `waiting`;
 export const QUEUE_STATUS_MESSAGE: string = `Le status de la file d'attente est à présent à jour`;
 export const CLIENT_CALLED_MESSAGE: string = `Client appelé avec succès`;
 export const CANCELLED_CLIENT_STATUS: string = `cancelled`;
+export const CALLED_CLIENT_STATUS: string = `called`;
+export const SERVED_CLIENT_STATUS: string = `called`;
 export const LOGIN_MESSAGE: string = `L'utilisateur est connecté !`;
 export const ID_IS_MISSING: string = `ID requis`;
 export const ENTRY_IS_MISSING: string = `Entrée non trouvée ou déjà traitée`;
+export const ENTRY_NOT_CALLED: string = `Entrée non trouvée ou pas encore appelée`;
 export const NO_CLIENT: string = `Aucun client en attente`;
 export const UNKNOWN_ERROR: string = `Erreur inconnue`;
 export const NOW: Date = new Date();
@@ -72,6 +75,7 @@ export const QUEUES_PATH: string = "/queues";
 export const QUEUE_STATUS_PATH: string = "/status";
 export const JOIN_QUEUE_PATH: string = "/join";
 export const NEXT_CLIENT_PATH: string = "/next";
+export const SERVED_CLIENT_PATH: string = "/served";
 export const CANCEL_CLIENT_PATH: string = "/cancel";
 
 /* ++++++++++++++ Tests ++++++++++++++ */

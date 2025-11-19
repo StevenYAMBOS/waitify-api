@@ -7,6 +7,7 @@ import {
   JoinQueueController,
   CallNextClientController,
   CancelQueueEntryController,
+  MarkClientAsServedController,
 } from "../controllers/queueControllers";
 import { authMiddleware } from "../../auth/middlewares/authMiddleware";
 import {
@@ -16,12 +17,18 @@ import {
   JOIN_QUEUE_PATH,
   NEXT_CLIENT_PATH,
   QUEUE_STATUS_PATH,
+  SERVED_CLIENT_PATH,
 } from "../../config/constants";
 
 queueRouter.patch(
   BUSINESS_PATH + ID_PARAM + QUEUE_STATUS_PATH,
   authMiddleware,
   ActivateQueueController
+);
+queueRouter.patch(
+  ID_PARAM + SERVED_CLIENT_PATH,
+  authMiddleware,
+  MarkClientAsServedController
 );
 queueRouter.post(
   BUSINESS_PATH + ID_PARAM + JOIN_QUEUE_PATH,

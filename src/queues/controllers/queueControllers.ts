@@ -21,11 +21,13 @@ import {
   UNAUTHORIZED,
   PATCH_METHOD,
   QUEUE_STATUS_MESSAGE,
-  NEXT_CLIENT_MESSAGE,
+  CLIENT_CALLED_MESSAGE,
   CANCELLED_CLIENT_STATUS,
   NO_CONTENT,
   ID_IS_MISSING,
   ENTRY_IS_MISSING,
+  NO_CLIENT,
+  UNKNOWN_ERROR,
 } from "../../config/constants";
 import {
   GetQueueResponse,
@@ -91,12 +93,12 @@ export const JoinQueueController = async (req: Request, res: Response) => {
 
   try {
     // Corps de la requête
-    const { businessId, phone, clientName } = req.body;
+    const { BusinessId, phone, clientName } = req.body;
 
     /* ----- Validation des champs ----- */
 
     // Validation de l'identifiant du commerce
-    if (!businessId) {
+    if (!BusinessId) {
       return res.status(BAD_REQUEST).json({
         message: BUSINESS_ID_REQUIRED,
       });
@@ -122,7 +124,7 @@ export const JoinQueueController = async (req: Request, res: Response) => {
 
     // Vérifier que le commerce existe ET que la file d'attente est active
     const businessQuery: string = `SELECT is_queue_active, max_queue_size, average_service_time FROM businesses WHERE id = $1 AND is_active = true;`;
-    const businessValues: string[] = [businessId];
+    const businessValues: string[] = [BusinessId];
     const businessResult = await pool.query(businessQuery, businessValues);
 
     // Vérifier si le commerce existe
@@ -145,7 +147,7 @@ export const JoinQueueController = async (req: Request, res: Response) => {
     // Vérifier que le client n'est pas déjà dans la file
     const alreadyInQueueQuery: string = `SELECT EXISTS(SELECT 1 FROM queue_entries WHERE BusinessId = $1 AND phone = $2 AND status = $3) as exists;`;
     const alreadyInQueueValues: string[] = [
-      businessId,
+      BusinessId,
       phone,
       QUEUE_STATUS_WAITING,
     ];
@@ -163,7 +165,7 @@ export const JoinQueueController = async (req: Request, res: Response) => {
 
     // Vérifier que la file n'est pas pleine
     const currentQueueSizeQuery: string = `SELECT COUNT(*)::integer as count FROM queue_entries WHERE BusinessId = $1 AND status = $2;`;
-    const currentQueueSizeValues: string[] = [businessId, QUEUE_STATUS_WAITING];
+    const currentQueueSizeValues: string[] = [BusinessId, QUEUE_STATUS_WAITING];
     const currentQueueSizeResult = await pool.query(
       currentQueueSizeQuery,
       currentQueueSizeValues
@@ -189,7 +191,7 @@ export const JoinQueueController = async (req: Request, res: Response) => {
     const insertQuery: string = `INSERT INTO queue_entries (id, BusinessId, phone, client_name, position, estimated_wait_time, status, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *;`;
     const insertValues: (string | number | Date)[] = [
       id,
-      businessId,
+      BusinessId,
       phone,
       clientName || null,
       nextPosition,
@@ -335,70 +337,91 @@ export const GetQueueStatusController = async (
     console.error("Erreur GetQueueStatus : ", error);
     res.status(INTERNAL_SERVER_ERROR).json({
       message: INTERNAL_SERVER_ERROR_MESSAGE,
-      error: error instanceof Error ? error.message : "Erreur inconnue",
+      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
     });
   }
 };
 
-// Appeller le client suivant
-export const CallNextClientController = async (req: Request, res: Response) => {
-  // Vérification méthode HTTP
-  if (req.method !== POST_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
-  }
-
+/**
+ * Appelle le client suivant en attente dans la file d'attente
+ * Change le statut de 'waiting' à 'called' et enregistre l'heure d'appel
+ * Les triggers PostgreSQL recalculent automatiquement les positions
+ * Paramètres URL: BusinessId (UUID du business)
+ * Body: vide (le premier client 'waiting' est appelé)
+ */
+export const CallNextClientController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    // Corps de la requête
-    const { id, phone, clientName } = req.body; // ici c'est l'id du client
+    const { BusinessId } = req.params;
 
-    // Récupérer l'ID de la file d'attente depuis l'URL
-    const idParam: string = req.params.id;
+    // Validation du paramètre
+    if (!BusinessId || BusinessId.trim() === "") {
+      res.status(BAD_REQUEST).json({
+        error: ID_IS_MISSING,
+      });
+      return;
+    }
 
-    /* ****** Récupérer le premier client en attente ****** */
+    // Récupérer le premier client en attente (position 1, ordre FIFO)
+    const selectClientQuery = `
+      SELECT id, phone, client_name, position
+      FROM queue_entries
+      WHERE BusinessId = $1 AND status = 'waiting'
+      ORDER BY position ASC
+      LIMIT 1
+    `;
 
-    // Query
-    const clientQuery: string = `SELECT id, phone, client_name FROM queue_entries WHERE BusinessId = $1 AND status = 'waiting' ORDER BY position ASC LIMIT 1;`;
+    const values: string[] = [BusinessId, QUEUE_STATUS_WAITING];
 
-    // Valeurs
-    const clientValues: string[] = [idParam, id, phone, clientName];
+    const clientResult = await pool.query(selectClientQuery, values);
 
-    // // Récupérer l'entrée
-    await pool.query(clientQuery, clientValues);
+    if (clientResult.rows.length === 0) {
+      res.status(NOT_FOUND).json({
+        error: NO_CLIENT,
+      });
+      return;
+    }
 
-    /* ******  Mettre à jour le status ****** */
+    const { id: clientId, phone, client_name, position } = clientResult.rows[0];
 
-    // Query
-    const statusQuery: string = `UPDATE queue_entries SET status = 'called', called_at = $2, updated_at = $3 WHERE id = $1;`;
+    // Mettre à jour le statut du client à 'called'
+    // NOW() avec timezone pour tracer précisément quand l'appel s'est fait
+    const updateStatusQuery = `
+      UPDATE queue_entries
+      SET status = 'called', called_at = NOW(), updated_at = NOW()
+      WHERE id = $1
+      RETURNING id, phone, client_name, position
+    `;
 
-    // Date à l'instant T
-    const now: Date = new Date();
+    await pool.query(updateStatusQuery, [clientId]);
 
-    // Valeurs
-    const statusValues: string[] = [id, now, now];
+    // Les triggers PostgreSQL recalculent automatiquement les positions des autres clients
+    // Pas besoin de logique manuelle ici
 
-    // Récupérer l'entrée
-    await pool.query(statusQuery, statusValues);
+    // TODO: Envoyer SMS "C'est votre tour !"
+    // await sendSMS(phone, `C'est votre tour ! Présentez-vous au comptoir.`);
 
-    /* ******  Les triggers implémenter côté PostgreSQL vont recalculés automatiquement les positions restantes ****** */
+    // TODO: Enregistrer l'SMS dans sms_logs
+    // await logSMSSent(clientId, phone, 'your_turn', ...);
 
-    // Envoyer le SMS "C'est votre tour !"
-    // sendSMS(phone, "C'est votre tour chez ...")
-
-    // Réponse
     const response: NextClientResponse = {
-      message: NEXT_CLIENT_MESSAGE,
+      message: CLIENT_CALLED_MESSAGE,
       Client: {
-        id: id,
-        phone: phone,
-        clientName: clientName,
+        id: clientId,
+        phone,
+        clientName: client_name,
+        position,
       },
     };
 
-    res.status(OK).send(response);
+    res.status(OK).json(response);
   } catch (error: unknown) {
+    console.error("Erreur CallNextClient : ", error);
     res.status(INTERNAL_SERVER_ERROR).json({
       message: INTERNAL_SERVER_ERROR_MESSAGE,
-      error: error,
+      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
     });
   }
 };

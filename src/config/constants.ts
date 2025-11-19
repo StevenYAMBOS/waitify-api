@@ -41,11 +41,13 @@ export const BUSINESS_NOT_FOUND_OR_INACTIVE: string = `Le commerce est introuvab
 export const INVALID_PHONE_FORMAT: string = `Le format du numéro de téléphone est invalide`;
 export const QUEUE_STATUS_WAITING: string = `waiting`;
 export const QUEUE_STATUS_MESSAGE: string = `Le status de la file d'attente est à présent à jour`;
-export const NEXT_CLIENT_MESSAGE: string = `Le client est appelé`;
+export const CLIENT_CALLED_MESSAGE: string = `Client appelé avec succès`;
 export const CANCELLED_CLIENT_STATUS: string = `cancelled`;
 export const LOGIN_MESSAGE: string = `L'utilisateur est connecté !`;
 export const ID_IS_MISSING: string = `ID requis`;
 export const ENTRY_IS_MISSING: string = `Entrée non trouvée ou déjà traitée`;
+export const NO_CLIENT: string = `Aucun client en attente`;
+export const UNKNOWN_ERROR: string = `Erreur inconnue`;
 
 /* ++++++++++++++ Routes ++++++++++++++ */
 export const WAITIFY_URL: string = `https://waitify.fr`;

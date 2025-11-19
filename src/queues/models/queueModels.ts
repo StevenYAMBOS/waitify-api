@@ -19,6 +19,7 @@ export interface JoinQueueRequest {
   id: string;
   phone: string;
   clientName: string;
+  position: number;
 }
 
 export interface JoinQueueResponse {

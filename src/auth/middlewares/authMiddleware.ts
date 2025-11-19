@@ -11,6 +11,7 @@ import {
   UNAUTHORIZED,
   UNAUTHORIZED_RESOURCE,
 } from "../../config/constants";
+import { pool } from "../../config/database";
 
 export const authMiddleware = async (
   req: Request,
@@ -31,7 +32,28 @@ export const authMiddleware = async (
       req.user = user;
       next();
     });
-  } catch (err) {
+  } catch (err: unknown) {
+    console.error("Erreur authentification : ", err);
     res.status(UNAUTHORIZED).send(UNAUTHORIZED_RESOURCE);
   }
+};
+
+// Vérifier que le commerce appartient à l'utilisateur
+export const checkBusinessOwnership = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const { businessId } = req.params;
+  const userId = req.user.id;
+
+  const query: string = `SELECT EXISTS(SELECT 1 FROM businesses WHERE id = $1 AND UserId = $2)`;
+  const values: string[] = [businessId, userId];
+
+  const result = await pool.query(query, values);
+
+  if (!result.rows[0].exists) {
+    return res.status(UNAUTHORIZED).json({ error: UNAUTHORIZED_RESOURCE });
+  }
+  next();
 };

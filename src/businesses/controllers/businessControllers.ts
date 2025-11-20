@@ -6,18 +6,10 @@ import {
 } from "../models/businessModels";
 import { pool } from "../../config/database";
 import {
-  BAD_HTTP_METHOD,
-  BAD_REQUEST,
-  DELETE_METHOD,
-  GET_METHOD,
-  INTERNAL_SERVER_ERROR,
-  INTERNAL_SERVER_ERROR_MESSAGE,
-  NO_CONTENT,
-  OK,
-  PATCH_METHOD,
-  POST_METHOD,
-  QRCODE_TOKEN_PATH,
-  WAITIFY_URL,
+  ASSETS,
+  ERROR_MESSAGES,
+  HTTP_METHODS,
+  HTTP_STATUS,
 } from "../../config/constants";
 import { v4 as uuidv4 } from "uuid";
 import QRCode from "qrcode";
@@ -26,8 +18,8 @@ import { PassThrough } from "stream";
 // Récupérer les informations d'une entreprise
 export const GetBusinessController = async (req: Request, res: Response) => {
   // Vérification méthode HTTP
-  if (req.method !== GET_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  if (req.method !== HTTP_METHODS.GET) {
+    res.status(HTTP_STATUS.BAD_REQUEST).send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
   }
 
   try {
@@ -40,10 +32,10 @@ export const GetBusinessController = async (req: Request, res: Response) => {
 
     // Entreprise récupérée
     const businessFetched: Business = response?.rows[0];
-    res.status(OK).send(businessFetched);
+    res.status(HTTP_STATUS.OK).send(businessFetched);
   } catch (error: unknown) {
-    res.status(INTERNAL_SERVER_ERROR).json({
-      message: INTERNAL_SERVER_ERROR_MESSAGE,
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
       error: error,
     });
   }
@@ -52,11 +44,11 @@ export const GetBusinessController = async (req: Request, res: Response) => {
 // Récupérer les entreprises d'un utilisateur
 export const GetUserBusinessesController = async (
   req: Request,
-  res: Response,
+  res: Response
 ) => {
   // Vérification méthode HTTP
-  if (req.method !== GET_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  if (req.method !== HTTP_METHODS.GET) {
+    res.status(HTTP_STATUS.BAD_REQUEST).send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
   }
 
   try {
@@ -74,10 +66,10 @@ export const GetUserBusinessesController = async (
 
     // Entreprise récupérée
     const businessesFetched: Business[] = response?.rows;
-    res.status(OK).send(businessesFetched);
+    res.status(HTTP_STATUS.OK).send(businessesFetched);
   } catch (error: unknown) {
-    res.status(INTERNAL_SERVER_ERROR).json({
-      message: INTERNAL_SERVER_ERROR_MESSAGE,
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
       error: error,
     });
   }
@@ -86,8 +78,8 @@ export const GetUserBusinessesController = async (
 //  Créer une entreprise + générer le QR Code
 export const AddBusinessController = async (req: Request, res: Response) => {
   // Vérification méthode HTTP
-  if (req.method !== POST_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  if (req.method !== HTTP_METHODS.POST) {
+    res.status(HTTP_STATUS.BAD_REQUEST).send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
   }
 
   try {
@@ -146,7 +138,7 @@ export const AddBusinessController = async (req: Request, res: Response) => {
     */
 
     // Contenu du du QRCode
-    const content: string = WAITIFY_URL + QRCODE_TOKEN_PATH + `${qrCodeToken}`;
+    const content: string = ASSETS.WAITIFY_URL + "/q/" + qrCodeToken;
     // Taille de l'image du QRCode
     const size: number = 256;
     // Type d'image du QRCode
@@ -165,9 +157,9 @@ export const AddBusinessController = async (req: Request, res: Response) => {
     // Renvoi l'image du QRCode
     qrStream.pipe(res);
   } catch (error: unknown) {
-    console.error(INTERNAL_SERVER_ERROR_MESSAGE, error);
-    res.status(INTERNAL_SERVER_ERROR).json({
-      message: INTERNAL_SERVER_ERROR_MESSAGE,
+    console.error(ERROR_MESSAGES.INTERNAL_SERVER_ERROR, error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
       error: error,
     });
   }
@@ -176,8 +168,8 @@ export const AddBusinessController = async (req: Request, res: Response) => {
 //  Modifier les informations d'une entreprise existante
 export const UpdateBusinessController = async (req: Request, res: Response) => {
   // Vérification méthode HTTP
-  if (req.method !== PATCH_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  if (req.method !== HTTP_METHODS.PATCH) {
+    res.status(HTTP_STATUS.BAD_REQUEST).send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
   }
 
   try {
@@ -230,11 +222,11 @@ export const UpdateBusinessController = async (req: Request, res: Response) => {
     };
 
     // Réponse
-    res.status(OK).json(response);
+    res.status(HTTP_STATUS.OK).json(response);
   } catch (error: unknown) {
-    console.error(INTERNAL_SERVER_ERROR_MESSAGE, error);
-    res.status(INTERNAL_SERVER_ERROR).json({
-      message: INTERNAL_SERVER_ERROR_MESSAGE,
+    console.error(ERROR_MESSAGES.INTERNAL_SERVER_ERROR, error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
       error: error,
     });
   }
@@ -243,8 +235,8 @@ export const UpdateBusinessController = async (req: Request, res: Response) => {
 //  Supprimer une entreprise existante
 export const DeleteBusinessController = async (req: Request, res: Response) => {
   // Vérification méthode HTTP
-  if (req.method !== DELETE_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  if (req.method !== HTTP_METHODS.DELETE) {
+    res.status(HTTP_STATUS.BAD_REQUEST).send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
   }
 
   try {
@@ -263,11 +255,11 @@ export const DeleteBusinessController = async (req: Request, res: Response) => {
     await pool.query(query, values);
 
     // Réponse
-    res.status(NO_CONTENT).json(message);
+    res.status(HTTP_STATUS.NO_CONTENT).json(message);
   } catch (error: unknown) {
-    console.error(INTERNAL_SERVER_ERROR_MESSAGE, error);
-    res.status(INTERNAL_SERVER_ERROR).json({
-      message: INTERNAL_SERVER_ERROR_MESSAGE,
+    console.error(ERROR_MESSAGES.INTERNAL_SERVER_ERROR, error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
       error: error,
     });
   }
@@ -277,8 +269,8 @@ export const DeleteBusinessController = async (req: Request, res: Response) => {
 // Le client (front) envoie le `qrCodeToken` dans sa requête (body) pour générer le QRCode
 export const GenerateQRCodeController = async (req: Request, res: Response) => {
   // Vérification méthode HTTP
-  if (req.method !== POST_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  if (req.method !== HTTP_METHODS.POST) {
+    res.status(HTTP_STATUS.BAD_REQUEST).send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
   }
 
   try {
@@ -286,7 +278,7 @@ export const GenerateQRCodeController = async (req: Request, res: Response) => {
     const { qrCodeToken } = req.body;
 
     // Contenu du du QRCode
-    const content: string = WAITIFY_URL + QRCODE_TOKEN_PATH + `/${qrCodeToken}`;
+    const content: string = ASSETS.WAITIFY_URL + "/q/" + qrCodeToken;
     console.log("URL : ", content);
 
     const size: number = 256;
@@ -305,9 +297,9 @@ export const GenerateQRCodeController = async (req: Request, res: Response) => {
     // Envoie du QRCode dans la réponse (image `png` du QRCode)
     qrStream.pipe(res);
   } catch (error: unknown) {
-    console.error(INTERNAL_SERVER_ERROR_MESSAGE, error);
-    res.status(INTERNAL_SERVER_ERROR).json({
-      message: INTERNAL_SERVER_ERROR_MESSAGE,
+    console.error(ERROR_MESSAGES.INTERNAL_SERVER_ERROR, error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
       error: error,
     });
   }

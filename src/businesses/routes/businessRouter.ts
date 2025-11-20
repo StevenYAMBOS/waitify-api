@@ -13,45 +13,40 @@ import {
   authMiddleware,
   checkBusinessOwnership,
 } from "../../auth/middlewares/authMiddleware";
-import {
-  ID_PARAM,
-  NEUTRAL_PATH,
-  QRCODE_PATH,
-  USER_PATH,
-} from "../../config/constants";
+import { ROUTES_BUSINESSES, ROUTES_USERS } from "../../config/constants";
 
 businessRouter.get(
-  ID_PARAM,
+  ROUTES_BUSINESSES.BY_ID,
   authMiddleware,
   checkBusinessOwnership,
   GetBusinessController
 );
 businessRouter.get(
-  USER_PATH + ID_PARAM,
+  ROUTES_USERS.BASE + ROUTES_BUSINESSES.BY_ID,
   authMiddleware,
   checkBusinessOwnership,
   GetUserBusinessesController
 );
 businessRouter.post(
-  QRCODE_PATH,
+  "/generate",
   authMiddleware,
   checkBusinessOwnership,
   GenerateQRCodeController
 );
 businessRouter.post(
-  NEUTRAL_PATH,
+  "/",
   authMiddleware,
   checkBusinessOwnership,
   AddBusinessController
 );
 businessRouter.patch(
-  ID_PARAM,
+  ROUTES_BUSINESSES.BY_ID,
   authMiddleware,
   checkBusinessOwnership,
   UpdateBusinessController
 );
 businessRouter.delete(
-  ID_PARAM,
+  ROUTES_BUSINESSES.BY_ID,
   authMiddleware,
   checkBusinessOwnership,
   DeleteBusinessController

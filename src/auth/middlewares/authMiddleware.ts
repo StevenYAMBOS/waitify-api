@@ -2,15 +2,7 @@ import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import { SECRET_KEY } from "../../config/envVariables";
 import { User } from "../../users/models/userModels";
-import {
-  AUTHORIZATION_HEADER,
-  BEARER_STRING,
-  EMPTY_STRING,
-  FORBIDDEN,
-  INVALID_TOKEN,
-  UNAUTHORIZED,
-  UNAUTHORIZED_RESOURCE,
-} from "../../config/constants";
+import { AUTH, HTTP_STATUS } from "../../config/constants";
 import { pool } from "../../config/database";
 
 export const authMiddleware = async (
@@ -19,22 +11,21 @@ export const authMiddleware = async (
   next: NextFunction
 ) => {
   try {
-    const token = req
-      .header(AUTHORIZATION_HEADER)
-      ?.replace(BEARER_STRING, EMPTY_STRING);
+    const token = req.header(AUTH.HEADER_NAME)?.replace(AUTH.BEARER_PREFIX, "");
 
     if (!token) {
       throw new Error();
     }
 
     jwt.verify(token, SECRET_KEY, (err: unknown, user: User) => {
-      if (err) return res.status(FORBIDDEN).send(INVALID_TOKEN);
+      if (err)
+        return res.status(HTTP_STATUS.FORBIDDEN).send(AUTH.INVALID_TOKEN);
       req.user = user;
       next();
     });
   } catch (err: unknown) {
     console.error("Erreur authentification : ", err);
-    res.status(UNAUTHORIZED).send(UNAUTHORIZED_RESOURCE);
+    res.status(HTTP_STATUS.UNAUTHORIZED).send(AUTH.UNAUTHORIZED_ACCESS);
   }
 };
 
@@ -53,7 +44,9 @@ export const checkBusinessOwnership = async (
   const result = await pool.query(query, values);
 
   if (!result.rows[0].exists) {
-    return res.status(UNAUTHORIZED).json({ error: UNAUTHORIZED_RESOURCE });
+    return res
+      .status(HTTP_STATUS.UNAUTHORIZED)
+      .json({ error: AUTH.UNAUTHORIZED_ACCESS });
   }
   next();
 };

@@ -7,14 +7,10 @@ import {
   RegisterController,
 } from "../controllers/authControllers";
 // import { authMiddleware } from "../middlewares/authMiddleware";
-import {
-  LOGIN_PATH,
-  PROTECTED_PATH,
-  REGISTER_PATH,
-} from "../../config/constants";
+import { ROUTES_AUTH } from "../../config/constants";
 
-authRouter.post(REGISTER_PATH, RegisterController);
-authRouter.post(LOGIN_PATH, LoginController);
-authRouter.get(PROTECTED_PATH, ProtectedController);
+authRouter.post(ROUTES_AUTH.REGISTER, RegisterController);
+authRouter.post(ROUTES_AUTH.LOGIN, LoginController);
+authRouter.get(ROUTES_AUTH.PROTECTED, ProtectedController);
 
 export default authRouter;

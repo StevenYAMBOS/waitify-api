@@ -7,21 +7,16 @@ import { LoginResponse } from "../models/authModels";
 import { User } from "../../users/models/userModels";
 import { SECRET_KEY } from "../../config/envVariables";
 import {
-  BAD_HTTP_METHOD,
-  BAD_REQUEST,
-  CREATED,
-  IMAGE,
-  INTERNAL_SERVER_ERROR,
-  INTERNAL_SERVER_ERROR_MESSAGE,
-  OK,
-  POST_METHOD,
-  UNAUTHORIZED,
+  ASSETS,
+  ERROR_MESSAGES,
+  HTTP_METHODS,
+  HTTP_STATUS,
 } from "../../config/constants";
 
 // Inscription
 export const RegisterController = async (req: Request, res: Response) => {
-  if (req.method !== POST_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  if (req.method !== HTTP_METHODS.POST) {
+    res.status(HTTP_STATUS.BAD_REQUEST).send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
   }
 
   try {
@@ -67,7 +62,7 @@ export const RegisterController = async (req: Request, res: Response) => {
       uuid,
       email,
       hashedPassword,
-      profile_picture || IMAGE,
+      profile_picture || ASSETS.PLACEHOLDER_IMAGE,
       date,
       date,
     ]);
@@ -81,19 +76,19 @@ export const RegisterController = async (req: Request, res: Response) => {
 
     const message: string = "Utilisateur créé avec succès";
 
-    res.status(CREATED).json({ message, user });
+    res.status(HTTP_STATUS.CREATED).json({ message, user });
   } catch (error: unknown) {
     console.log(error);
     res
-      .status(INTERNAL_SERVER_ERROR)
-      .json({ error: INTERNAL_SERVER_ERROR_MESSAGE });
+      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
+      .json({ error: ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
   }
 };
 
 // Connexion
 export const LoginController = async (req: Request, res: Response) => {
-  if (req.method !== POST_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  if (req.method !== HTTP_METHODS.POST) {
+    res.status(HTTP_STATUS.BAD_REQUEST).send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
   }
 
   try {
@@ -111,7 +106,7 @@ export const LoginController = async (req: Request, res: Response) => {
       !password ||
       password.length == 0
     ) {
-      return res.status(UNAUTHORIZED).json({
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
         status: "Mauvaise requête",
         message: "Erreur lors de la connexion",
         statusCode: 401,
@@ -127,13 +122,13 @@ export const LoginController = async (req: Request, res: Response) => {
     // Comparaison mot de passe
     if (!password || !(await bcrypt.compare(password, hashedPassword))) {
       return res
-        .status(UNAUTHORIZED)
+        .status(HTTP_STATUS.UNAUTHORIZED)
         .send("Le mot de passe entré est incorrect");
     }
 
     if (!userFetched) {
       return res
-        .status(UNAUTHORIZED)
+        .status(HTTP_STATUS.UNAUTHORIZED)
         .json({ error: "L'utilisateur n'existe pas" });
     }
 
@@ -151,16 +146,16 @@ export const LoginController = async (req: Request, res: Response) => {
       User: userFetched,
     };
 
-    res.status(OK).json({ loginResponse });
+    res.status(HTTP_STATUS.OK).json({ loginResponse });
   } catch (error: unknown) {
     console.log(error);
     res
-      .status(INTERNAL_SERVER_ERROR)
+      .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
       .json({ error: "La connexion a échouée, une erreur est survenue" });
   }
 };
 
 // Route protégée
 export const ProtectedController = async (req: Request, res: Response) => {
-  res.status(OK).json(`Accès à la route protégé !`);
+  res.status(HTTP_STATUS.OK).json(`Accès à la route protégé !`);
 };

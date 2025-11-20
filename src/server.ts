@@ -5,10 +5,10 @@ import userRouter from "./users/routes/userRouter";
 import businessRouter from "./businesses/routes/businessRouter";
 import { SERVER_PORT } from "./config/envVariables";
 import {
-  AUTH_PATH,
-  BUSINESS_PATH,
-  QUEUES_PATH,
-  USER_PATH,
+  ROUTES_AUTH,
+  ROUTES_BUSINESSES,
+  ROUTES_QUEUES,
+  ROUTES_USERS,
 } from "./config/constants";
 import queueRouter from "./queues/routes/queueRouter";
 
@@ -17,17 +17,17 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // Routes d'authentification
-app.use(AUTH_PATH, authRouter);
+app.use(ROUTES_AUTH.BASE, authRouter);
 // Routes utilisateurs
-app.use(USER_PATH, userRouter);
+app.use(ROUTES_USERS.BASE, userRouter);
 // Routes entreprises
-app.use(BUSINESS_PATH, businessRouter);
+app.use(ROUTES_BUSINESSES.BASE, businessRouter);
 // Routes files d'attentes
-app.use(QUEUES_PATH, queueRouter);
+app.use(ROUTES_QUEUES.BASE, queueRouter);
 
 app.listen(SERVER_PORT, () => {
   console.log(
-    `L'application est lançée à l'adresse : http://localhost:${SERVER_PORT}`,
+    `L'application est lançée à l'adresse : http://localhost:${SERVER_PORT}`
   );
 });
 

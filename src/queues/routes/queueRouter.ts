@@ -13,46 +13,34 @@ import {
   authMiddleware,
   checkBusinessOwnership,
 } from "../../auth/middlewares/authMiddleware";
-import {
-  BUSINESS_PATH,
-  CANCEL_CLIENT_PATH,
-  ID_PARAM,
-  JOIN_QUEUE_PATH,
-  NEXT_CLIENT_PATH,
-  QUEUE_STATUS_PATH,
-  SERVED_CLIENT_PATH,
-} from "../../config/constants";
+import { ROUTES_BUSINESSES, ROUTES_QUEUES } from "../../config/constants";
 
 queueRouter.patch(
-  BUSINESS_PATH + ID_PARAM + QUEUE_STATUS_PATH,
+  ROUTES_BUSINESSES.BASE + ROUTES_BUSINESSES.BY_ID + "/status",
   authMiddleware,
   checkBusinessOwnership,
   ActivateQueueController
 );
 queueRouter.patch(
-  ID_PARAM + SERVED_CLIENT_PATH,
+  ROUTES_QUEUES.MARK_SERVED,
   authMiddleware,
   checkBusinessOwnership,
   MarkClientAsServedController
 );
 queueRouter.post(
-  BUSINESS_PATH + ID_PARAM + JOIN_QUEUE_PATH,
+  ROUTES_BUSINESSES.BASE + ROUTES_BUSINESSES.BY_ID + ROUTES_QUEUES.JOIN,
   authMiddleware,
   JoinQueueController
 );
-queueRouter.get(
-  QUEUE_STATUS_PATH + ID_PARAM,
-  authMiddleware,
-  GetQueueStatusController
-);
+queueRouter.get(ROUTES_QUEUES.STATUS, authMiddleware, GetQueueStatusController);
 queueRouter.post(
-  ID_PARAM + NEXT_CLIENT_PATH,
+  ROUTES_QUEUES.NEXT_CLIENT,
   authMiddleware,
   checkBusinessOwnership,
   CallNextClientController
 );
 queueRouter.delete(
-  ID_PARAM + CANCEL_CLIENT_PATH,
+  ROUTES_QUEUES.CANCEL,
   authMiddleware,
   CancelQueueEntryController
 );

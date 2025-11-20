@@ -1,36 +1,13 @@
 import { Request, Response } from "express";
 import { pool } from "../../config/database";
 import {
-  ALREADY_IN_QUEUE,
-  BAD_HTTP_METHOD,
-  BAD_REQUEST,
-  BUSINESS_NOT_FOUND_OR_INACTIVE,
-  CREATED,
-  INVALID_PHONE_FORMAT,
-  INTERNAL_SERVER_ERROR,
-  INTERNAL_SERVER_ERROR_MESSAGE,
-  JOIN_QUEUE_SUCCESS,
-  NOT_FOUND,
-  OK,
-  PHONE_REQUIRED,
-  POST_METHOD,
-  QUEUE_CLOSED,
-  QUEUE_FULL,
-  QUEUE_STATUS_WAITING,
-  PATCH_METHOD,
-  QUEUE_STATUS_MESSAGE,
-  CLIENT_CALLED_MESSAGE,
-  CANCELLED_CLIENT_STATUS,
-  NO_CONTENT,
-  ID_IS_MISSING,
-  ENTRY_IS_MISSING,
-  NO_CLIENT,
-  UNKNOWN_ERROR,
-  NOW,
-  CALLED_CLIENT_STATUS,
-  ENTRY_NOT_CALLED,
-  SERVED_CLIENT_STATUS,
-  SERVED_CLIENT_MESSAGE,
+  BUSINESS_MESSAGES,
+  ERROR_MESSAGES,
+  HTTP_METHODS,
+  HTTP_STATUS,
+  QUEUE_MESSAGES,
+  QUEUE_STATUSES,
+  VALIDATION,
 } from "../../config/constants";
 import {
   GetQueueResponse,
@@ -49,8 +26,8 @@ On utilise le token QR Code pour identifier l'entreprise plutôt que l'id
 */
 export const ActivateQueueController = async (req: Request, res: Response) => {
   // Vérification méthode HTTP
-  if (req.method !== PATCH_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  if (req.method !== HTTP_METHODS.PATCH) {
+    res.status(HTTP_STATUS.BAD_REQUEST).send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
   }
 
   try {
@@ -73,15 +50,15 @@ export const ActivateQueueController = async (req: Request, res: Response) => {
     await pool.query(query, values);
 
     const response: StatusQueueResponse = {
-      message: QUEUE_STATUS_MESSAGE,
+      message: QUEUE_MESSAGES.POSITION_UPDATED,
     };
 
     // Réponse
-    res.status(OK).json(response);
+    res.status(HTTP_STATUS.OK).json(response);
   } catch (error: unknown) {
-    console.error(INTERNAL_SERVER_ERROR_MESSAGE, error);
-    res.status(INTERNAL_SERVER_ERROR).json({
-      message: INTERNAL_SERVER_ERROR_MESSAGE,
+    console.error(ERROR_MESSAGES.INTERNAL_SERVER_ERROR, error);
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
       error: error,
     });
   }
@@ -102,8 +79,8 @@ export const JoinQueueController = async (
   res: Response
 ): Promise<void> => {
   // Vérification méthode HTTP
-  if (req.method !== POST_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  if (req.method !== HTTP_METHODS.POST) {
+    res.status(HTTP_STATUS.BAD_REQUEST).send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
   }
 
   try {
@@ -111,15 +88,15 @@ export const JoinQueueController = async (
 
     // Validations basiques
     if (!BusinessId || BusinessId.trim() === "") {
-      res.status(BAD_REQUEST).json({
-        error: ID_IS_MISSING,
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: VALIDATION.BUSINESS_ID_REQUIRED,
       });
       return;
     }
 
     if (!phone || phone.trim() === "") {
-      res.status(BAD_REQUEST).json({
-        error: PHONE_REQUIRED,
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: VALIDATION.PHONE_REQUIRED,
       });
       return;
     }
@@ -127,8 +104,8 @@ export const JoinQueueController = async (
     // Valider format téléphone français
     const phoneRegex = /^(\+33|0)[1-9]\d{8}$/;
     if (!phoneRegex.test(phone)) {
-      res.status(BAD_REQUEST).json({
-        error: INVALID_PHONE_FORMAT,
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: VALIDATION.INVALID_PHONE_FORMAT,
       });
       return;
     }
@@ -145,8 +122,8 @@ export const JoinQueueController = async (
 
     // Vérifier si le commerce existe
     if (businessResult.rows.length === 0) {
-      res.status(NOT_FOUND).json({
-        error: BUSINESS_NOT_FOUND_OR_INACTIVE,
+      res.status(HTTP_STATUS.NOT_FOUND).json({
+        error: BUSINESS_MESSAGES.NOT_FOUND_OR_INACTIVE,
       });
       return;
     }
@@ -160,8 +137,8 @@ export const JoinQueueController = async (
 
     // Vérification 1: File d'attente ouverte
     if (!is_queue_active) {
-      res.status(BAD_REQUEST).json({
-        error: QUEUE_CLOSED,
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: QUEUE_MESSAGES.QUEUE_CLOSED,
       });
       return;
     }
@@ -177,7 +154,7 @@ export const JoinQueueController = async (
     const duplicateValues: (string | number)[] = [
       businessId,
       phone,
-      QUEUE_STATUS_WAITING,
+      QUEUE_STATUSES.WAITING,
     ];
 
     const duplicateResult = await pool.query(
@@ -186,8 +163,8 @@ export const JoinQueueController = async (
     );
 
     if (duplicateResult.rows[0].exists) {
-      res.status(BAD_REQUEST).json({
-        error: ALREADY_IN_QUEUE,
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: QUEUE_MESSAGES.ALREADY_IN_QUEUE,
       });
       return;
     }
@@ -203,8 +180,8 @@ export const JoinQueueController = async (
     const currentQueueSize = queueCountResult.rows[0].queue_count;
 
     if (currentQueueSize >= max_queue_size) {
-      res.status(BAD_REQUEST).json({
-        error: QUEUE_FULL,
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: QUEUE_MESSAGES.QUEUE_FULL,
       });
       return;
     }
@@ -232,7 +209,7 @@ export const JoinQueueController = async (
       phone,
       clientName || null,
       estimatedWaitTime,
-      QUEUE_STATUS_WAITING,
+      QUEUE_STATUSES.WAITING,
     ];
 
     await pool.query(insertQuery, insertValues);
@@ -252,7 +229,7 @@ export const JoinQueueController = async (
     // await logSMSSent(entryId, phone, 'confirmation', ...);
 
     const response: JoinQueueResponse = {
-      message: JOIN_QUEUE_SUCCESS,
+      message: QUEUE_MESSAGES.JOINED_SUCCESSFULLY,
       Entry: {
         id: entryId,
         BusinessID: businessId,
@@ -260,17 +237,18 @@ export const JoinQueueController = async (
         clientName,
         position,
         estimatedWaitTime,
-        status: QUEUE_STATUS_WAITING,
-        createdAt: NOW,
+        status: QUEUE_STATUSES.WAITING,
+        createdAt: new Date(),
       },
     };
 
-    res.status(CREATED).json(response);
+    res.status(HTTP_STATUS.CREATED).json(response);
   } catch (error: unknown) {
     console.error("Erreur JoinQueue : ", error);
-    res.status(INTERNAL_SERVER_ERROR).json({
-      message: INTERNAL_SERVER_ERROR_MESSAGE,
-      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+      error:
+        error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR,
     });
   }
 };
@@ -278,8 +256,8 @@ export const JoinQueueController = async (
 // Récupérer les informations d'une file d'attente
 export const GetQueueController = async (req: Request, res: Response) => {
   // Vérification méthode HTTP
-  if (req.method !== POST_METHOD) {
-    res.status(BAD_REQUEST).send(BAD_HTTP_METHOD);
+  if (req.method !== HTTP_METHODS.POST) {
+    res.status(HTTP_STATUS.BAD_REQUEST).send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
   }
 
   try {
@@ -308,10 +286,10 @@ export const GetQueueController = async (req: Request, res: Response) => {
       Queue: queueFetched,
     };
 
-    res.status(OK).send(response);
+    res.status(HTTP_STATUS.OK).send(response);
   } catch (error: unknown) {
-    res.status(INTERNAL_SERVER_ERROR).json({
-      message: INTERNAL_SERVER_ERROR_MESSAGE,
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
       error: error,
     });
   }
@@ -331,8 +309,8 @@ export const GetQueueStatusController = async (
 
     // Validation du paramètre
     if (!id || id.trim() === "") {
-      res.status(BAD_REQUEST).json({
-        error: ID_IS_MISSING,
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: VALIDATION.ENTRY_ID_REQUIRED,
       });
       return;
     }
@@ -354,8 +332,8 @@ export const GetQueueStatusController = async (
     const result = await pool.query(query, [id]);
 
     if (result.rows.length === 0) {
-      res.status(NOT_FOUND).json({
-        error: ENTRY_IS_MISSING,
+      res.status(HTTP_STATUS.NOT_FOUND).json({
+        error: QUEUE_MESSAGES.ENTRY_NOT_FOUND,
       });
       return;
     }
@@ -371,15 +349,16 @@ export const GetQueueStatusController = async (
     const response: GetQueueStatusResponse = {
       position,
       estimatedWaitTime: currentEstimateMinutes,
-      status: QUEUE_STATUS_WAITING,
+      status: QUEUE_STATUSES.WAITING,
     };
 
-    res.status(OK).json(response);
+    res.status(HTTP_STATUS.OK).json(response);
   } catch (error: unknown) {
     console.error("Erreur GetQueueStatus : ", error);
-    res.status(INTERNAL_SERVER_ERROR).json({
-      message: INTERNAL_SERVER_ERROR_MESSAGE,
-      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+      error:
+        error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR,
     });
   }
 };
@@ -400,8 +379,8 @@ export const CallNextClientController = async (
 
     // Validation du paramètre
     if (!BusinessId || BusinessId.trim() === "") {
-      res.status(BAD_REQUEST).json({
-        error: ID_IS_MISSING,
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: VALIDATION.BUSINESS_ID_REQUIRED,
       });
       return;
     }
@@ -415,13 +394,13 @@ export const CallNextClientController = async (
       LIMIT 1
     `;
 
-    const values: string[] = [BusinessId, QUEUE_STATUS_WAITING];
+    const values: string[] = [BusinessId, QUEUE_STATUSES.WAITING];
 
     const clientResult = await pool.query(selectClientQuery, values);
 
     if (clientResult.rows.length === 0) {
-      res.status(NOT_FOUND).json({
-        error: NO_CLIENT,
+      res.status(HTTP_STATUS.NOT_FOUND).json({
+        error: QUEUE_MESSAGES.NO_CLIENTS_WAITING,
       });
       return;
     }
@@ -449,7 +428,7 @@ export const CallNextClientController = async (
     // await logSMSSent(clientId, phone, 'your_turn', ...);
 
     const response: NextClientResponse = {
-      message: CLIENT_CALLED_MESSAGE,
+      message: QUEUE_MESSAGES.CLIENT_CALLED,
       Client: {
         id: clientId,
         phone,
@@ -458,12 +437,13 @@ export const CallNextClientController = async (
       },
     };
 
-    res.status(OK).json(response);
+    res.status(HTTP_STATUS.OK).json(response);
   } catch (error: unknown) {
     console.error("Erreur CallNextClient : ", error);
-    res.status(INTERNAL_SERVER_ERROR).json({
-      message: INTERNAL_SERVER_ERROR_MESSAGE,
-      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+      error:
+        error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR,
     });
   }
 };
@@ -483,8 +463,8 @@ export const CancelQueueEntryController = async (
 
     // Validation du paramètre
     if (!id || id.trim() === "") {
-      res.status(BAD_REQUEST).json({
-        error: ID_IS_MISSING,
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: VALIDATION.ENTRY_ID_REQUIRED,
       });
       return;
     }
@@ -499,8 +479,8 @@ export const CancelQueueEntryController = async (
     const selectResult = await pool.query(selectQuery, [id]);
 
     if (selectResult.rows.length === 0) {
-      res.status(NOT_FOUND).json({
-        error: ENTRY_IS_MISSING,
+      res.status(HTTP_STATUS.NOT_FOUND).json({
+        error: QUEUE_MESSAGES.ENTRY_NOT_FOUND,
       });
       return;
     }
@@ -515,7 +495,11 @@ export const CancelQueueEntryController = async (
       RETURNING id, status
     `;
 
-    const values: (string | Date)[] = [id, CANCELLED_CLIENT_STATUS, NOW];
+    const values: (string | Date)[] = [
+      id,
+      QUEUE_STATUSES.CANCELLED,
+      new Date(),
+    ];
 
     await pool.query(cancelQuery, values);
 
@@ -527,12 +511,13 @@ export const CancelQueueEntryController = async (
     // TODO: Enregistrer l'SMS dans sms_logs
     // await logSMSSent(id, phone, 'cancelled', ...);
 
-    res.status(NO_CONTENT).send();
+    res.status(HTTP_STATUS.NO_CONTENT).send();
   } catch (error: unknown) {
     console.error("Erreur CancelQueueEntry : ", error);
-    res.status(INTERNAL_SERVER_ERROR).json({
-      message: INTERNAL_SERVER_ERROR_MESSAGE,
-      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+      error:
+        error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR,
     });
   }
 };
@@ -556,8 +541,8 @@ export const MarkClientAsServedController = async (
 
     // Validation du paramètre
     if (!id || id.trim() === "") {
-      res.status(BAD_REQUEST).json({
-        error: ID_IS_MISSING,
+      res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: VALIDATION.ENTRY_ID_REQUIRED,
       });
       return;
     }
@@ -569,13 +554,13 @@ export const MarkClientAsServedController = async (
       WHERE id = $1 AND status = $2
     `;
 
-    const values: string[] = [id, CALLED_CLIENT_STATUS];
+    const values: string[] = [id, QUEUE_STATUSES.CALLED];
 
     const selectResult = await pool.query(selectQuery, values);
 
     if (selectResult.rows.length === 0) {
-      res.status(NOT_FOUND).json({
-        error: ENTRY_NOT_CALLED,
+      res.status(HTTP_STATUS.NOT_FOUND).json({
+        error: QUEUE_MESSAGES.ENTRY_NOT_CALLED,
       });
       return;
     }
@@ -593,27 +578,28 @@ export const MarkClientAsServedController = async (
       RETURNING id, status
     `;
 
-    const updatedValues: string[] = [
+    const updatedValues: (string | number | Date | null)[] = [
       id,
       serviceTime,
-      SERVED_CLIENT_STATUS,
-      NOW,
-      NOW,
+      QUEUE_STATUSES.SERVED,
+      new Date(),
+      new Date(),
     ];
 
     await pool.query(updateQuery, updatedValues);
 
     // Les triggers PostgreSQL recalculent automatiquement les positions des autres clients
 
-    res.status(OK).json({
-      message: SERVED_CLIENT_MESSAGE,
+    res.status(HTTP_STATUS.OK).json({
+      message: QUEUE_MESSAGES.CLIENT_MARKED_SERVED,
       id,
     });
   } catch (error: unknown) {
     console.error("Erreur MarkClientAsServed : ", error);
-    res.status(INTERNAL_SERVER_ERROR).json({
-      message: INTERNAL_SERVER_ERROR_MESSAGE,
-      error: error instanceof Error ? error.message : UNKNOWN_ERROR,
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      message: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+      error:
+        error instanceof Error ? error.message : ERROR_MESSAGES.UNKNOWN_ERROR,
     });
   }
 };

@@ -9,7 +9,10 @@ import {
   CancelQueueEntryController,
   MarkClientAsServedController,
 } from "../controllers/queueControllers";
-import { authMiddleware } from "../../auth/middlewares/authMiddleware";
+import {
+  authMiddleware,
+  checkBusinessOwnership,
+} from "../../auth/middlewares/authMiddleware";
 import {
   BUSINESS_PATH,
   CANCEL_CLIENT_PATH,
@@ -23,11 +26,13 @@ import {
 queueRouter.patch(
   BUSINESS_PATH + ID_PARAM + QUEUE_STATUS_PATH,
   authMiddleware,
+  checkBusinessOwnership,
   ActivateQueueController
 );
 queueRouter.patch(
   ID_PARAM + SERVED_CLIENT_PATH,
   authMiddleware,
+  checkBusinessOwnership,
   MarkClientAsServedController
 );
 queueRouter.post(
@@ -43,6 +48,7 @@ queueRouter.get(
 queueRouter.post(
   ID_PARAM + NEXT_CLIENT_PATH,
   authMiddleware,
+  checkBusinessOwnership,
   CallNextClientController
 );
 queueRouter.delete(

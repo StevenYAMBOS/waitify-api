@@ -62,9 +62,10 @@ export const RegisterUserService = async (
   const user: RegisterResponse = {
     message: USER_MESSAGES.CREATION_SUCCESS,
     User: {
-      id: userCreated.uuid,
+      id: userCreated.id,
       email: userCreated.email,
-      createdAt: userCreated.date,
+      createdAt: userCreated.createdAt,
+      updatedAt: userCreated.updatedAt,
     },
   };
 
@@ -100,8 +101,9 @@ export const LoginUserService = async (
   const loginDate = new Date();
 
   await userRepository.updateLastLogin(email, loginDate);
-
+  /* 
   const { password: _pwd, ...userWithoutPassword } = userFetched;
 
   return { user: userWithoutPassword as LoginResponse };
+  */
 };

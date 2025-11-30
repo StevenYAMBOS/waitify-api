@@ -48,6 +48,7 @@ export const AUTH = {
   UNAUTHORIZED_ACCESS: "Accès non autorisé à cette ressource",
   MISSING_TOKEN: "Token d'authentification manquant",
   INVALID_CREDENTIALS: "Email ou mot de passe incorrect",
+  EXPIRATION_TIME: "1h",
 } as const;
 
 // ============================================================================
@@ -108,10 +109,12 @@ export const USER_MESSAGES = {
   CREATION_SUCCESS: "Utilisateur créé avec succès",
   UPDATE_SUCCESS: "Profil mis à jour avec succès",
   DELETION_SUCCESS: "Compte supprimé avec succès",
+  EMAIL: "Email",
   EMAIL_ALREADY_EXISTS: "Cet email est déjà utilisé",
   LOGIN_SUCCESS: "Connexion réussie",
   LOGOUT_SUCCESS: "Déconnexion réussie",
   PROFILE_UPDATED: "Votre profil a été mis à jour",
+  DOES_NOT_EXISTS: "L'utilisateur n'existe pas",
 } as const;
 
 // ============================================================================
@@ -134,7 +137,7 @@ export const VALIDATION = {
   INVALID_UUID_FORMAT: "Le format de l'identifiant est invalide",
   PASSWORD_TOO_WEAK:
     "Le mot de passe doit contenir au moins 8 caractères, une majuscule et un chiffre",
-
+  INVALID_PASSWORD: "Le mot de passe est incorrect",
   // Autres
   MIN_LENGTH: "La longueur minimale requise n'est pas atteinte",
   MAX_LENGTH: "La longueur maximale a été dépassée",
@@ -153,6 +156,7 @@ export const ERROR_MESSAGES = {
     "Erreur lors de la communication avec un service externe",
   TIMEOUT_ERROR: "La requête a dépassé le délai imparti",
   METHOD_NOT_ALLOWED: "Méthode HTTP non autorisée",
+  INVALID_EMAIL_OR_PASSWORD: "Email ou mot de passe invalide",
 } as const;
 
 // ============================================================================

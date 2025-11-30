@@ -1,28 +1,26 @@
 import { JwtPayload } from "jsonwebtoken";
-import { User } from "../../users/models/userModels";
 
 export interface RegisterRequest {
-  username: string;
   email: string;
   password: string;
+  profilePicture?: string;
+}
+
+export interface CreateUserData {
+  id: string;
+  email: string;
+  password: string;
+  created_at: Date;
+  updated_at: Date;
 }
 
 export interface RegisterResponse {
   message: string;
-  user: User;
-}
-
-export interface RegisterUserInput {
-  email: string;
-  password: string;
-  profile_picture?: string;
-}
-
-export interface RegisterUserOutput {
-  id: string;
-  email: string;
-  profile_picture: string;
-  createdAt: Date;
+  User: {
+    id: string;
+    email: string;
+    createdAt: Date;
+  };
 }
 
 export interface ValidationError {
@@ -38,7 +36,14 @@ export interface LoginRequest {
 export interface LoginResponse {
   message: string;
   token: string;
-  User: User;
+  User: {
+    id: string;
+    email: string;
+    profile_picture: string;
+    created_at: Date;
+    updated_at: Date;
+    last_login: Date | null;
+  };
 }
 
 export interface CustomRequest extends Request {

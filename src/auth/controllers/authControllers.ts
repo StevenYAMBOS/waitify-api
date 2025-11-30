@@ -1,161 +1,89 @@
 import { Request, Response } from "express";
-import { pool } from "../../config/database";
-import { v4 as uuidv4 } from "uuid";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
-import { LoginResponse } from "../models/authModels";
-import { User } from "../../users/models/userModels";
 import { SECRET_KEY } from "../../config/envVariables";
 import {
-  ASSETS,
+  AUTH,
   ERROR_MESSAGES,
   HTTP_METHODS,
   HTTP_STATUS,
+  USER_MESSAGES,
 } from "../../config/constants";
+import {
+  LoginUserService,
+  RegisterUserService,
+} from "../services/authServices";
 
-// Inscription
 export const RegisterController = async (req: Request, res: Response) => {
   if (req.method !== HTTP_METHODS.POST) {
-    res.status(HTTP_STATUS.BAD_REQUEST).send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
+    return res
+      .status(HTTP_STATUS.BAD_REQUEST)
+      .send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
   }
 
   try {
-    const { email, password, profile_picture } = req.body;
-    // Générer l'id
-    const uuid = uuidv4();
-    // Date du jour
-    const date = new Date();
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
-    // Insetion en base de données
-    const query: string = `INSERT INTO users (id, email, password, profile_picture, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6)`;
+    const { email, password } = req.body;
 
-    /* ------ Restrictions ------ */
-
-    const errors = [];
-
-    if (
-      !email ||
-      email.length == 0 ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-    ) {
-      errors.push({
-        champs: "Email",
-        message: "L'adresse email est invalide",
-      });
-    }
-
-    if (!password || password.length == 0) {
-      errors.push({
-        champs: "Mot de passe",
-        message: "Le mot de passe est invalide",
-      });
-    }
-
-    if (errors.length > 0) {
-      return res.status(422).json({
-        errors: errors,
-      });
-    }
-
-    await pool.query(query, [
-      uuid,
+    const result = await RegisterUserService({
       email,
-      hashedPassword,
-      profile_picture || ASSETS.PLACEHOLDER_IMAGE,
-      date,
-      date,
-    ]);
+      password,
+    });
 
-    const user = {
-      id: uuid,
-      email: email,
-      profile_picture: profile_picture,
-      createdAt: date,
-    };
+    if (result.errors) {
+      return res.status(HTTP_STATUS.OK).json({
+        errors: result.errors,
+      });
+    }
 
-    const message: string = "Utilisateur créé avec succès";
-
-    res.status(HTTP_STATUS.CREATED).json({ message, user });
+    res.status(HTTP_STATUS.CREATED).json({
+      message: USER_MESSAGES.CREATION_SUCCESS,
+      user: result.user,
+    });
   } catch (error: unknown) {
-    console.log(error);
+    console.error("Erreur lors de l'inscription:", error);
     res
       .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
       .json({ error: ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
   }
 };
 
-// Connexion
 export const LoginController = async (req: Request, res: Response) => {
   if (req.method !== HTTP_METHODS.POST) {
-    res.status(HTTP_STATUS.BAD_REQUEST).send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
+    return res
+      .status(HTTP_STATUS.BAD_REQUEST)
+      .send(ERROR_MESSAGES.METHOD_NOT_ALLOWED);
   }
 
   try {
     const { email, password } = req.body;
-    // Date du jour
-    const loginDate = new Date();
-    // Query connexion
-    const loginQuery: string = `SELECT * FROM users WHERE email=$1`;
-    // Query MAJ date de connexion
-    const updateDateQuery: string = `UPDATE users SET last_login = $1 WHERE email=$2`;
 
-    if (
-      !email ||
-      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-      !password ||
-      password.length == 0
-    ) {
+    const result = await LoginUserService({ email, password });
+
+    if (result.error) {
       return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-        status: "Mauvaise requête",
-        message: "Erreur lors de la connexion",
-        statusCode: 401,
+        status: ERROR_MESSAGES.INVALID_REQUEST,
+        message: result.error,
+        statusCode: HTTP_STATUS.UNAUTHORIZED,
       });
     }
 
-    // Requête de connexion
-    const user = await pool.query(loginQuery, [email]);
-    // Utilisateur récupéré
-    const userFetched: User = user.rows[0];
-    const hashedPassword: string = userFetched.password;
-
-    // Comparaison mot de passe
-    if (!password || !(await bcrypt.compare(password, hashedPassword))) {
-      return res
-        .status(HTTP_STATUS.UNAUTHORIZED)
-        .send("Le mot de passe entré est incorrect");
-    }
-
-    if (!userFetched) {
-      return res
-        .status(HTTP_STATUS.UNAUTHORIZED)
-        .json({ error: "L'utilisateur n'existe pas" });
-    }
-
-    // Mise à jour date de connexion
-    await pool.query(updateDateQuery, [loginDate, email]);
-
-    const token = jwt.sign({ user: userFetched }, SECRET_KEY, {
-      expiresIn: "1h",
+    const token = jwt.sign({ user: result.user }, SECRET_KEY, {
+      expiresIn: AUTH.EXPIRATION_TIME,
     });
 
-    // Réponse
-    const loginResponse: LoginResponse = {
-      message: "L'utilisateur est connecté",
+    res.status(HTTP_STATUS.OK).json({
+      message: USER_MESSAGES.LOGIN_SUCCESS,
       token: token,
-      User: userFetched,
-    };
-
-    res.status(HTTP_STATUS.OK).json({ loginResponse });
+      user: result.user,
+    });
   } catch (error: unknown) {
-    console.log(error);
+    console.error("Erreur lors de la connexion:", error);
     res
       .status(HTTP_STATUS.INTERNAL_SERVER_ERROR)
-      .json({ error: "La connexion a échouée, une erreur est survenue" });
+      .json({ error: ERROR_MESSAGES.INTERNAL_SERVER_ERROR });
   }
 };
 
-// Route protégée
+// Test (route protégée)
 export const ProtectedController = async (req: Request, res: Response) => {
   res.status(HTTP_STATUS.OK).json(`Accès à la route protégé !`);
 };

@@ -84,6 +84,6 @@ export const LoginController = async (req: Request, res: Response) => {
 };
 
 // Test (route protégée)
-export const ProtectedController = async (req: Request, res: Response) => {
+export const ProtectedController = async (res: Response) => {
   res.status(HTTP_STATUS.OK).json(`Accès à la route protégé !`);
 };

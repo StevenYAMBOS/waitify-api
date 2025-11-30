@@ -1,8 +1,7 @@
-/*
-Constantes qu'on va réutiliser dans toute l'app
-*/
+// Constantes qu'on va réutiliser dans toute l'app
 
-/* Nouvelle méthode */
+import dotenv from "dotenv";
+dotenv.config();
 
 // ============================================================================
 // CODES DE STATUT HTTP
@@ -157,6 +156,19 @@ export const ERROR_MESSAGES = {
   TIMEOUT_ERROR: "La requête a dépassé le délai imparti",
   METHOD_NOT_ALLOWED: "Méthode HTTP non autorisée",
   INVALID_EMAIL_OR_PASSWORD: "Email ou mot de passe invalide",
+} as const;
+
+// ============================================================================
+// GOOGLE API
+// ============================================================================
+
+export const GOOGLE_API = {
+  CLIENT_ID: process.env.GCP_CLIENT_ID,
+  CLIENT_NAME: process.env.GCP_CLIENT_NAME,
+  CLIENT_SECRET: process.env.GCP_CLIENT_SECRET,
+  REDIRECT_URL: process.env.GCP_CLIENT_CALLBACK,
+  STORAGE_BUCKET_NAME: process.env.GCS_BUCKET_NAME,
+  STORAGE_BUCKET: process.env.GCS_BUCKET,
 } as const;
 
 // ============================================================================

@@ -168,7 +168,13 @@ export const GOOGLE_API = {
   CLIENT_SECRET: process.env.GCP_CLIENT_SECRET,
   REDIRECT_URL: process.env.GCP_CLIENT_CALLBACK,
   STORAGE_BUCKET_NAME: process.env.GCS_BUCKET_NAME,
+  OAUTH_URL: process.env.GCP_OAUTH_URL,
+  ACCESS_TOKEN_URL: process.env.GCP_ACCESS_TOKEN_URL,
   STORAGE_BUCKET: process.env.GCS_BUCKET,
+  OAUTH_SCOPES: [
+    "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
+  ],
 } as const;
 
 // ============================================================================
@@ -182,6 +188,8 @@ export const ROUTES_AUTH = {
   LOGOUT: "/logout",
   REFRESH_TOKEN: "/refresh",
   PROTECTED: "/protected",
+  GOOGLE: "/google",
+  CALLBACK: "/callback",
 } as const;
 
 // ============================================================================

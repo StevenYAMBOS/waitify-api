@@ -10,6 +10,8 @@ export interface CreateUserData {
   id: string;
   email: string;
   password: string;
+  profile_picture?: string;
+  google_id?: string;
   created_at: Date;
   updated_at: Date;
 }
@@ -45,6 +47,26 @@ export interface LoginResponse {
     updated_at: Date;
     last_login: Date | null;
   };
+}
+
+export interface GoogleTokenResponse {
+  access_token: string;
+  expires_in: number;
+  refresh_token?: string;
+  scope: string;
+  token_type: string;
+  id_token: string;
+}
+
+export interface GoogleUserInfo {
+  sub: string; // Google User ID
+  email: string;
+  email_verified: boolean;
+  name: string;
+  given_name: string;
+  family_name: string;
+  picture: string;
+  locale: string;
 }
 
 export interface CustomRequest extends Request {

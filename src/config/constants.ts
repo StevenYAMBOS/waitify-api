@@ -114,6 +114,8 @@ export const USER_MESSAGES = {
   LOGOUT_SUCCESS: "Déconnexion réussie",
   PROFILE_UPDATED: "Votre profil a été mis à jour",
   DOES_NOT_EXISTS: "L'utilisateur n'existe pas",
+  FAILED_FETCH: "Impossible de récupérer les informations utilisateur",
+  UNAUTHORIZED: "Votre email Google n'est pas vérifié",
 } as const;
 
 // ============================================================================
@@ -156,6 +158,10 @@ export const ERROR_MESSAGES = {
   TIMEOUT_ERROR: "La requête a dépassé le délai imparti",
   METHOD_NOT_ALLOWED: "Méthode HTTP non autorisée",
   INVALID_EMAIL_OR_PASSWORD: "Email ou mot de passe invalide",
+  GOOGLE_AUTH_FAILED: "Authentification Google annulée ou échouée",
+  INVALID_SESSION: "État de session invalide (protection CSRF)",
+  INVALID_CODE: "Code d'autorisation manquant",
+  EXCHANGE_CODE_FAILED: "Échec de l'échange du code d'autorisation",
 } as const;
 
 // ============================================================================
@@ -163,17 +169,16 @@ export const ERROR_MESSAGES = {
 // ============================================================================
 
 export const GOOGLE_API = {
-  CLIENT_ID: process.env.GCP_CLIENT_ID,
-  CLIENT_NAME: process.env.GCP_CLIENT_NAME,
-  CLIENT_SECRET: process.env.GCP_CLIENT_SECRET,
-  REDIRECT_URL: process.env.GCP_CLIENT_CALLBACK,
-  STORAGE_BUCKET_NAME: process.env.GCS_BUCKET_NAME,
   OAUTH_URL: process.env.GCP_OAUTH_URL,
   ACCESS_TOKEN_URL: process.env.GCP_ACCESS_TOKEN_URL,
-  STORAGE_BUCKET: process.env.GCS_BUCKET,
+  TOKEN_INFO_URL: process.env.GCP_TOKEN_INFO_URL,
+  CLIENT_ID: process.env.GCP_CLIENT_ID,
+  CLIENT_SECRET: process.env.GCP_CLIENT_SECRET,
+  REDIRECT_URL: process.env.GCP_CLIENT_CALLBACK,
   OAUTH_SCOPES: [
     "https://www.googleapis.com/auth/userinfo.email",
     "https://www.googleapis.com/auth/userinfo.profile",
+    "openid",
   ],
 } as const;
 

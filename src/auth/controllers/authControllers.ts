@@ -4,7 +4,6 @@ import { SECRET_KEY } from "../../config/envVariables";
 import {
   AUTH,
   ERROR_MESSAGES,
-  GOOGLE_API,
   HTTP_METHODS,
   HTTP_STATUS,
   USER_MESSAGES,
@@ -13,6 +12,13 @@ import {
   LoginUserService,
   RegisterUserService,
 } from "../services/authServices";
+import { UserRepository } from "../../users/repositories/userRepositories";
+import { GoogleAuthService } from "../services/googleAuthServices";
+import crypto from "crypto";
+
+const userRepository = new UserRepository();
+const googleAuthService = new GoogleAuthService(userRepository);
+const oauthStates = new Map<string, { timestamp: number }>();
 
 export const RegisterController = async (req: Request, res: Response) => {
   if (req.method !== HTTP_METHODS.POST) {
@@ -93,10 +99,37 @@ export const GoogleOAuthPortalController = async (
   req: Request,
   res: Response
 ) => {
-  const state = "randomstate";
-  const scopes = GOOGLE_API.OAUTH_SCOPES.join(" ");
-  const GOOGLE_OAUTH_CONSENT_SCREEN_URL = `${GOOGLE_API.OAUTH_URL}?client_id=${GOOGLE_API.CLIENT_ID}&redirect_uri=${GOOGLE_API.REDIRECT_URL}&access_type=offline&response_type=code&state=${state}&scope=${scopes}`;
-  res.redirect(GOOGLE_OAUTH_CONSENT_SCREEN_URL);
+  try {
+    // Générer un state aléatoire sécurisé
+    const state = crypto.randomBytes(32).toString("hex");
+
+    // Stocker le state (expire après 10 minutes)
+    oauthStates.set(state, { timestamp: Date.now() });
+
+    // Nettoyer les anciens states (plus de 10 minutes)
+    const tenMinutesAgo = Date.now() - 10 * 60 * 1000;
+    for (const [key, value] of oauthStates.entries()) {
+      if (value.timestamp < tenMinutesAgo) {
+        oauthStates.delete(key);
+      }
+    }
+
+    const consentUrl = googleAuthService.getConsentScreenUrl(state);
+    console.log("Redirection vers Google OAuth", {
+      url: consentUrl,
+    });
+
+    res.redirect(consentUrl);
+  } catch (error) {
+    console.error("Erreur lors de l'init OAuth", {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
+    res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      error: ERROR_MESSAGES.EXTERNAL_SERVICE_ERROR,
+    });
+  }
 };
 
 export const GoogleOAuthCallbackController = async (
@@ -104,79 +137,91 @@ export const GoogleOAuthCallbackController = async (
   res: Response
 ) => {
   try {
-    const { code } = req.query;
-    if (!code) {
-      console.error("Google OAuth: Code manquant dans la requête");
-      return res.status(HTTP_STATUS.BAD_REQUEST).json({
-        error: ERROR_MESSAGES.INVALID_REQUEST,
-      });
-    }
-
-    const data = {
-      code,
-      client_id: GOOGLE_API.CLIENT_ID,
-      client_secret: GOOGLE_API.CLIENT_SECRET,
-      redirect_uri: GOOGLE_API.REDIRECT_URL,
-      grant_type: "authorization_code",
-    };
-    console.log("Google OAuth: Échange du code contre un token...", { data });
-
-    // Échange du code contre un token
-    const tokenResponse = await fetch(GOOGLE_API.ACCESS_TOKEN_URL, {
-      method: HTTP_METHODS.POST,
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
+    console.log("Callback Google reçu", {
+      query: req.query,
     });
 
-    if (!tokenResponse.ok) {
-      console.error("Google OAuth: Échec de l'échange du code", {
-        status: tokenResponse.status,
-        data: await tokenResponse.text(),
-      });
-      return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-        error: ERROR_MESSAGES.EXTERNAL_SERVICE_ERROR,
-      });
-    }
+    const { code, state, error } = req.query;
 
-    const accessTokenData = await tokenResponse.json();
-    const { id_token } = accessTokenData;
-    console.log("Google OAuth: Token reçu", { id_token });
-
-    // Récupération des infos utilisateur
-    const userInfoResponse = await fetch(
-      `${process.env.GOOGLE_TOKEN_INFO_URL}?id_token=${id_token}`
-    );
-
-    if (!userInfoResponse.ok) {
-      console.error(
-        "Google OAuth: Échec de la récupération des infos utilisateur",
-        {
-          status: userInfoResponse.status,
-          data: await userInfoResponse.text(),
-        }
-      );
-      return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-        error: ERROR_MESSAGES.EXTERNAL_SERVICE_ERROR,
+    if (error) {
+      console.error("Erreur retournée par Google", { error });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: ERROR_MESSAGES.GOOGLE_AUTH_FAILED,
+        details: error,
       });
     }
 
-    const userInfo = await userInfoResponse.json();
-    console.log("Google OAuth: Infos utilisateur récupérées", { userInfo });
+    if (!state || typeof state !== "string" || !oauthStates.has(state)) {
+      console.error("State invalide ou manquant", { state });
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: ERROR_MESSAGES.INVALID_SESSION,
+      });
+    }
 
-    // Ici, tu peux créer un utilisateur ou un token JWT pour ton application
+    oauthStates.delete(state);
+
+    if (!code || typeof code !== "string") {
+      console.error("Code d'autorisation manquant");
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        error: ERROR_MESSAGES.INVALID_CODE,
+      });
+    }
+
+    const tokens = await googleAuthService.exchangeCodeForTokens(code);
+    if (!tokens) {
+      console.error("Échec de l'échange du code");
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        error: ERROR_MESSAGES.EXCHANGE_CODE_FAILED,
+      });
+    }
+
+    const googleUser = await googleAuthService.getUserInfo(tokens.id_token);
+    if (!googleUser) {
+      console.error("Échec de la récupération des infos");
+      return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+        error: USER_MESSAGES.FAILED_FETCH,
+      });
+    }
+
+    if (!googleUser.email_verified) {
+      console.error("Email non vérifié", {
+        email: googleUser.email,
+      });
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
+        error: USER_MESSAGES.UNAUTHORIZED,
+      });
+    }
+
+    const user = await googleAuthService.findOrCreateUser(googleUser);
+
     const token = jwt.sign(
-      { email: userInfo.email, sub: userInfo.sub },
+      {
+        user: {
+          id: user.id,
+          email: user.email,
+        },
+      },
       SECRET_KEY,
-      { expiresIn: AUTH.EXPIRATION_TIME }
+      { expiresIn: "7d" }
     );
 
-    res.status(HTTP_STATUS.OK).json({ token, user: userInfo });
+    res.status(HTTP_STATUS.OK).json({
+      message: USER_MESSAGES.LOGIN_SUCCESS,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        profile_picture: user.profilePicture,
+      },
+    });
   } catch (error) {
-    console.error("Google OAuth: Erreur inattendue", { error });
+    console.error("Erreur lors du callback OAuth", {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+
     res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
-      error: ERROR_MESSAGES.INTERNAL_SERVER_ERROR,
+      error: ERROR_MESSAGES.EXTERNAL_SERVICE_ERROR,
     });
   }
 };

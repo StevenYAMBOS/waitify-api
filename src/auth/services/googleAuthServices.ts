@@ -8,9 +8,6 @@ import { GoogleTokenResponse, GoogleUserInfo } from "../models/authModels";
 export class GoogleAuthService {
   constructor(private userRepository: UserRepository) {}
 
-  /**
-   * Génère l'URL de consentement Google OAuth
-   */
   getConsentScreenUrl(state: string): string {
     const scopes = GOOGLE_API.OAUTH_SCOPES.join(" ");
     const params = new URLSearchParams({
@@ -26,9 +23,6 @@ export class GoogleAuthService {
     return `${GOOGLE_API.OAUTH_URL}?${params.toString()}`;
   }
 
-  /**
-   * Échange le code d'autorisation contre un access token
-   */
   async exchangeCodeForTokens(
     code: string
   ): Promise<GoogleTokenResponse | null> {
@@ -110,7 +104,6 @@ export class GoogleAuthService {
       return user;
     }
 
-    // Créer un nouvel utilisateur
     const uuid = uuidv4();
     const date = new Date();
 
@@ -121,7 +114,7 @@ export class GoogleAuthService {
       created_at: date,
       updated_at: date,
       profile_picture: googleUser.picture,
-      google_id: googleUser.sub, // Stocker l'ID Google
+      google_id: googleUser.sub, // Stocker l'ID Google on ne sait jamais
     });
 
     return user;

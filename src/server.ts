@@ -16,13 +16,9 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// Routes d'authentification
 app.use(ROUTES_AUTH.BASE, authRouter);
-// Routes utilisateurs
 app.use(ROUTES_USERS.BASE, userRouter);
-// Routes entreprises
 app.use(ROUTES_BUSINESSES.BASE, businessRouter);
-// Routes files d'attentes
 app.use(ROUTES_QUEUES.BASE, queueRouter);
 
 app.listen(SERVER_PORT, () => {

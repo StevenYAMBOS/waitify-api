@@ -2,11 +2,9 @@
 
 <div align="center">
 
-[![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=fff)](#)
-[![Node.js](https://img.shields.io/badge/Node.js-6DA55F?logo=node.js&logoColor=white)](#)
-[![Postgres](https://img.shields.io/badge/Postgres-%23316192.svg?logo=postgresql&logoColor=white)](#)
-[![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=fff)](#)
-[![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?logo=amazon-aws&logoColor=white)](#)
+[![C#](https://custom-icon-badges.demolab.com/badge/C%23-%23239120.svg?logo=cshrp&logoColor=white)](#)
+[![.NET](https://img.shields.io/badge/.NET-512BD4?logo=dotnet&logoColor=fff)](#)[![Postgres](https://img.shields.io/badge/Postgres-%23316192.svg?logo=postgresql&logoColor=white)](#)
+[![Microsoft Azure](https://custom-icon-badges.demolab.com/badge/Microsoft%20Azure-0089D6?logo=msazure&logoColor=white)](#)[![AWS](https://img.shields.io/badge/AWS-%23FF9900.svg?logo=amazon-aws&logoColor=white)](#)
 [![Google Cloud](https://img.shields.io/badge/Google%20Cloud-%234285F4.svg?logo=google-cloud&logoColor=white)](#)
 [![DigitalOcean](https://img.shields.io/badge/DigitalOcean-%230167ff.svg?logo=digitalOcean&logoColor=white)](#)
 [![Stripe](https://img.shields.io/badge/Stripe-5851DD?logo=stripe&logoColor=fff)](#)
@@ -25,43 +23,40 @@ Waitify est un SaaS français de gestion de files d'attente virtuelles par QR co
 
 ## Technologies
 
-| Composant | Technologie | Version |
-|-----------|-------------|---------|
-| Runtime | Node.js | > 20.0 |
-| Langage | TypeScript | 5.x |
-| Framework | Express.js | 5.1.0 |
-| Base de données | PostgreSQL | 15+ |
-| Infrastructure | AWS | RDS/Lambda/ECS |
-| Paiements | Stripe | API v2023 |
-| Authentification | JWT | RS256 |
-| SMS | AWS SNS | Latest |
+| Composant        | Technologie | Version        |
+| ---------------- | ----------- | -------------- |
+| Runtime          | Node.js     | > 20.0         |
+| Langage          | C#          | 14             |
+| Framework        | ASP.NET     | 10.0           |
+| Base de données  | PostgreSQL  | 17+            |
+| Infrastructure   | MC Azure    | RDS/Lambda/ECS |
+| Paiements        | Stripe      | API v2023      |
+| Authentification | JWT         | RS256          |
+| SMS              | AWS SNS     | Latest         |
 
 ## Installation
 
 ### Prérequis
 
-- Node 20.0 ou supérieur
-- PostgreSQL 15 ou supérieur
-- Compte AWS configuré
+- .NETde 8.0 ou supérieur
+- PostgreSQL 16 ou supérieur
+- Compte Microsoft Azure configuré
 - Clés API Stripe (test/prod)
 
 ### Lancement
 
 ```bash
 # Installation des dépendances
-npm install
+nuget update
 
 # Développement
-npm run dev
+dotnet run
 
 # Build
-npm run build
-
-# Production
-npm start
+dotnet build
 ```
 
-L'API sera accessible sur `http://localhost:{port}`
+L'API sera accessible sur `http://localhost:{port}/swagger/index.html`
 
 ## Modèles de données
 
@@ -105,4 +100,5 @@ Chaque utilisateur ne peut accéder qu'à ses propres données via les politique
 <div align="center">
 
 Développé par **[Steven YAMBOS](https://www.linkedin.com/in/steven-yambos/)**
+
 </div>

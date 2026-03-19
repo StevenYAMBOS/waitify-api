@@ -69,6 +69,7 @@ CREATE TABLE users (
     profile_picture VARCHAR(255),
     is_active BOOLEAN DEFAULT true,
     auth_provider VARCHAR(50) DEFAULT 'google',
+    role VARCHAR(50) DEFAULT 'owner',
     subscription_status VARCHAR(50) DEFAULT 'trial',
     SubscriptionPlanId UUID REFERENCES subscription_plans(id),
     trial_ends_at TIMESTAMP WITH TIME ZONE,
@@ -87,6 +88,7 @@ CREATE INDEX idx_users_active ON users(is_active) WHERE is_active = true;
 ALTER TABLE users ADD CONSTRAINT check_email_format CHECK (email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
 ALTER TABLE users ADD CONSTRAINT check_subscription_status CHECK (subscription_status IN ('trial', 'active', 'suspended', 'cancelled'));
 ALTER TABLE users ADD CONSTRAINT check_auth_provider CHECK (auth_provider IN ('google', 'facebook'));
+ALTER TABLE users ADD CONSTRAINT check_role CHECK (role IN ('client', 'admin', 'owner'));
 ALTER TABLE users ADD CONSTRAINT check_phone_number_format CHECK (phone_number IS NULL OR phone_number ~ '^(\+33|0)[1-9][0-9]{8}$');
 ```
 
@@ -102,6 +104,10 @@ ALTER TABLE users ADD CONSTRAINT check_phone_number_format CHECK (phone_number I
 - `profile_picture` : Image de profile
 - `is_active` : Permet de suspendre un compte utilisateur globalement
 - `auth_provider` : Application de connexion
+- `role` : Rôle de l'utilisateur :
+  - `client` : Clients.
+  - `owner` : Commerçants.
+  - `Admin` : Développeurs.
 - `subscription_status` : État global de l'abonnement utilisateur
 - `SubscriptionPlanId` : Référence vers le plan d'abonnement actuel
 - `trial_ends_at` : Date limite de la période d'essai gratuite de 14 jours

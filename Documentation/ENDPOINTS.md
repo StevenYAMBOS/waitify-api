@@ -1,6 +1,6 @@
 # Documentation des routes API
 
-Modifié le : 01/11/2025
+Modifié le : 19/03/2026
 
 Par : [Steven YAMBOS](www.linkedin.com/in/steven-yambos)
 
@@ -11,3 +11,5 @@ Par : [Steven YAMBOS](www.linkedin.com/in/steven-yambos)
 #### Route d'inscription
 
 #### Route de connexion
+
+#### Route de connexion (Google)

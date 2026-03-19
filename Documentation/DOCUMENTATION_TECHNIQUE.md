@@ -1,6 +1,6 @@
 # Documentation technique - Waitify API
 
-**Dernière mise à jour :** 30 octobre 2025  
+**Dernière mise à jour :** 19 Mars 2026  
 **Auteur :** Steven YAMBOS  
 **Version :** 1.0.0
 
@@ -80,16 +80,16 @@ Waitify digitalise complètement le processus :
 
 ### Stack technologique
 
-| Composant | Technologie | Version | Rôle |
-|-----------|------------|---------|------|
-| **Runtime** | Node.js | > 20.0 | Environnement d'exécution |
-| **Langage** | TypeScript | 5.x | Langage de programmation typé |
-| **Framework** | Express.js | 5.1.0 | Framework web pour API REST |
-| **Base de données** | PostgreSQL | 15+ | Base de données relationnelle |
-| **Authentification** | JWT (JSON Web Token) | RS256 | Tokens d'authentification |
-| **Paiements** | Stripe | API v2023 | Gestion des paiements |
-| **SMS** | AWS SNS | Latest | Envoi de notifications SMS |
-| **Infrastructure** | AWS | RDS/Lambda/ECS | Hébergement cloud |
+| Composant        | Technologie | Version        |
+| ---------------- | ----------- | -------------- |
+| Runtime          | Node.js     | > 20.0         |
+| Langage          | C#          | 14             |
+| Framework        | ASP.NET     | 10.0           |
+| Base de données  | PostgreSQL  | 17+            |
+| Infrastructure   | MC Azure    | RDS/Lambda/ECS |
+| Paiements        | Stripe      | API v2023      |
+| Authentification | JWT         | RS256          |
+| SMS              | AWS SNS     | Latest         |
 
 ### Architecture en couches
 
@@ -141,7 +141,7 @@ Waitify digitalise complètement le processus :
 - **Contraintes d'intégrité** pour garantir la cohérence
 - **Index optimisés** pour les performances
 
-#### **TypeScript/Express.js (API)**
+#### **ASP.NET (API)**
 
 - **Validation métier** des requêtes
 - **Calcul des temps d'attente** estimés
@@ -290,12 +290,12 @@ waiting (initial)
 
 **Transitions autorisées** :
 
-| De | Vers | Action | Recalcul positions |
-|----|------|--------|-------------------|
-| `waiting` | `called` | Commerçant appelle | ✅ Oui |
-| `called` | `served` | Client servi | ✅ Oui |
-| `called` | `missed` | Timeout 5 min | ✅ Oui |
-| `waiting` | `cancelled` | Client annule | ✅ Oui |
+| De        | Vers        | Action             | Recalcul positions |
+| --------- | ----------- | ------------------ | ------------------ |
+| `waiting` | `called`    | Commerçant appelle | ✅ Oui             |
+| `called`  | `served`    | Client servi       | ✅ Oui             |
+| `called`  | `missed`    | Timeout 5 min      | ✅ Oui             |
+| `waiting` | `cancelled` | Client annule      | ✅ Oui             |
 
 **États finaux** (ne recalculent plus) :
 
@@ -312,8 +312,8 @@ Le système envoie **5 types** de SMS :
 1. **Confirmation** : À l'inscription
 
    ```text
-   "Votre place #3 chez [Business] est confirmée. 
-   Temps d'attente estimé: ~12min. 
+   "Votre place #3 chez [Business] est confirmée.
+   Temps d'attente estimé: ~12min.
    Rescannez le QR code pour suivre votre position."
    ```
 
@@ -326,14 +326,14 @@ Le système envoie **5 types** de SMS :
 3. **Votre tour** : Quand c'est le tour du client
 
    ```text
-   "C'est votre tour chez [Business]! 
+   "C'est votre tour chez [Business]!
    Présentez-vous au comptoir maintenant."
    ```
 
 4. **Tour manqué** : Après timeout
 
    ```text
-   "Votre tour chez [Business] est passé. 
+   "Votre tour chez [Business] est passé.
    Rescannez le QR code pour vous réinscrire."
    ```
 
@@ -379,11 +379,11 @@ Le commerçant peut consulter :
 
 #### Plans disponibles
 
-| Plan | Prix/mois | Établissements | SMS inclus | Fonctionnalités |
-|------|-----------|----------------|------------|-----------------|
-| **Basic** | 19€ | 1 | 1000 | Analytics basiques, Support email |
-| **Pro** | 49€ | 5 | 2500 | Analytics avancés, Support prioritaire, API access, Branding personnalisé |
-| **Enterprise** | 99€ | Illimité | 5000 | Analytics avancés, Support téléphone, API access, Branding personnalisé, Gestionnaire dédié |
+| Plan           | Prix/mois | Établissements | SMS inclus | Fonctionnalités                                                                             |
+| -------------- | --------- | -------------- | ---------- | ------------------------------------------------------------------------------------------- |
+| **Basic**      | 19€       | 1              | 1000       | Analytics basiques, Support email                                                           |
+| **Pro**        | 49€       | 5              | 2500       | Analytics avancés, Support prioritaire, API access, Branding personnalisé                   |
+| **Enterprise** | 99€       | Illimité       | 5000       | Analytics avancés, Support téléphone, API access, Branding personnalisé, Gestionnaire dédié |
 
 #### Période d'essai
 
@@ -428,6 +428,7 @@ La base de données utilise **PostgreSQL 15+** avec les extensions suivantes :
 - `profile_picture` : URL de la photo de profil
 - `is_active` : Compte actif/suspendu
 - `auth_provider` : 'google' ou 'facebook'
+- `role` : 'Client', 'Owner' ou 'Admin'
 - `subscription_status` : 'trial', 'active', 'suspended', 'cancelled'
 - `SubscriptionPlanId` : Référence vers `subscription_plans`
 - `trial_ends_at` : Date de fin de l'essai gratuit
@@ -467,13 +468,13 @@ La base de données utilise **PostgreSQL 15+** avec les extensions suivantes :
 
 ```json
 {
-  "monday": {"open": "08:00", "close": "18:00", "closed": false},
-  "tuesday": {"open": "08:00", "close": "18:00", "closed": false},
-  "wednesday": {"open": "08:00", "close": "12:00", "closed": false},
-  "thursday": {"open": "08:00", "close": "18:00", "closed": false},
-  "friday": {"open": "08:00", "close": "18:00", "closed": false},
-  "saturday": {"open": "08:00", "close": "17:00", "closed": false},
-  "sunday": {"closed": true}
+  "monday": { "open": "08:00", "close": "18:00", "closed": false },
+  "tuesday": { "open": "08:00", "close": "18:00", "closed": false },
+  "wednesday": { "open": "08:00", "close": "12:00", "closed": false },
+  "thursday": { "open": "08:00", "close": "18:00", "closed": false },
+  "friday": { "open": "08:00", "close": "18:00", "closed": false },
+  "saturday": { "open": "08:00", "close": "17:00", "closed": false },
+  "sunday": { "closed": true }
 }
 ```
 
@@ -614,8 +615,8 @@ La base de données utilise **PostgreSQL 15+** avec les extensions suivantes :
 UPDATE queue_entries
 SET position = new_position
 FROM (
-    SELECT 
-        id, 
+    SELECT
+        id,
         ROW_NUMBER() OVER (ORDER BY created_at ASC) as new_position
     FROM queue_entries
     WHERE BusinessId = COALESCE(NEW.BusinessId, OLD.BusinessId)
@@ -762,8 +763,8 @@ T=10:07:00
 
 ```sql
 -- Accélère les requêtes sur les clients en attente uniquement
-CREATE INDEX idx_waiting_only 
-    ON queue_entries(BusinessId, position) 
+CREATE INDEX idx_waiting_only
+    ON queue_entries(BusinessId, position)
     WHERE status = 'waiting';
 ```
 
@@ -771,7 +772,7 @@ CREATE INDEX idx_waiting_only
 
 ```sql
 CREATE MATERIALIZED VIEW queue_stats AS
-SELECT 
+SELECT
     BusinessId,
     COUNT(*) FILTER (WHERE status = 'waiting') as waiting_count,
     AVG(estimated_wait_time) FILTER (WHERE status = 'waiting') as avg_wait,
@@ -1343,144 +1344,6 @@ L'API est organisée en **4 modules principaux** :
 
 ---
 
-## Organisation du code
-
-### Structure des dossiers
-
-```text
-waitify-api/
-├── src/
-│   ├── auth/              # Authentification
-│   │   ├── controllers/  # Logique métier
-│   │   ├── middlewares/  # Middlewares d'auth
-│   │   ├── models/       # Modèles TypeScript
-│   │   └── routes/       # Définition des routes
-│   │
-│   ├── businesses/       # Gestion des établissements
-│   │   ├── controllers/
-│   │   ├── models/
-│   │   └── routes/
-│   │
-│   ├── queues/           # Files d'attente
-│   │   ├── controllers/
-│   │   ├── models/
-│   │   └── routes/
-│   │
-│   ├── users/            # Gestion des utilisateurs
-│   │   ├── controllers/
-│   │   ├── models/
-│   │   └── routes/
-│   │
-│   ├── config/           # Configuration
-│   │   ├── constants.ts  # Constantes de l'application
-│   │   ├── database.ts   # Connexion PostgreSQL
-│   │   └── envVariables.ts # Variables d'environnement
-│   │
-│   ├── server.ts         # Point d'entrée de l'application
-│   └── tests/            # Tests unitaires
-│
-├── dist/                 # Code compilé JavaScript
-├── documentation/        # Documentation technique
-├── package.json          # Dépendances npm
-├── tsconfig.json         # Configuration TypeScript
-└── README.md             # Documentation utilisateur
-```
-
-### Patterns utilisés
-
-#### MVC (Model-View-Controller)
-
-- **Models** : Définition des structures de données TypeScript
-- **Controllers** : Logique métier et gestion des requêtes
-- **Routes** : Définition des endpoints et middleware
-
-#### Separation of Concerns
-
-- Chaque module est indépendant (auth, businesses, queues, users)
-- Logique métier isolée dans les controllers
-- Validation centralisée dans les middlewares
-
-#### Constants Pattern
-
-- Toutes les constantes dans `src/config/constants.ts`
-- Messages d'erreur centralisés
-- Routes définies une seule fois
-
-### Conventions de nommage
-
-- **Fichiers** : camelCase (ex: `authControllers.ts`)
-- **Classes** : PascalCase (ex: `BusinessController`)
-- **Fonctions** : camelCase (ex: `getBusinessById`)
-- **Constantes** : UPPER_SNAKE_CASE (ex: `HTTP_STATUS`)
-- **Interfaces** : PascalCase (ex: `Business`)
-
----
-
-## Déploiement et infrastructure
-
-### Environnements de déploiement
-
-#### Environnement de développement
-
-- **Local** : Node.js + PostgreSQL local
-- **Scripts** : `npm run dev` (watch mode)
-- **Port** : Configurable via `.env`
-
-#### Pré-production
-
-- **Branche** : `pre-prod`
-- **Usage** : Démonstrations clients
-- **Stabilité** : Code validé depuis `dev`
-
-#### Production
-
-- **Branche** : `prod`
-- **Infrastructure** : AWS
-- **Stabilité** : Code entièrement testé
-
-### Infrastructure AWS
-
-#### RDS (Relational Database Service)
-
-- **Service** : PostgreSQL managé
-- **Avantages** : Sauvegardes automatiques, haute disponibilité
-- **Configuration** : Multi-AZ pour la redondance
-
-#### ECS (Elastic Container Service)
-
-- **Service** : Conteneurs Docker
-- **Avantages** : Scalabilité automatique
-- **Configuration** : Load balancer, auto-scaling
-
-#### Lambda
-
-- **Service** : Fonctions serverless
-- **Usage** : Jobs CRON (timeout clients, facturation)
-- **Avantages** : Coût optimisé, déclenchement automatique
-
-#### SNS (Simple Notification Service)
-
-- **Service** : Envoi de SMS
-- **Configuration** : Intégration avec opérateurs français
-- **Coût** : ~0,03€ par SMS
-
-### Docker
-
-#### Dockerfile
-
-Le projet inclut un `Dockerfile` pour la containerisation :
-
-```dockerfile
-FROM node:20-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-RUN npm run build
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
 ### Variables d'environnement
 
 Fichier `.env` (non versionné) :
@@ -1504,10 +1367,6 @@ JWT_EXPIRES_IN=24h
 # Stripe
 STRIPE_SECRET_KEY=sk_live_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-
-# AWS
-AWS_REGION=eu-west-1
-AWS_SNS_TOPIC_ARN=arn:aws:sns:...
 ```
 
 ### Monitoring
@@ -1541,5 +1400,4 @@ Waitify est une **solution SaaS complète** de gestion de files d'attente virtue
 ---
 
 **Documentation maintenue par** : Steven YAMBOS  
-**Contact** : [LinkedIn](https://www.linkedin.com/in/steven-yambos/)  
-**Dernière mise à jour** : 30 octobre 2025
+**Contact** : [LinkedIn](https://www.linkedin.com/in/steven-yambos/)

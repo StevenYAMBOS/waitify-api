@@ -68,6 +68,7 @@ CREATE TABLE users (
     phone_number VARCHAR(20),
     profile_picture VARCHAR(255),
     is_active BOOLEAN DEFAULT true,
+    -- email_confirmed BOOLEAN DEFAULT false, // remplace `isActive`. Documentation -> https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.identity.identityuser-1.emailconfirmed?view=aspnetcore-10.0#microsoft-aspnetcore-identity-identityuser-1-emailconfirmed
     auth_provider VARCHAR(50) DEFAULT 'google',
     role VARCHAR(50) DEFAULT 'owner',
     subscription_status VARCHAR(50) DEFAULT 'trial',

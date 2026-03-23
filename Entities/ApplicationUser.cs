@@ -1,19 +1,37 @@
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Identity;
 
 namespace WaitifyApi.Entities;
 
 public class ApplicationUser : IdentityUser
 {
-    // public string? GoogleId { get; set; }
+    [Column("first_name", TypeName = "varchar(100)")]
+    [MaxLength(100)]
+    [Required]
     public string? FirstName { get; set; }
+    [Column("last_name", TypeName = "varchar(100)")]
+    [MaxLength(100)]
+    [Required]
     public string? LastName { get; set; }
+    [Column("profile_picture", TypeName = "varchar(200)")]
+    [MaxLength(100)]
     public string? ProfilePicture { get; set; }
-    // public string? AuthProvider { get; set; }
+    [Column("role")]
+    [Required]
     public string? Role { get; set; }
+    [Column("subsription_id")]
     public string? SubsriptionId { get; set; }
+    [Column("subsription_status")]
     public string? SubsriptionStatus { get; set; }
+    [Column("trial_ends_at")]
     public DateTime TrialEndsAt { get; set; } = DateTime.UtcNow;
+    [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    [Column("updated_at")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    [Column("last_login")]
     public DateTime LastLogin { get; set; } = DateTime.UtcNow;
+    // public string? GoogleId { get; set; }
+    // public string? AuthProvider { get; set; }
 }

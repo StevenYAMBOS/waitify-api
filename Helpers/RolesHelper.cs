@@ -5,7 +5,7 @@ public static class RoleHelper
 {
     public static async Task EnsureRolesCreated(RoleManager<IdentityRole> roleManager)
     {
-        string[] roles = { "Admin", "User" };
+        string[] roles = { "Admin", "Client", "Owner" };
 
         foreach (var role in roles)
         {

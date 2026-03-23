@@ -16,7 +16,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         builder.Entity<ApplicationUser>(entity =>
         {
             entity.ToTable("users");
-            // Pour stocker le rôle en string lisible (exemple : "Admin", "User")
             entity.Property(u => u.Role)
                   .HasConversion<string>();
         });

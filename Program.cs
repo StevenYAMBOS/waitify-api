@@ -3,23 +3,26 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi;
 using Serilog;
-using System.Text.Json.Serialization;
+// using System.Text.Json.Serialization;
 using System.Text;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WaitifyApi.Entities;
+using WaitifyApi.Data;
+using System.Text.Json.Serialization;
 
 var builder = WebApplication.CreateBuilder(args);
 
 Env.Load();
 
-builder.Services.AddControllers().AddJsonOptions(options =>
+builder.Services.AddControllers();
+/* builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-}).AddNewtonsoftJson();
+}).AddNewtonsoftJson(); */
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(option =>
+/* builder.Services.AddSwaggerGen(option =>
 {
     option.SwaggerDoc("v1", new OpenApiInfo
     {
@@ -55,9 +58,21 @@ builder.Services.AddSwaggerGen(option =>
             new string[]{}
         }
     });
-});
+}); */
 builder.Host.UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration));
 
+var jwtSecret = Environment.GetEnvironmentVariable("AppSettingsToken");
+var key = Encoding.ASCII.GetBytes(jwtSecret!);
+var issuer = Environment.GetEnvironmentVariable("AppSettingsIssuer");
+var audience = Environment.GetEnvironmentVariable("AppSettingsAudience");
+var dbConfig = Environment.GetEnvironmentVariable("DatabaseConnection");
+var cloudflareApiToken = Environment.GetEnvironmentVariable("CloudflareApiToken");
+var cloudflareAccountId = Environment.GetEnvironmentVariable("CloudflareAccountId");
+var cloudflareAccessKeyId = Environment.GetEnvironmentVariable("CloudflareAccessKeyId");
+var cloudflareSecretAccessKey = Environment.GetEnvironmentVariable("CloudflareSecretAccessKey");
+var cloudflareApiEndpoint = Environment.GetEnvironmentVariable("CloudflareJuridictionDefault");
+var cloudflareEndpointUrl = Environment.GetEnvironmentVariable("R2EndpointUrl");
+var cloudflareEndpointPublicUrl = Environment.GetEnvironmentVariable("R2PublicUrl");
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -97,13 +112,13 @@ builder.Services.AddAuthentication(options =>
 });
 
 // Injection de dépendances
-builder.Services.AddScoped<IAuthService, AuthService>();
+// builder.Services.AddScoped<IAuthService, AuthService>();
 // builder.Services.AddScoped<IArticleService, ArticleService>();
-builder.Services.AddScoped<IFileService, FileService>();
-builder.Services.AddScoped<TokenService, TokenService>();
-builder.Services.AddScoped<IUserProfileService, ProfilService>();
-builder.Services.AddScoped<IContactService, ContactService>();
-builder.Services.AddScoped<IEmailService, EmailService>();
+// builder.Services.AddScoped<IFileService, FileService>();
+// builder.Services.AddScoped<TokenService, TokenService>();
+// builder.Services.AddScoped<IUserProfileService, ProfilService>();
+// builder.Services.AddScoped<IContactService, ContactService>();
+// builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(dbConfig));
 

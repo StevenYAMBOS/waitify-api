@@ -8,7 +8,7 @@ using WaitifyApi.Entities;
 
 namespace WaitifyApi.Services;
 
-public class TokenService(ILogger<TokenService> logger, IConfiguration configuration, UserManager<ApplicationUser> userManager)
+public class TokenService(ILogger<TokenService> logger, UserManager<ApplicationUser> userManager)
 {
     private const int ExpirationMinutes = 60;
 
@@ -57,7 +57,7 @@ public class TokenService(ILogger<TokenService> logger, IConfiguration configura
     private SigningCredentials CreateSigningCredentials()
     {
         var key = new SymmetricSecurityKey(
-        Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("AppSettingsToken"))
+        Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("AppSettingsToken")!)
     );
         return new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
     }

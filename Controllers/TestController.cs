@@ -1,7 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using WaitifyApi.Services;
 
-namespace Portfolio.Controllers
+namespace WaitifyApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
@@ -9,11 +10,13 @@ namespace Portfolio.Controllers
     {
 
         [HttpGet]
-        [EnableRateLimiting("fixed")]
-        public string WelcomeMessage()
+        // [EnableRateLimiting("fixed")]
+        public async Task<string> WelcomeMessage()
         {
-            var message = "Page test";
+            var message = "Hello World !";
             Console.WriteLine(message);
+            // await blobService.GetFiles();
+
             return message;
         }
     }

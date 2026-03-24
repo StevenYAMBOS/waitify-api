@@ -3,13 +3,16 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.OpenApi;
 using Serilog;
-// using System.Text.Json.Serialization;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WaitifyApi.Entities;
 using WaitifyApi.Data;
 using System.Text.Json.Serialization;
+using Azure.Storage.Blobs;
+using WaitifyApi.Repositories;
+using WaitifyApi.Services;
+using Microsoft.AspNetCore.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -64,13 +67,7 @@ var key = Encoding.ASCII.GetBytes(jwtSecret!);
 var issuer = Environment.GetEnvironmentVariable("AppSettingsIssuer");
 var audience = Environment.GetEnvironmentVariable("AppSettingsAudience");
 var databaseConfig = Environment.GetEnvironmentVariable("DatabaseConnection");
-var cloudflareApiToken = Environment.GetEnvironmentVariable("CloudflareApiToken");
-var cloudflareAccountId = Environment.GetEnvironmentVariable("CloudflareAccountId");
-var cloudflareAccessKeyId = Environment.GetEnvironmentVariable("CloudflareAccessKeyId");
-var cloudflareSecretAccessKey = Environment.GetEnvironmentVariable("CloudflareSecretAccessKey");
-var cloudflareApiEndpoint = Environment.GetEnvironmentVariable("CloudflareJuridictionDefault");
-var cloudflareEndpointUrl = Environment.GetEnvironmentVariable("R2EndpointUrl");
-var cloudflareEndpointPublicUrl = Environment.GetEnvironmentVariable("R2PublicUrl");
+var azureBlobStorageConnStrg = Environment.GetEnvironmentVariable("AzureBlobStorage");
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -110,15 +107,17 @@ builder.Services.AddAuthentication(options =>
 });
 
 // Injection de dépendances
-// builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuthRepository, AuthService>();
+builder.Services.AddScoped<TokenService, TokenService>();
+// builder.Services.AddScoped<BlobService, BlobService>();
 // builder.Services.AddScoped<IArticleService, ArticleService>();
 // builder.Services.AddScoped<IFileService, FileService>();
-// builder.Services.AddScoped<TokenService, TokenService>();
 // builder.Services.AddScoped<IUserProfileService, ProfilService>();
 // builder.Services.AddScoped<IContactService, ContactService>();
 // builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(databaseConfig));
+builder.Services.AddSingleton(x => new BlobServiceClient(azureBlobStorageConnStrg));
 
 // builder.Services.AddOpenApi();
 

@@ -1,6 +1,5 @@
 using WaitifyApi.Models;
 using Microsoft.AspNetCore.Identity;
-using Newtonsoft.Json;
 using WaitifyApi.Entities;
 using WaitifyApi.Repositories;
 using WaitifyApi.Enums;

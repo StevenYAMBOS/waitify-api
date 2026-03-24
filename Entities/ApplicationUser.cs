@@ -8,21 +8,21 @@ namespace WaitifyApi.Entities;
 public class ApplicationUser : IdentityUser
 {
     [Column("first_name", TypeName = "varchar(100)")]
-    [MaxLength(100)]
-    [Required]
+    // [MaxLength(100)]
+    // [Required]
     public string? FirstName { get; set; }
 
     [Column("last_name", TypeName = "varchar(100)")]
-    [MaxLength(100)]
-    [Required]
+    // [MaxLength(100)]
+    // [Required]
     public string? LastName { get; set; }
 
     [Column("profile_picture", TypeName = "varchar(200)")]
-    [MaxLength(100)]
+    // [MaxLength(200)]
     public string? ProfilePicture { get; set; }
 
     [Column("role")]
-    [Required]
+    // [Required]
     public Role Role { get; set; } = Role.Owner;
 
     [Column("subsription_id")]

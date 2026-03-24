@@ -8,6 +8,7 @@ namespace WaitifyApi.Services;
 
 public class AuthService(UserManager<ApplicationUser> userManager,
     TokenService tokenService,
+    FileStorageService fileStorageService,
     ILogger<AuthService> logger) : IAuthRepository
 {
     public async Task<(bool Success, string? Token, IEnumerable<string>? Errors)> RegisterAsync(RegisterRequest request)
@@ -19,12 +20,32 @@ public class AuthService(UserManager<ApplicationUser> userManager,
             return (false, null, ["Cette adresse email est déjà utilisée."]);
         }
 
+        string? profilePictureUrl = null;
+        // string bucketFolder = "users";
+        string userName = $"{request.FirstName + request.LastName}";
+
+        if (request.ProfilePicture is not null)
+        {
+            string[] allowedExtensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
+            // profilePictureUrl = await fileStorageService.UploadBlobAsync(request.ProfilePicture, allowedExtensions, bucketFolder, userName);
+            profilePictureUrl = await fileStorageService.UploadBlobAsync(request.ProfilePicture, userName, allowedExtensions);
+        }
+
+        logger.LogInformation("Prénom entré : {0}", request.FirstName);
+        logger.LogInformation("Nom de famille entré : {0}", request.LastName);
+        logger.LogInformation("Email entré : {0}", request.Email);
+        // logger.LogInformation("Role entré : {0}", user.Role);
+        logger.LogInformation("Image entré : {0}", profilePictureUrl);
+
+
         var user = new ApplicationUser
         {
             FirstName = request.FirstName,
             LastName = request.LastName,
+            UserName = request.FirstName + request.LastName,
             Email = request.Email,
             Role = Role.Owner,
+            ProfilePicture = profilePictureUrl,
             CreatedAt = DateTime.UtcNow
         };
 

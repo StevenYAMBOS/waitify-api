@@ -22,7 +22,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 }).AddNewtonsoftJson();
-builder.Services.AddEndpointsApiExplorer();
+// builder.Services.AddEndpointsApiExplorer();
 /* builder.Services.AddSwaggerGen(option =>
 {
     option.SwaggerDoc("v1", new OpenApiInfo
@@ -108,8 +108,8 @@ builder.Services.AddAuthentication(options =>
 
 // Injection de dépendances
 builder.Services.AddScoped<IAuthRepository, AuthService>();
-builder.Services.AddScoped<TokenService, TokenService>();
-// builder.Services.AddScoped<BlobService, BlobService>();
+builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<FileStorageService>();
 // builder.Services.AddScoped<IArticleService, ArticleService>();
 // builder.Services.AddScoped<IFileService, FileService>();
 // builder.Services.AddScoped<IUserProfileService, ProfilService>();
@@ -125,8 +125,8 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    // app.UseSwagger();
+    // app.UseSwaggerUI();
 }
 
 using (var scope = app.Services.CreateScope())
@@ -135,7 +135,7 @@ using (var scope = app.Services.CreateScope())
     await RoleHelper.EnsureRolesCreated(roleManager);
 }
 
-app.UseRateLimiter();
+// app.UseRateLimiter();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.MapControllers();

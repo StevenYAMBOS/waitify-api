@@ -10,12 +10,12 @@ namespace WaitifyApi.Controllers
     {
 
         [HttpGet]
-        // [EnableRateLimiting("fixed")]
+        [EnableRateLimiting("fixed")]
         public async Task<string> WelcomeMessage()
         {
             var message = "Hello World !";
             Console.WriteLine(message);
-            // await blobService.GetFiles();
+            // await blobService.ListBlobsFlatListing();
 
             return message;
         }

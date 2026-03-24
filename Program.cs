@@ -5,7 +5,6 @@ using Microsoft.OpenApi;
 using Serilog;
 // using System.Text.Json.Serialization;
 using System.Text;
-using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WaitifyApi.Entities;
@@ -16,11 +15,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 Env.Load();
 
-builder.Services.AddControllers();
-/* builder.Services.AddControllers().AddJsonOptions(options =>
+builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
-}).AddNewtonsoftJson(); */
+}).AddNewtonsoftJson();
 builder.Services.AddEndpointsApiExplorer();
 /* builder.Services.AddSwaggerGen(option =>
 {
@@ -65,7 +63,7 @@ var jwtSecret = Environment.GetEnvironmentVariable("AppSettingsToken");
 var key = Encoding.ASCII.GetBytes(jwtSecret!);
 var issuer = Environment.GetEnvironmentVariable("AppSettingsIssuer");
 var audience = Environment.GetEnvironmentVariable("AppSettingsAudience");
-var dbConfig = Environment.GetEnvironmentVariable("DatabaseConnection");
+var databaseConfig = Environment.GetEnvironmentVariable("DatabaseConnection");
 var cloudflareApiToken = Environment.GetEnvironmentVariable("CloudflareApiToken");
 var cloudflareAccountId = Environment.GetEnvironmentVariable("CloudflareAccountId");
 var cloudflareAccessKeyId = Environment.GetEnvironmentVariable("CloudflareAccessKeyId");
@@ -120,14 +118,9 @@ builder.Services.AddAuthentication(options =>
 // builder.Services.AddScoped<IContactService, ContactService>();
 // builder.Services.AddScoped<IEmailService, EmailService>();
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(dbConfig));
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(databaseConfig));
 
-/* ************************************************ */
-
-// builder.Services.AddControllers();
 // builder.Services.AddOpenApi();
-
-
 
 var app = builder.Build();
 

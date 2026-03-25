@@ -22,7 +22,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
 {
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 }).AddNewtonsoftJson();
-// builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddEndpointsApiExplorer();
 /* builder.Services.AddSwaggerGen(option =>
 {
     option.SwaggerDoc("v1", new OpenApiInfo
@@ -117,6 +117,15 @@ builder.Services.AddScoped<IApplicationUserRepository, ApplicationUserService>()
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(databaseConfig));
 builder.Services.AddSingleton(x => new BlobServiceClient(azureBlobStorageConnStrg));
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(
+        policy =>
+        {
+            policy.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
+        });
+});
+
 // builder.Services.AddOpenApi();
 
 var app = builder.Build();
@@ -136,6 +145,7 @@ using (var scope = app.Services.CreateScope())
 // app.UseRateLimiter();
 app.UseHttpsRedirection();
 app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 app.UseSerilogRequestLogging();
 app.UseCors();

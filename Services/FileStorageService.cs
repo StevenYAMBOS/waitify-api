@@ -71,6 +71,14 @@ public class FileStorageService
         }
     }
 
+    public async Task DeleteBlobSnapshotsAsync(string fileName)
+    {
+        string azureConnectionString = Environment.GetEnvironmentVariable("AzureBlobStorage")!;
+        var container = new BlobContainerClient(azureConnectionString, "images");
+        BlobClient blobClient = container.GetBlobClient(fileName);
+        await blobClient.DeleteAsync(snapshotsOption: DeleteSnapshotsOption.IncludeSnapshots);
+    }
+
     /*
     public BlobServiceClient GetBlobServiceClient(string accountName)
     {

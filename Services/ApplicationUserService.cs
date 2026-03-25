@@ -55,6 +55,13 @@ namespace WaitifyApi.Services
                   }
             */
 
+            if (user.ProfilePicture != null)
+            {
+                string blobUrl = Environment.GetEnvironmentVariable("AzureGenericBlobsUrl")!;
+                string blobFileName = user.ProfilePicture.Replace(blobUrl, "");
+                await fileStorageService.DeleteBlobSnapshotsAsync(blobFileName);
+            }
+
             context.Users.Remove(user);
             await context.SaveChangesAsync();
         }

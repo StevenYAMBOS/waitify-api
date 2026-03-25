@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.RateLimiting;
+using Newtonsoft.Json;
+
+// using Microsoft.AspNetCore.RateLimiting;
 using WaitifyApi.Entities;
 using WaitifyApi.Repositories;
 using WaitifyApi.Services;
@@ -14,7 +16,7 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
 {
     [HttpGet()]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    [EnableRateLimiting("fixed")]
+    // [EnableRateLimiting("fixed")]
     public async Task<IActionResult> GetUserProfil()
     {
 
@@ -34,14 +36,14 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
             return StatusCode(StatusCodes.Status404NotFound, "Utilisateur introuvable");
         }
 
-        logger.LogInformation("Informations utilisateur : {@0}", user);
+        logger.LogInformation("Informations utilisateur : {@0}", JsonConvert.SerializeObject(user, Formatting.Indented));
         return Ok(user);
     }
 
 
     [HttpPatch()]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    [EnableRateLimiting("fixed")]
+    // [EnableRateLimiting("fixed")]
     public async Task<IActionResult> UpdateUserProfil([FromBody] JsonPatchDocument<ApplicationUser> patchDocument)
     {
         if (patchDocument == null)
@@ -71,7 +73,7 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
 
     [HttpDelete()]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    [EnableRateLimiting("fixed")]
+    // [EnableRateLimiting("fixed")]
     public async Task<IActionResult> DeleteUserProfile()
     {
         var idFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");

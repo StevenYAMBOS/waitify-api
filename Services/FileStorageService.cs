@@ -62,7 +62,7 @@ public class FileStorageService
             }
             fileUrl = blobClient.Uri.AbsoluteUri;
             var result = fileUrl;
-            logger.LogInformation("Fichier téléchargé avec succès : {0}", fileUrl);
+            logger.LogInformation("Fichier téléchargé avec succès : {@0}", fileUrl);
             return result;
         }
         catch (Exception ex)

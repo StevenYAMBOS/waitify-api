@@ -110,9 +110,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddScoped<IAuthRepository, AuthService>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<FileStorageService>();
-// builder.Services.AddScoped<IArticleService, ArticleService>();
-// builder.Services.AddScoped<IFileService, FileService>();
-// builder.Services.AddScoped<IUserProfileService, ProfilService>();
+builder.Services.AddScoped<IApplicationUserRepository, ApplicationUserService>();
 // builder.Services.AddScoped<IContactService, ContactService>();
 // builder.Services.AddScoped<IEmailService, EmailService>();
 

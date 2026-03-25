@@ -54,7 +54,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,
         await userManager.AddToRoleAsync(user, Role.Owner.ToString());
 
         var token = await tokenService.CreateTokenAsync(user);
-        logger.LogInformation("Token de connexion : {0}", JsonConvert.SerializeObject(token, Formatting.Indented));
+        logger.LogInformation("Token de connexion : {@0}", JsonConvert.SerializeObject(token, Formatting.Indented));
 
         return (true, token, null);
     }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using WaitifyApi.Entities;
 using WaitifyApi.Repositories;
 using WaitifyApi.Enums;
+using Newtonsoft.Json;
 
 namespace WaitifyApi.Services;
 
@@ -21,21 +22,13 @@ public class AuthService(UserManager<ApplicationUser> userManager,
         }
 
         string? profilePictureUrl = null;
-        // string bucketFolder = "users";
         string userName = $"{request.FirstName + request.LastName}";
 
         if (request.ProfilePicture is not null)
         {
             string[] allowedExtensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
-            // profilePictureUrl = await fileStorageService.UploadBlobAsync(request.ProfilePicture, allowedExtensions, bucketFolder, userName);
             profilePictureUrl = await fileStorageService.UploadBlobAsync(request.ProfilePicture, userName, allowedExtensions);
         }
-
-        logger.LogInformation("Prénom entré : {0}", request.FirstName);
-        logger.LogInformation("Nom de famille entré : {0}", request.LastName);
-        logger.LogInformation("Email entré : {0}", request.Email);
-        // logger.LogInformation("Role entré : {0}", user.Role);
-        logger.LogInformation("Image entré : {0}", profilePictureUrl);
 
 
         var user = new ApplicationUser
@@ -61,6 +54,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,
         await userManager.AddToRoleAsync(user, Role.Owner.ToString());
 
         var token = await tokenService.CreateTokenAsync(user);
+        logger.LogInformation("Token de connexion : {0}", JsonConvert.SerializeObject(token, Formatting.Indented));
 
         return (true, token, null);
     }
@@ -83,7 +77,6 @@ public class AuthService(UserManager<ApplicationUser> userManager,
 
         var tokens = await GenerateTokensAsync(user);
 
-        // Console.WriteLine("{0}", JsonConvert.SerializeObject(tokens, Formatting.Indented));
         return (true, tokens, null);
     }
 

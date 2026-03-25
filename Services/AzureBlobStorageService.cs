@@ -1,5 +1,3 @@
-using Azure;
-using Azure.Identity;
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
 
@@ -7,26 +5,17 @@ namespace WaitifyApi.Services;
 
 public class FileStorageService
 {
-    private readonly string UsersContainer = "images";
     private readonly BlobServiceClient _blobServiceClient;
     private readonly BlobContainerClient _containerClient;
     private readonly ILogger<FileStorageService> logger;
 
     public FileStorageService(BlobServiceClient blobServiceClient, ILogger<FileStorageService> _logger)
     {
+        var azureContainer = Environment.GetEnvironmentVariable("AzureBlobUsersContainer");
         _blobServiceClient = blobServiceClient;
-        _containerClient = _blobServiceClient.GetBlobContainerClient(UsersContainer);
+        _containerClient = _blobServiceClient.GetBlobContainerClient(azureContainer);
         _containerClient.CreateIfNotExists();
         logger = _logger;
-    }
-
-    public BlobServiceClient GetBlobServiceClient(string accountName)
-    {
-        BlobServiceClient client = new(
-            new Uri($"https://{accountName}.blob.core.windows.net"),
-            new DefaultAzureCredential());
-
-        return client;
     }
 
     private string GenerateFileName(string fileName, string ClientName)
@@ -59,8 +48,8 @@ public class FileStorageService
         {
             var filename = GenerateFileName(file.FileName, clientName);
             var fileUrl = "";
-            string connectionString = Environment.GetEnvironmentVariable("AzureBlobStorage")!;
-            var container = new BlobContainerClient(connectionString, "images");
+            string azureConnectionString = Environment.GetEnvironmentVariable("AzureBlobStorage")!;
+            var container = new BlobContainerClient(azureConnectionString, "images");
 
             string[] extensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
 
@@ -73,41 +62,23 @@ public class FileStorageService
             }
             fileUrl = blobClient.Uri.AbsoluteUri;
             var result = fileUrl;
+            logger.LogInformation("Fichier téléchargé avec succès : {0}", fileUrl);
             return result;
         }
         catch (Exception ex)
         {
             throw new InvalidOperationException("Une erreur est survenue lors de l'upload du fichier : ", ex);
         }
-        /*         ArgumentNullException.ThrowIfNull(file);
-
-                var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
-                if (!allowedExtensions.Contains(ext))
-                {
-                    throw new ArgumentException($"Extensions autorisées : {string.Join(", ", allowedExtensions)}");
-                }
-
-                var objectKey = $"{folder}/{name}{ext}";
-
-                await using var stream = file.OpenReadStream();
-                var blobClient = _containerClient.GetBlobClient(ext);
-                await blobClient.UploadAsync(file.OpenReadStream(), true); */
     }
-    /* 
-        public async Task GetFiles()
-        {
-            // Retrieve the connection string for use with the application. 
-            string connectionString = Environment.GetEnvironmentVariable("AzureBlobStorage")!;
 
-            // Create a BlobServiceClient object 
-            var blobServiceClient = new BlobServiceClient(connectionString);
+    /*
+    public BlobServiceClient GetBlobServiceClient(string accountName)
+    {
+        BlobServiceClient client = new(
+            new Uri($"https://{accountName}.blob.core.windows.net"),
+            new DefaultAzureCredential());
 
-            Console.WriteLine("Listing blobs...");
-
-            // List all blobs in the container
-            await foreach (BlobItem blobItem in _containerClient.GetBlobsAsync())
-            {
-                Console.WriteLine("\t" + blobItem.Name);
-            }
-        } */
+        return client;
+    }
+*/
 }

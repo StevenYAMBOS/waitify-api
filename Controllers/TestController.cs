@@ -1,12 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Newtonsoft.Json;
 using WaitifyApi.Services;
 
 namespace WaitifyApi.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class TestController() : ControllerBase
+    public class TestController(ILogger<TestController> logger) : ControllerBase
     {
 
         [HttpGet]
@@ -15,7 +16,7 @@ namespace WaitifyApi.Controllers
         {
             var message = "Hello World !";
             Console.WriteLine(message);
-            // await blobService.ListBlobsFlatListing();
+            logger.LogInformation("Token de connexion : {0}", JsonConvert.SerializeObject(message, Formatting.Indented));
 
             return message;
         }

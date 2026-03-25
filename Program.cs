@@ -23,7 +23,7 @@ builder.Services.AddControllers().AddJsonOptions(options =>
     options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
 }).AddNewtonsoftJson();
 builder.Services.AddEndpointsApiExplorer();
-/* builder.Services.AddSwaggerGen(option =>
+builder.Services.AddSwaggerGen(option =>
 {
     option.SwaggerDoc("v1", new OpenApiInfo
     {
@@ -45,21 +45,21 @@ builder.Services.AddEndpointsApiExplorer();
         BearerFormat = "JWT",
         Scheme = "Bearer"
     });
-    option.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type=ReferenceType.SecurityScheme,
-                    Id="Bearer"
-                }
-            },
-            new string[]{}
-        }
-    });
-}); */
+    // option.AddSecurityRequirement(new OpenApiSecurityRequirement
+    // {
+    //     {
+    //         new OpenApiSecurityScheme
+    //         {
+    //             Reference = new OpenApiReference
+    //             {
+    //                 Type=ReferenceType.SecurityScheme,
+    //                 Id="Bearer"
+    //             }
+    //         },
+    //         new string[]{}
+    //     }
+    // });
+});
 builder.Host.UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration));
 
 var jwtSecret = Environment.GetEnvironmentVariable("AppSettingsToken");
@@ -72,7 +72,7 @@ var azureBlobStorageConnStrg = Environment.GetEnvironmentVariable("AzureBlobStor
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
     {
-        options.SignIn.RequireConfirmedAccount = true;
+        options.SignIn.RequireConfirmedAccount = false;
         options.User.RequireUniqueEmail = true;
         options.Password.RequireDigit = true;
         options.Password.RequiredLength = 6;
@@ -94,6 +94,42 @@ builder.Services.AddAuthentication(options =>
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
 }).AddJwtBearer(options =>
 {
+    options.Events = new JwtBearerEvents()
+    {
+        OnMessageReceived = msg =>
+        {
+            var token = msg?.Request.Headers.Authorization.ToString();
+            string path = msg?.Request.Path ?? "";
+            if (!string.IsNullOrEmpty(token))
+
+            {
+                Console.WriteLine("Access token");
+                Console.WriteLine($"URL: {path}");
+                Console.WriteLine($"Token: {token}\r\n");
+            }
+            else
+            {
+                Console.WriteLine("Access token");
+                Console.WriteLine("URL: " + path);
+                Console.WriteLine("Token: No access token provided\r\n");
+            }
+            return Task.CompletedTask;
+        },
+        OnTokenValidated = ctx =>
+        {
+            Console.WriteLine();
+            Console.WriteLine("Claims from the access token");
+            if (ctx?.Principal != null)
+            {
+                foreach (var claim in ctx.Principal.Claims)
+                {
+                    Console.WriteLine($"{claim.Type} - {claim.Value}");
+                }
+            }
+            Console.WriteLine();
+            return Task.CompletedTask;
+        }
+    };
     options.IncludeErrorDetails = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
@@ -105,6 +141,8 @@ builder.Services.AddAuthentication(options =>
         IssuerSigningKey = new SymmetricSecurityKey(key)
     };
 });
+
+builder.Services.AddAuthorization();
 
 // Injection de dépendances
 builder.Services.AddScoped<IAuthRepository, AuthService>();
@@ -132,8 +170,8 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
-    // app.UseSwagger();
-    // app.UseSwaggerUI();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 using (var scope = app.Services.CreateScope())
@@ -145,7 +183,7 @@ using (var scope = app.Services.CreateScope())
 // app.UseRateLimiter();
 app.UseHttpsRedirection();
 app.UseAuthentication();
-app.UseAuthorization();
+// app.UseAuthorization();
 app.MapControllers();
 app.UseSerilogRequestLogging();
 app.UseCors();

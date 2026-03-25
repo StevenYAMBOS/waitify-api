@@ -37,7 +37,7 @@ public class TokenService(ILogger<TokenService> logger, UserManager<ApplicationU
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             new(JwtRegisteredClaimNames.Iat, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString()),
             new(ClaimTypes.NameIdentifier, user.Id),
-            // new(ClaimTypes.Name, user.LastName),
+            new(ClaimTypes.Name, user.UserName),
             new(ClaimTypes.Email, user.Email!),
             new(ClaimTypes.Role, user.Role.ToString())
         };

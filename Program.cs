@@ -1,7 +1,6 @@
 using DotNetEnv;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.OpenApi;
 using Serilog;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +11,7 @@ using System.Text.Json.Serialization;
 using Azure.Storage.Blobs;
 using WaitifyApi.Repositories;
 using WaitifyApi.Services;
-using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,25 +44,12 @@ builder.Services.AddSwaggerGen(option =>
         BearerFormat = "JWT",
         Scheme = "Bearer"
     });
-    // option.AddSecurityRequirement(new OpenApiSecurityRequirement
-    // {
-    //     {
-    //         new OpenApiSecurityScheme
-    //         {
-    //             Reference = new OpenApiReference
-    //             {
-    //                 Type=ReferenceType.SecurityScheme,
-    //                 Id="Bearer"
-    //             }
-    //         },
-    //         new string[]{}
-    //     }
-    // });
+    option.AddSecurityRequirement(document => new() { [new OpenApiSecuritySchemeReference("Bearer", document)] = [] });
 });
 builder.Host.UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration));
 
 var jwtSecret = Environment.GetEnvironmentVariable("AppSettingsToken");
-var key = Encoding.ASCII.GetBytes(jwtSecret!);
+var key = Encoding.UTF8.GetBytes(jwtSecret);
 var issuer = Environment.GetEnvironmentVariable("AppSettingsIssuer");
 var audience = Environment.GetEnvironmentVariable("AppSettingsAudience");
 var databaseConfig = Environment.GetEnvironmentVariable("DatabaseConnection");
@@ -131,6 +117,7 @@ builder.Services.AddAuthentication(options =>
         }
     };
     options.IncludeErrorDetails = true;
+    options.RequireHttpsMetadata = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -183,7 +170,7 @@ using (var scope = app.Services.CreateScope())
 // app.UseRateLimiter();
 app.UseHttpsRedirection();
 app.UseAuthentication();
-// app.UseAuthorization();
+app.UseAuthorization();
 app.MapControllers();
 app.UseSerilogRequestLogging();
 app.UseCors();

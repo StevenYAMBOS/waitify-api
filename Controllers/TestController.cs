@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Newtonsoft.Json;
@@ -11,6 +12,7 @@ namespace WaitifyApi.Controllers
     {
 
         [HttpGet]
+        // [Authorize(AuthenticationSchemes = "Bearer")]
         [EnableRateLimiting("fixed")]
         public async Task<string> WelcomeMessage()
         {

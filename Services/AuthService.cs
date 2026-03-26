@@ -35,7 +35,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,
         {
             FirstName = request.FirstName,
             LastName = request.LastName,
-            UserName = request.LastName,
+            UserName = request.LastName + request.FirstName,
             Email = request.Email,
             Role = Role.Owner,
             ProfilePicture = profilePictureUrl,

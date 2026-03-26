@@ -127,6 +127,7 @@ CREATE TABLE businesses (
     name VARCHAR(255) NOT NULL,
     business_type VARCHAR(100) NOT NULL,
     phone_number VARCHAR(20),
+    logo VARCHAR(255),
     address TEXT,
     city VARCHAR(100),
     zip_code VARCHAR(10),
@@ -177,6 +178,7 @@ ALTER TABLE businesses ADD CONSTRAINT check_phone_number_format_business CHECK (
 - `name` : Nom commercial de l'établissement (ex: "Boulangerie Martin Centre-Ville")
 - `business_type` : Type d'activité utilisé pour les temps de service par défaut
 - `phone_number` : Numéro de téléphone spécifique à cet établissement
+- `logo` : Logo du commerce
 - `address` : Adresse physique complète de l'établissement
 - `city` : Ville où se situe l'établissement
 - `zip_code` : Code postal de l'établissement

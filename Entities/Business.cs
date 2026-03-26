@@ -16,14 +16,17 @@ public class Business
 
     [Column("name", TypeName = "varchar(255)")]
     [Required]
-    public string Name { get; set; } = string.Empty;
+    public string? Name { get; set; }
 
     [Column("business_type", TypeName = "varchar(100)")]
     [Required]
-    public string BusinessType { get; set; } = string.Empty;
+    public string? BusinessType { get; set; }
 
     [Column("phone_number", TypeName = "varchar(20)")]
     public string? PhoneNumber { get; set; }
+
+    [Column("logo", TypeName = "varchar(255)")]
+    public string? Logo { get; set; }
 
     [Column("address", TypeName = "text")]
     public string? Address { get; set; }

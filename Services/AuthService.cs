@@ -23,13 +23,13 @@ public class AuthService(UserManager<ApplicationUser> userManager,
 
         string? profilePictureUrl = null;
         string userName = $"{request.FirstName + request.LastName}";
+        string azureContainerName = Environment.GetEnvironmentVariable("AzureBlobUsersContainer")!;
 
         if (request.ProfilePicture is not null)
         {
             string[] allowedExtensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
-            profilePictureUrl = await fileStorageService.UploadBlobAsync(request.ProfilePicture, userName, allowedExtensions);
+            profilePictureUrl = await fileStorageService.UploadBlobAsync(request.ProfilePicture, userName, azureContainerName, allowedExtensions);
         }
-
 
         var user = new ApplicationUser
         {

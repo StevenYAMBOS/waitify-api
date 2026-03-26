@@ -11,9 +11,9 @@ public class FileStorageService
 
     public FileStorageService(BlobServiceClient blobServiceClient, ILogger<FileStorageService> _logger)
     {
-        var azureContainer = Environment.GetEnvironmentVariable("AzureBlobUsersContainer");
+        var azureUsersContainer = Environment.GetEnvironmentVariable("AzureBlobUsersContainer");
         _blobServiceClient = blobServiceClient;
-        _containerClient = _blobServiceClient.GetBlobContainerClient(azureContainer);
+        _containerClient = _blobServiceClient.GetBlobContainerClient(azureUsersContainer);
         _containerClient.CreateIfNotExists();
         logger = _logger;
     }
@@ -34,7 +34,7 @@ public class FileStorageService
         }
     }
 
-    public async Task<string> UploadBlobAsync(IFormFile file, string clientName, string[] allowedExtensions)
+    public async Task<string> UploadBlobAsync(IFormFile file, string clientName, string containerName, string[] allowedExtensions)
     {
         ArgumentNullException.ThrowIfNull(file);
 
@@ -49,7 +49,7 @@ public class FileStorageService
             var filename = GenerateFileName(file.FileName, clientName);
             var fileUrl = "";
             string azureConnectionString = Environment.GetEnvironmentVariable("AzureBlobStorage")!;
-            var container = new BlobContainerClient(azureConnectionString, "images");
+            var container = new BlobContainerClient(azureConnectionString, containerName);
 
             string[] extensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
 
@@ -71,10 +71,10 @@ public class FileStorageService
         }
     }
 
-    public async Task DeleteBlobSnapshotsAsync(string fileName)
+    public async Task DeleteBlobSnapshotsAsync(string fileName, string containerName)
     {
         string azureConnectionString = Environment.GetEnvironmentVariable("AzureBlobStorage")!;
-        var container = new BlobContainerClient(azureConnectionString, "images");
+        var container = new BlobContainerClient(azureConnectionString, containerName);
         BlobClient blobClient = container.GetBlobClient(fileName);
         await blobClient.DeleteAsync(snapshotsOption: DeleteSnapshotsOption.IncludeSnapshots);
     }

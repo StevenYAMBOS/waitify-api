@@ -59,7 +59,8 @@ namespace WaitifyApi.Services
             {
                 string blobUrl = Environment.GetEnvironmentVariable("AzureGenericBlobsUrl")!;
                 string blobFileName = user.ProfilePicture.Replace(blobUrl, "");
-                await fileStorageService.DeleteBlobSnapshotsAsync(blobFileName);
+                string azureContainerName = Environment.GetEnvironmentVariable("AzureBlobUsersContainer")!;
+                await fileStorageService.DeleteBlobSnapshotsAsync(blobFileName, azureContainerName);
             }
 
             context.Users.Remove(user);

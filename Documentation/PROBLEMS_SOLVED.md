@@ -4,7 +4,7 @@
 
 ### Causes et corrections
 
-**1. Package manquant**
+**Package manquant**
 
 Le package `Microsoft.IdentityModel.JsonWebTokens` est requis pour la validation JWT avec `Microsoft.AspNetCore.Authentication.JwtBearer`.
 
@@ -12,7 +12,7 @@ Le package `Microsoft.IdentityModel.JsonWebTokens` est requis pour la validation
 dotnet add package Microsoft.IdentityModel.JsonWebTokens
 ```
 
-**2. `RequireHttpsMetadata = true` en développement**
+**`RequireHttpsMetadata = true` en développement**
 
 Si l'API tourne en HTTP (ex. `http://localhost:5258`), le middleware rejette le token car HTTPS est exigé.
 
@@ -24,7 +24,7 @@ options.RequireHttpsMetadata = true;
 options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
 ```
 
-**3. Mauvais ordre des middlewares**
+**Mauvais ordre des middlewares**
 
 `UseCors()` doit être placé **avant** `UseAuthentication()`.
 
@@ -35,7 +35,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 ```
 
-**4. Debugging — logs JWT**
+**Debugging — logs JWT**
 
 Ajouter `OnAuthenticationFailed` et `OnChallenge` dans `JwtBearerEvents` pour voir la cause exacte dans la console :
 

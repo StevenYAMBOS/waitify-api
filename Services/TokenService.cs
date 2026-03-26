@@ -57,7 +57,7 @@ public class TokenService(ILogger<TokenService> logger, UserManager<ApplicationU
     private SigningCredentials CreateSigningCredentials()
     {
         var key = new SymmetricSecurityKey(
-        Encoding.UTF8.GetBytes(Environment.GetEnvironmentVariable("AppSettingsToken"))
+        Encoding.ASCII.GetBytes(Environment.GetEnvironmentVariable("AppSettingsToken"))
     );
         return new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
     }

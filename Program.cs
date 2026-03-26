@@ -27,7 +27,7 @@ builder.Services.AddSwaggerGen(option =>
     option.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "Waitify API",
-        Description = "API du site internet `waitify.fr`.",
+        Description = "API de l'application `waitify.fr`.",
         Contact = new OpenApiContact
         {
             Name = "Développeur (Steven YAMBOS)",
@@ -49,7 +49,7 @@ builder.Services.AddSwaggerGen(option =>
 builder.Host.UseSerilog((context, config) => config.ReadFrom.Configuration(context.Configuration));
 
 var jwtSecret = Environment.GetEnvironmentVariable("AppSettingsToken");
-var key = Encoding.UTF8.GetBytes(jwtSecret);
+var key = Encoding.ASCII.GetBytes(jwtSecret);
 var issuer = Environment.GetEnvironmentVariable("AppSettingsIssuer");
 var audience = Environment.GetEnvironmentVariable("AppSettingsAudience");
 var databaseConfig = Environment.GetEnvironmentVariable("DatabaseConnection");
@@ -114,10 +114,21 @@ builder.Services.AddAuthentication(options =>
             }
             Console.WriteLine();
             return Task.CompletedTask;
+        },
+        OnAuthenticationFailed = ctx =>
+        {
+            Console.WriteLine($"❌ Auth failed: {ctx.Exception.GetType().Name} - {ctx.Exception.Message}");
+            return Task.CompletedTask;
+        },
+        OnChallenge = ctx =>
+        {
+            Console.WriteLine($"⚠️ Challenge: Error={ctx.Error}, Description={ctx.ErrorDescription}");
+            return Task.CompletedTask;
         }
     };
     options.IncludeErrorDetails = true;
-    options.RequireHttpsMetadata = true;
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+    options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -169,10 +180,10 @@ using (var scope = app.Services.CreateScope())
 
 // app.UseRateLimiter();
 app.UseHttpsRedirection();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.UseSerilogRequestLogging();
-app.UseCors();
 
 app.Run();

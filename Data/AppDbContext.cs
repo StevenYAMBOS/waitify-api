@@ -9,6 +9,8 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)
 {
 
+    public DbSet<Business> Businesses { get; set; }
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

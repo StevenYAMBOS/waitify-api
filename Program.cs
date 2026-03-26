@@ -162,8 +162,6 @@ builder.Services.AddCors(options =>
         });
 });
 
-// builder.Services.AddOpenApi();
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

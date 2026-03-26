@@ -8,21 +8,15 @@ namespace WaitifyApi.Entities;
 public class ApplicationUser : IdentityUser
 {
     [Column("first_name", TypeName = "varchar(100)")]
-    // [MaxLength(100)]
-    // [Required]
     public string? FirstName { get; set; }
 
     [Column("last_name", TypeName = "varchar(100)")]
-    // [MaxLength(100)]
-    // [Required]
     public string? LastName { get; set; }
 
     [Column("profile_picture", TypeName = "varchar(200)")]
-    // [MaxLength(200)]
     public string? ProfilePicture { get; set; }
 
     [Column("role")]
-    // [Required]
     public Role Role { get; set; } = Role.Owner;
 
     [Column("subsription_id")]
@@ -39,7 +33,7 @@ public class ApplicationUser : IdentityUser
     public DateTime? LastLogin { get; set; }
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiryTime { get; set; }
-    // public virtual ICollection<Business> Businesses { get; set; } = [];
+    public virtual ICollection<Business> Businesses { get; set; } = [];
     // public string? GoogleId { get; set; }
     // public string? AuthProvider { get; set; }
 }

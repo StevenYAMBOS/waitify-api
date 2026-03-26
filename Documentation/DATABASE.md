@@ -70,7 +70,7 @@ CREATE TABLE users (
     is_active BOOLEAN DEFAULT true,
     -- email_confirmed BOOLEAN DEFAULT false, // remplace `isActive`. Documentation -> https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.identity.identityuser-1.emailconfirmed?view=aspnetcore-10.0#microsoft-aspnetcore-identity-identityuser-1-emailconfirmed
     auth_provider VARCHAR(50) DEFAULT 'google',
-    role VARCHAR(50) DEFAULT 'owner',
+    role VARCHAR(50) DEFAULT 'Owner',
     subscription_status VARCHAR(50) DEFAULT 'trial',
     SubscriptionPlanId UUID REFERENCES subscription_plans(id),
     trial_ends_at TIMESTAMP WITH TIME ZONE,
@@ -106,8 +106,8 @@ ALTER TABLE users ADD CONSTRAINT check_phone_number_format CHECK (phone_number I
 - `is_active` : Permet de suspendre un compte utilisateur globalement
 - `auth_provider` : Application de connexion
 - `role` : Rôle de l'utilisateur :
-  - `client` : Clients.
-  - `owner` : Commerçants.
+  - `Client` : Clients.
+  - `Owner` : Commerçants.
   - `Admin` : Développeurs.
 - `subscription_status` : État global de l'abonnement utilisateur
 - `SubscriptionPlanId` : Référence vers le plan d'abonnement actuel
@@ -123,7 +123,7 @@ ALTER TABLE users ADD CONSTRAINT check_phone_number_format CHECK (phone_number I
 ```sql
 CREATE TABLE businesses (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    UserId UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name VARCHAR(255) NOT NULL,
     business_type VARCHAR(100) NOT NULL,
     phone_number VARCHAR(20),
@@ -147,11 +147,11 @@ CREATE TABLE businesses (
 );
 
 -- Index pour les performances multi-business
-CREATE INDEX idx_businesses_user ON businesses(UserId);
-CREATE INDEX idx_businesses_user_active ON businesses(UserId, is_active);
+CREATE INDEX idx_businesses_user ON businesses(owner_id);
+CREATE INDEX idx_businesses_user_active ON businesses(owner_id, is_active);
 CREATE UNIQUE INDEX idx_businesses_qr_token ON businesses(qr_code_token);
 CREATE INDEX idx_businesses_type ON businesses(business_type);
-CREATE INDEX idx_businesses_active_by_user ON businesses(UserId, created_at) WHERE is_active = true;
+CREATE INDEX idx_businesses_active_by_user ON businesses(owner_id, created_at) WHERE is_active = true;
 
 -- Contraintes de validation
 ALTER TABLE businesses ADD CONSTRAINT check_business_type CHECK (business_type IN (
@@ -173,7 +173,7 @@ ALTER TABLE businesses ADD CONSTRAINT check_phone_number_format_business CHECK (
 **Explications des colonnes :**
 
 - `id` : Identifiant unique UUID généré automatiquement
-- `UserId` : Référence vers le propriétaire utilisateur de l'établissement
+- `owner_id` : Référence vers le propriétaire utilisateur de l'établissement
 - `name` : Nom commercial de l'établissement (ex: "Boulangerie Martin Centre-Ville")
 - `business_type` : Type d'activité utilisé pour les temps de service par défaut
 - `phone_number` : Numéro de téléphone spécifique à cet établissement

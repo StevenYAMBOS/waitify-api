@@ -26,5 +26,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             entity.ToTable("roles");
         });
+        builder.Entity<Business>(entity =>
+        {
+            entity.HasOne(business => business.Owner)
+            .WithMany(owner => owner.Businesses)
+            .HasForeignKey(business => business.OwnerId)
+            .OnDelete(DeleteBehavior.Cascade);
+        });
     }
 }

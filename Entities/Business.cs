@@ -11,7 +11,7 @@ public class Business
     public Guid Id { get; set; }
 
     [Column("owner_id")]
-    public Guid OwnerId { get; set; }
+    public string? OwnerId { get; set; }
     public virtual ApplicationUser? Owner { get; set; }
 
     [Column("name", TypeName = "varchar(255)")]

@@ -9,7 +9,7 @@ namespace WaitifyApi.Repositories
         // Task<IEnumerable<Business>> GetAllPubishedBusinessesAsync();
         // Task<IEnumerable<Business>> GetAllBusinessesAsync();
         // Task<Business?> FindBusinessByIdAsync(Guid id);
-        Task<Business?> CreateBusinessAsync(string userId, BusinessRequest request);
+        Task<byte[]> CreateBusinessAsync(string userId, BusinessRequest request);
         // Task<Business> UpdateBusinessAsync(Guid articleId, UpdateBusinessDTO request);
         // Task<Business> TogglePublishBusinessAsync(Guid articleId, bool isPublished, string authorIdFromToken);
         // Task DeleteBusinessAsync(Guid id);

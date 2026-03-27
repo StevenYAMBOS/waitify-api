@@ -1,7 +1,3 @@
-using System.Drawing;
-using Microsoft.AspNetCore.JsonPatch;
-using Newtonsoft.Json;
-using QRCoder;
 using WaitifyApi.Constants;
 using WaitifyApi.Data;
 using WaitifyApi.Entities;
@@ -11,7 +7,7 @@ using WaitifyApi.Repositories;
 
 namespace WaitifyApi.Services;
 
-public class BusinessService(AppDbContext context, IApplicationUserRepository userService, FileStorageService fileStorageService, ILogger<BusinessService> logger) : IBusinessRepository
+public class BusinessService(AppDbContext context, IApplicationUserRepository userService, QRCodeGeneratorService qRCodeHelper, FileStorageService fileStorageService, ILogger<BusinessService> logger) : IBusinessRepository
 {
 
     public async Task<Business?> FindBusinessByIdAsync(Guid id)
@@ -61,18 +57,15 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         await context.SaveChangesAsync();
 
         var url = AppConstants.WaitifyUrl + "/q/" + qrCodeToken;
-        // QRCodeHelper.GenerateToFile(url);
+        var qrCodeGenerated = await qRCodeHelper.GenerateQRCode(url);
 
-        QRCodeGenerator qrGenerator = new QRCodeGenerator();
-        QRCodeData qrCodeData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.Q);
-        PngByteQRCode qrCode = new PngByteQRCode(qrCodeData);
-        byte[] qrCodeAsPngByteArr = qrCode.GetGraphic(5);
-        string base64String = Convert.ToBase64String(qrCodeAsPngByteArr, 0, qrCodeAsPngByteArr.Length);
-        var qrCodeGenerated = $"<img src='data:image/png;base64,{base64String}' />";
+        // QRCodeGenerator qrGenerator = new QRCodeGenerator();
+        // QRCodeData qrCodeData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.Q);
+        // PngByteQRCode qrCode = new PngByteQRCode(qrCodeData);
+        // byte[] qrCodeAsPngByteArr = qrCode.GetGraphic(5);
+        // string base64String = Convert.ToBase64String(qrCodeAsPngByteArr, 0, qrCodeAsPngByteArr.Length);
+        // var qrCodeGenerated = $"<img src='data:image/png;base64,{base64String}' />";
 
-        logger.LogInformation("BASE64 : {@0}", base64String);
-        logger.LogInformation("BYTES : {@0}", qrCodeAsPngByteArr);
-        logger.LogInformation("HTML : {@0}", qrCodeGenerated);
         logger.LogInformation("ID entreprise : {@0}", business.Id);
         return qrCodeGenerated;
     }

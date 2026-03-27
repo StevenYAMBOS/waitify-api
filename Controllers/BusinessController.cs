@@ -17,6 +17,21 @@ public class BusinessController(
     ILogger<BusinessController> logger
 ) : ControllerBase
 {
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetBusiness(Guid id)
+    {
+        var business = await businessService.FindBusinessByIdAsync(id);
+        if (business == null)
+        {
+            logger.LogInformation("Entreprise avec l'id : `{id}` introuvable", id);
+            return StatusCode(StatusCodes.Status404NotFound, "Entreprise introuvable");
+        }
+        logger.LogInformation("ENTREPRISE : {@0}", JsonConvert.SerializeObject(business, Formatting.Indented));
+        return Ok(business);
+    }
+
+
     [HttpPost]
     public async Task<IActionResult> CreateBusiness([FromForm] BusinessRequest request)
     {
@@ -48,7 +63,7 @@ public class BusinessController(
 
     [HttpDelete("{id}")]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    public async Task<IActionResult> DeleteOneArticle(Guid id)
+    public async Task<IActionResult> DeleteOneBusiness(Guid id)
     {
         try
         {

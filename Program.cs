@@ -12,19 +12,11 @@ using Azure.Storage.Blobs;
 using WaitifyApi.Repositories;
 using WaitifyApi.Services;
 using Microsoft.OpenApi;
+using WaitifyApi.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
 Env.Load();
-
-/*
-JsonConvert.SerializeObject(YourPOCOHere, Formatting.Indented, 
-new JsonSerializerSettings 
-{ 
-        ReferenceLoopHandling = ReferenceLoopHandling.Serialize
-});
-
-*/
 
 builder.Services.AddControllers().AddJsonOptions(options =>
 {
@@ -151,12 +143,13 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// Injection de dépendances
+// Injection des dépendances
 builder.Services.AddScoped<IAuthRepository, AuthService>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<FileStorageService>();
 builder.Services.AddScoped<IApplicationUserRepository, ApplicationUserService>();
 builder.Services.AddScoped<IBusinessRepository, BusinessService>();
+builder.Services.AddScoped<QRCodeGeneratorService>();
 // builder.Services.AddScoped<IContactService, ContactService>();
 // builder.Services.AddScoped<IEmailService, EmailService>();
 

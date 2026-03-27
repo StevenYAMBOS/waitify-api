@@ -4,22 +4,21 @@ using QRCoder;
 
 namespace WaitifyApi.Helpers;
 
-public class QRCodeHelper
+public class QRCodeGeneratorService
 {
-    public static void GenerateToFile(
-        QRCodeData url,
-        // string filePath, 
-        int pixelsPerModule = 20
+    public async Task<string> GenerateQRCode(
+        string url
+        // string filePath
         )
     {
-        // using var qrGenerator = new QRCodeGenerator();
-        // using var qrData = qrGenerator.CreateQrCode(url);
-        var qrCode = new PngByteQRCode(url);
+        QRCodeGenerator qrGenerator = new QRCodeGenerator();
+        QRCodeData qrCodeData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.Q);
+        PngByteQRCode qrCode = new PngByteQRCode(qrCodeData);
+        byte[] qrCodeAsPngByteArr = qrCode.GetGraphic(20);
+        string base64String = Convert.ToBase64String(qrCodeAsPngByteArr, 0, qrCodeAsPngByteArr.Length);
+        var qrCodeGenerated = $"<img src='data:image/png;base64,{base64String}' />";
 
-        // Get PNG as byte array
-        var pngBytes = qrCode.GetGraphic(pixelsPerModule);
-
-        // return pngBytes;
+        return qrCodeGenerated;
 
         // Save to file
         // File.WriteAllBytes(filePath, pngBytes);

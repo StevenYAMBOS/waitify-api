@@ -6,19 +6,20 @@ namespace WaitifyApi.Helpers;
 
 public class QRCodeHelper
 {
-    public static byte[] GenerateToFile(
-        string url,
+    public static void GenerateToFile(
+        QRCodeData url,
         // string filePath, 
-        int pixelsPerModule = 20)
+        int pixelsPerModule = 20
+        )
     {
-        using var qrGenerator = new QRCodeGenerator();
-        using var qrData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.Q);
-        var qrCode = new PngByteQRCode(qrData);
+        // using var qrGenerator = new QRCodeGenerator();
+        // using var qrData = qrGenerator.CreateQrCode(url);
+        var qrCode = new PngByteQRCode(url);
 
         // Get PNG as byte array
-        byte[] pngBytes = qrCode.GetGraphic(pixelsPerModule);
+        var pngBytes = qrCode.GetGraphic(pixelsPerModule);
 
-        return pngBytes;
+        // return pngBytes;
 
         // Save to file
         // File.WriteAllBytes(filePath, pngBytes);

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Newtonsoft.Json;
@@ -41,7 +42,24 @@ public class BusinessController(
             return StatusCode(StatusCodes.Status404NotFound, "Erreur lors de la création de l'entreprise.");
         }
 
-        logger.LogInformation("Informations utilisateur : {@0}", JsonConvert.SerializeObject(business, Formatting.Indented));
+        logger.LogInformation("Entreprise créé : {@0}", JsonConvert.SerializeObject(business, Formatting.Indented));
         return Ok(business);
+    }
+
+    [HttpDelete("{id}")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<IActionResult> DeleteOneArticle(Guid id)
+    {
+        try
+        {
+            logger.LogInformation("Entreprise '{@0}' supprimée avec succès.", id);
+            await businessService.DeleteBusinessAsync(id);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            StatusCode(StatusCodes.Status500InternalServerError);
+            return NotFound();
+        }
     }
 }

@@ -18,15 +18,11 @@ var builder = WebApplication.CreateBuilder(args);
 Env.Load();
 
 /*
-// Source - https://stackoverflow.com/a/30203455
-// Posted by Pedro Figueiredo, modified by community. See post 'Timeline' for change history
-// Retrieved 2026-03-27, License - CC BY-SA 3.0
-
-HttpConfiguration config = GlobalConfiguration.Configuration;
-
-config.Formatters.JsonFormatter
-            .SerializerSettings
-            .ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore;
+JsonConvert.SerializeObject(YourPOCOHere, Formatting.Indented, 
+new JsonSerializerSettings 
+{ 
+        ReferenceLoopHandling = ReferenceLoopHandling.Serialize
+});
 
 */
 

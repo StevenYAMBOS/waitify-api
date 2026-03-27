@@ -29,5 +29,5 @@ public class BusinessRequest
     public string Country { get; set; } = "France";
 
     [Required(ErrorMessage = "Le QRCode est obligatoire.")]
-    public string QrCodeToken { get; set; } = string.Empty;
+    public Guid QrCodeToken { get; set; }
 };

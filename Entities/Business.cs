@@ -42,7 +42,7 @@ public class Business
 
     [Column("qr_code_token", TypeName = "varchar(255)")]
     [Required]
-    public string QrCodeToken { get; set; } = string.Empty;
+    public Guid QrCodeToken { get; set; }
 
     [Column("average_service_time")]
     public int AverageServiceTime { get; set; } = 300;

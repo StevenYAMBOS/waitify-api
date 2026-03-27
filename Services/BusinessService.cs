@@ -10,7 +10,7 @@ namespace WaitifyApi.Services
 {
     public class BusinessService(AppDbContext context, IApplicationUserRepository userService, FileStorageService fileStorageService, ILogger<BusinessService> logger) : IBusinessRepository
     {
-        public async Task<byte[]> CreateBusinessAsync(string userId, BusinessRequest request)
+        public async Task<Business?> CreateBusinessAsync(string userId, BusinessRequest request)
         {
             var user = await userService.FindUserByIdAsync(userId);
             if (user == null)
@@ -22,7 +22,7 @@ namespace WaitifyApi.Services
             string? logoUrl = null;
             string businessName = $"{request.Name}";
             string azureContainerName = Environment.GetEnvironmentVariable("AzureBlobBusinessesContainer")!;
-            Guid qrCodeToken = new Guid();
+            Guid qrCodeToken = Guid.NewGuid();
 
             if (request.Logo is not null)
             {
@@ -33,6 +33,7 @@ namespace WaitifyApi.Services
 
             var business = new Business
             {
+                OwnerId = user.Id,
                 Name = request.Name,
                 BusinessType = request.BusinessType,
                 PhoneNumber = request.PhoneNumber,
@@ -41,7 +42,7 @@ namespace WaitifyApi.Services
                 City = request.City,
                 ZipCode = request.ZipCode,
                 Country = request.Country,
-                QrCodeToken = qrCodeToken.ToString(),
+                QrCodeToken = qrCodeToken,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -52,7 +53,8 @@ namespace WaitifyApi.Services
             var url = AppConstants.WaitifyUrl + "/q/" + qrCodeToken;
             var qrCodeGenerated = QRCodeHelper.GenerateToFile(url);
 
-            return qrCodeGenerated;
+            logger.LogInformation(qrCodeGenerated.ToString());
+            return business;
         }
     }
 }

@@ -74,14 +74,13 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
                 return (false, null, "Erreur lors de la mise à jour de l'entreprise.");
             }
 
-            logger.LogInformation("Entreprise mis à jour avec succès : {@0}", JsonConvert.SerializeObject(existingBusiness, Formatting.Indented));
             patchDocument.ApplyTo(existingBusiness);
-
             existingBusiness.UpdatedAt = DateTime.UtcNow;
 
             context.Businesses.Update(existingBusiness);
             await context.SaveChangesAsync();
 
+            logger.LogInformation("Entreprise mis à jour avec succès : {@0}", JsonConvert.SerializeObject(existingBusiness, Formatting.Indented));
             return (true, existingBusiness, null);
         }
         catch (Exception ex)
@@ -90,14 +89,18 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             throw new InvalidOperationException("Une erreur est survenue lors de la mise à jour de l'entreprise.", ex);
         }
     }
-    public async Task<Business?> UpdateBusinessLogoAsync(string userId, Guid businessId, UpdateBusinessLogoRequest request)
+    public async Task<Business?> UpdateBusinessLogoAsync(
+        // string userId, 
+        Guid businessId,
+        UpdateBusinessLogoRequest request
+        )
     {
-        var existingUser = userService.FindUserByIdAsync(userId);
-        if (existingUser?.Id.ToString() == userId)
-        {
-            logger.LogError("Accès interdit. L'id utilisateur est incorrecte.\n ID en base de données : `{@0}`.\n ID de la requête : `{@1}`.", existingUser?.Id, userId);
-            return null;
-        }
+        // var existingUser = userService.FindUserByIdAsync(userId);
+        // if (existingUser?.Id.ToString() == userId)
+        // {
+        //     logger.LogError("Accès interdit. L'id utilisateur est incorrecte.\n ID en base de données : `{@0}`.\n ID de la requête : `{@1}`.", existingUser?.Id, userId);
+        //     return null;
+        // }
 
         try
         {
@@ -108,11 +111,11 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
                 return null;
             }
 
-            if (existingUser?.Id.ToString() != existingBusiness.OwnerId)
-            {
-                logger.LogError("Accès refusé !\n ID récupéré du JWT : `{@0}`.\n ID du gérant en BDD : `{@1}`.", existingUser?.Id, existingBusiness.OwnerId);
-                return null;
-            }
+            // if (existingUser?.Id.ToString() != existingBusiness.OwnerId)
+            // {
+            //     logger.LogError("Accès refusé !\n ID récupéré du JWT : `{@0}`.\n ID du gérant en BDD : `{@1}`.", existingUser?.Id, existingBusiness.OwnerId);
+            //     return null;
+            // }
 
             string oldImage = existingBusiness?.Logo;
             string? logoUrl = null;

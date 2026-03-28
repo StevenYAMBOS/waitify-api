@@ -96,19 +96,22 @@ public class BusinessController(
     [HttpPatch("{id}/logo")]
     [Authorize(AuthenticationSchemes = "Bearer")]
     [EnableRateLimiting("fixed")]
-    public async Task<IActionResult> UpdateBusinessLogo(Guid id, [FromBody] UpdateBusinessLogoRequest request)
+    public async Task<IActionResult> UpdateBusinessLogo(Guid id, [FromForm] UpdateBusinessLogoRequest request)
     {
 
-        var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
-        if (ownerIdFromToken == null)
-        {
-            logger.LogError("Impossible de récupérer l'ID de l'utilisateur depuis le token JWT.");
-            return Unauthorized("Utilisateur non authentifié.");
-        }
+        // var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        // if (ownerIdFromToken == null)
+        // {
+        //     logger.LogError("Impossible de récupérer l'ID de l'utilisateur depuis le token JWT.");
+        //     return Unauthorized("Utilisateur non authentifié.");
+        // }
 
         try
         {
-            var business = await businessService.UpdateBusinessLogoAsync(ownerIdFromToken, id, request);
+            var business = await businessService.UpdateBusinessLogoAsync(
+                // ownerIdFromToken, 
+                id,
+                request);
             if (business == null)
             {
                 logger.LogError("Entreprise {@0} non trouvée.", business?.Id);
@@ -118,7 +121,7 @@ public class BusinessController(
         }
         catch (UnauthorizedAccessException)
         {
-            logger.LogWarning("Utilisateur {@0} non autorisé à modifier l'entreprise.", ownerIdFromToken);
+            // logger.LogWarning("Utilisateur {@0} non autorisé à modifier l'entreprise.", ownerIdFromToken);
             return Forbid("Vous n'êtes pas autorisé à modifier cette entreprise.");
         }
         catch (Exception ex)

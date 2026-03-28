@@ -7,12 +7,13 @@ namespace WaitifyApi.Repositories
 {
     public interface IBusinessRepository
     {
-        // Task<IEnumerable<Business>> GetAllPubishedBusinessesAsync();
-        // Task<IEnumerable<Business>> GetAllBusinessesAsync();
         Task<Business?> FindBusinessByIdAsync(Guid id);
         Task<string> CreateBusinessAsync(string userId, BusinessRequest request);
-        // Task<Business> UpdateBusinessAsync(Guid articleId, UpdateBusinessDTO request);
-        // Task<Business> TogglePublishBusinessAsync(Guid articleId, bool isPublished, string authorIdFromToken);
+        Task<(bool Success, Business? Business, string? Error)> UpdateBusinessAsync(Guid businessId, JsonPatchDocument<Business> patchDocument);
+        Task<Business?> UpdateBusinessLogoAsync(string userId, Guid businessId, UpdateBusinessLogoRequest request);
         Task DeleteBusinessAsync(Guid id);
+        // Task<IEnumerable<Business>> GetAllPubishedBusinessesAsync();
+        // Task<IEnumerable<Business>> GetAllBusinessesAsync();
+        // Task<Business> TogglePublishBusinessAsync(Guid articleId, bool isPublished, string authorIdFromToken);
     }
 }

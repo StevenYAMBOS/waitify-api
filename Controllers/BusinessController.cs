@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Newtonsoft.Json;
+using WaitifyApi.Entities;
 using WaitifyApi.Models;
 using WaitifyApi.Repositories;
 using WaitifyApi.Services;
@@ -59,6 +61,71 @@ public class BusinessController(
 
         logger.LogInformation("Entreprise créé : {@0}", JsonConvert.SerializeObject(business, Formatting.Indented));
         return Ok(business);
+    }
+
+
+    [HttpPatch("{id}")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    [EnableRateLimiting("fixed")]
+    public async Task<IActionResult> UpdateBusiness(Guid id, [FromBody] JsonPatchDocument<Business> patchedDocument)
+    {
+        var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        if (ownerIdFromToken == null)
+        {
+            logger.LogError("Impossible de récupérer l'ID de l'utilisateur depuis le token JWT.");
+            return Unauthorized("Utilisateur non authentifié.");
+        }
+
+        if (patchedDocument == null)
+        {
+            logger.LogError("La requête est nulle : {@0}", patchedDocument);
+            return BadRequest();
+        }
+
+        var (success, existingUser, error) = await businessService.UpdateBusinessAsync(id, patchedDocument);
+
+        if (!success)
+        {
+            logger.LogError("Une erreur est sruvenue");
+            return NotFound(new { error });
+        }
+
+        return Ok(existingUser);
+    }
+
+    [HttpPatch("{id}/logo")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    [EnableRateLimiting("fixed")]
+    public async Task<IActionResult> UpdateBusinessLogo(Guid id, [FromBody] UpdateBusinessLogoRequest request)
+    {
+
+        var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        if (ownerIdFromToken == null)
+        {
+            logger.LogError("Impossible de récupérer l'ID de l'utilisateur depuis le token JWT.");
+            return Unauthorized("Utilisateur non authentifié.");
+        }
+
+        try
+        {
+            var business = await businessService.UpdateBusinessLogoAsync(ownerIdFromToken, id, request);
+            if (business == null)
+            {
+                logger.LogError("Entreprise {@0} non trouvée.", business?.Id);
+                return NotFound("Entreprise non trouvée ou accès refusé.");
+            }
+            return Ok(business);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            logger.LogWarning("Utilisateur {@0} non autorisé à modifier l'entreprise.", ownerIdFromToken);
+            return Forbid("Vous n'êtes pas autorisé à modifier cette entreprise.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erreur lors de la mise à jour du logo de l'entreprise {@0}.", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, "Une erreur est survenue.");
+        }
     }
 
     [HttpDelete("{id}")]

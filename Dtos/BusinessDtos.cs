@@ -31,3 +31,21 @@ public class BusinessRequest
     [Required(ErrorMessage = "Le QRCode est obligatoire.")]
     public Guid QrCodeToken { get; set; }
 };
+
+/* public record class UpdateBusinessGeneralInfosRequest
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string BusinessType { get; set; } = string.Empty;
+    public string PhoneNumber { get; set; } = string.Empty;
+    public string? Address { get; set; }
+    public string? City { get; set; }
+    public string? ZipCode { get; set; }
+
+    public string? Country { get; set; }
+} */
+
+public record class UpdateBusinessLogoRequest
+{
+    public IFormFile? NewLogoFile { get; set; }
+}

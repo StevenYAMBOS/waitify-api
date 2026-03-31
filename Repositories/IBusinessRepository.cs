@@ -7,10 +7,15 @@ namespace WaitifyApi.Repositories
 {
     public interface IBusinessRepository
     {
-        Task<string> GenerateNewQRCodeAsync(Guid qrCodeToken);
         Task<Business?> FindBusinessByIdAsync(Guid id);
         Task<string> CreateBusinessAsync(string userId, BusinessRequest request);
+        Task<(bool Success, Business? Business, string? Error)> UpdateBusinessAsync(Guid businessId, JsonPatchDocument<Business> patchDocument);
+        Task<Business?> UpdateBusinessLogoAsync(
+            // string userId, 
+            Guid businessId,
+            UpdateBusinessLogoRequest request);
         Task DeleteBusinessAsync(Guid id);
+        Task<string> GenerateNewQRCodeAsync(Guid qrCodeToken);
         // Task<IEnumerable<Business>> GetAllBusinessesAsync();
         // Task<IEnumerable<Business>> GetAllPubishedBusinessesAsync();
         // Task<Business> UpdateBusinessAsync(Guid articleId, UpdateBusinessDTO request);

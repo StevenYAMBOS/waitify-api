@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.JsonPatch;
 using Newtonsoft.Json;
 using WaitifyApi.Constants;
 using WaitifyApi.Data;
@@ -45,7 +46,6 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             logoUrl = await fileStorageService.UploadBlobAsync(request.Logo, businessName, azureContainerName, allowedExtensions);
         }
 
-
         var business = new Business
         {
             OwnerId = user.Id,
@@ -61,24 +61,108 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             CreatedAt = DateTime.UtcNow
         };
 
-
         context.Businesses.Add(business);
         await context.SaveChangesAsync();
 
         var url = AppConstants.WaitifyUrl + "/q/" + qrCodeToken;
         var qrCodeGenerated = await qRCodeHelper.GenerateQRCode(url);
 
-        // QRCodeGenerator qrGenerator = new QRCodeGenerator();
-        // QRCodeData qrCodeData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.Q);
-        // PngByteQRCode qrCode = new PngByteQRCode(qrCodeData);
-        // byte[] qrCodeAsPngByteArr = qrCode.GetGraphic(5);
-        // string base64String = Convert.ToBase64String(qrCodeAsPngByteArr, 0, qrCodeAsPngByteArr.Length);
-        // var qrCodeGenerated = $"<img src='data:image/png;base64,{base64String}' />";
-
         logger.LogInformation("ID entreprise : {@0}", business.Id);
         return qrCodeGenerated;
     }
 
+    public async Task<(bool Success, Business? Business, string? Error)> UpdateBusinessAsync(Guid businessId, JsonPatchDocument<Business> patchDocument)
+    {
+        try
+        {
+            var existingBusiness = context.Businesses.FirstOrDefault(business => business.Id == businessId);
+            if (existingBusiness == null)
+            {
+                logger.LogError("Erreur lors de la mise à jour de l'entreprise.");
+                return (false, null, "Erreur lors de la mise à jour de l'entreprise.");
+            }
+
+            patchDocument.ApplyTo(existingBusiness);
+            existingBusiness.UpdatedAt = DateTime.UtcNow;
+
+            context.Businesses.Update(existingBusiness);
+            await context.SaveChangesAsync();
+
+            logger.LogInformation("Entreprise mis à jour avec succès : {@0}", JsonConvert.SerializeObject(existingBusiness, Formatting.Indented));
+            return (true, existingBusiness, null);
+        }
+        catch (Exception ex)
+        {
+            logger.LogInformation("Erreur : {@0}", ex);
+            throw new InvalidOperationException("Une erreur est survenue lors de la mise à jour de l'entreprise.", ex);
+        }
+    }
+    public async Task<Business?> UpdateBusinessLogoAsync(
+        // string userId, 
+        Guid businessId,
+        UpdateBusinessLogoRequest request
+        )
+    {
+        // var existingUser = userService.FindUserByIdAsync(userId);
+        // if (existingUser?.Id.ToString() == userId)
+        // {
+        //     logger.LogError("Accès interdit. L'id utilisateur est incorrecte.\n ID en base de données : `{@0}`.\n ID de la requête : `{@1}`.", existingUser?.Id, userId);
+        //     return null;
+        // }
+
+        try
+        {
+            var existingBusiness = context.Businesses.FirstOrDefault(business => business.Id == businessId);
+            if (existingBusiness == null)
+            {
+                logger.LogError("Entreprise non trouvée.\n ID en base de données : `{@0}`.\n ID de la requête : `{@1}`.", existingBusiness?.Id, businessId);
+                return null;
+            }
+
+            // if (existingUser?.Id.ToString() != existingBusiness.OwnerId)
+            // {
+            //     logger.LogError("Accès refusé !\n ID récupéré du JWT : `{@0}`.\n ID du gérant en BDD : `{@1}`.", existingUser?.Id, existingBusiness.OwnerId);
+            //     return null;
+            // }
+
+            string oldImage = existingBusiness?.Logo;
+            string? logoUrl = null;
+            string businessName = $"{existingBusiness.Name}";
+            string azureContainerName = Environment.GetEnvironmentVariable("AzureBlobBusinessesContainer")!;
+            Guid qrCodeToken = Guid.NewGuid();
+
+            if (request.NewLogoFile is not null)
+            {
+                string[] allowedExtensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
+                logoUrl = await fileStorageService.UploadBlobAsync(request.NewLogoFile, businessName, azureContainerName, allowedExtensions);
+            }
+
+            existingBusiness.Logo = request.NewLogoFile != null ? logoUrl : existingBusiness.Logo;
+            existingBusiness.UpdatedAt = DateTime.UtcNow;
+
+            context.Businesses.Update(existingBusiness);
+            await context.SaveChangesAsync();
+
+            if (request.NewLogoFile != null && oldImage != null)
+            {
+                string blobUrl = Environment.GetEnvironmentVariable("AzureGenericBlobsUrl")!;
+                string blobFileName = existingBusiness?.Logo.Replace(blobUrl + azureContainerName, "");
+                await fileStorageService.DeleteBlobSnapshotsAsync(blobFileName, azureContainerName);
+            }
+
+            logger.LogInformation("Logo mis à jour avec succès !");
+
+            return existingBusiness;
+        }
+        catch (KeyNotFoundException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Une erreur est survenue lors de la mise à jour du logo de l'entreprise.", ex);
+        }
+    }
     public async Task DeleteBusinessAsync(Guid id)
     {
         var business = await FindBusinessByIdAsync(id) ?? throw new KeyNotFoundException("Entreprise non trouvée.");

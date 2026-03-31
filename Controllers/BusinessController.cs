@@ -18,6 +18,19 @@ public class BusinessController(
 ) : ControllerBase
 {
 
+    // [HttpPost("generate:{id}/qrcode")]
+    [HttpPost("{id}")]
+    public async Task<IActionResult> GenerateNewQRCode(Guid qrCodeToken)
+    {
+        var business = await businessService.GenerateNewQRCodeAsync(qrCodeToken);
+        if (business == null)
+        {
+            logger.LogInformation("QRCode non généré : {@0}", business);
+            return StatusCode(StatusCodes.Status404NotFound, "QRCode non généré.");
+        }
+        return Ok(business);
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> GetBusiness(Guid id)
     {
@@ -30,7 +43,6 @@ public class BusinessController(
         logger.LogInformation("ENTREPRISE : {@0}", JsonConvert.SerializeObject(business, Formatting.Indented));
         return Ok(business);
     }
-
 
     [HttpPost]
     public async Task<IActionResult> CreateBusiness([FromForm] BusinessRequest request)

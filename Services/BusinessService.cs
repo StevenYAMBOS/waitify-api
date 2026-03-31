@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using WaitifyApi.Constants;
 using WaitifyApi.Data;
 using WaitifyApi.Entities;
@@ -9,6 +10,14 @@ namespace WaitifyApi.Services;
 
 public class BusinessService(AppDbContext context, IApplicationUserRepository userService, QRCodeGeneratorService qRCodeHelper, FileStorageService fileStorageService, ILogger<BusinessService> logger) : IBusinessRepository
 {
+    public async Task<string> GenerateNewQRCodeAsync(Guid qrCodeToken)
+    {
+        var url = AppConstants.WaitifyUrl + "/q/" + qrCodeToken;
+        var qrCodeGenerated = await qRCodeHelper.GenerateQRCode(url);
+
+        logger.LogInformation("Nouveau QRCode généré : {@0}", JsonConvert.SerializeObject(qrCodeGenerated, Formatting.Indented));
+        return qrCodeGenerated;
+    }
 
     public async Task<Business?> FindBusinessByIdAsync(Guid id)
     {

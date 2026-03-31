@@ -13,7 +13,7 @@ public class QRCodeGeneratorService
     {
         QRCodeGenerator qrGenerator = new QRCodeGenerator();
         QRCodeData qrCodeData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.Q);
-        PngByteQRCode qrCode = new PngByteQRCode(qrCodeData);
+        PngByteQRCode qrCode = new(qrCodeData);
         byte[] qrCodeAsPngByteArr = qrCode.GetGraphic(20);
         string base64String = Convert.ToBase64String(qrCodeAsPngByteArr, 0, qrCodeAsPngByteArr.Length);
         var qrCodeGenerated = $"<img src='data:image/png;base64,{base64String}' />";

@@ -20,11 +20,18 @@ public class BusinessController(
 ) : ControllerBase
 {
 
-    // [HttpPost("generate:{id}/qrcode")]
-    [HttpPost("{id}")]
-    public async Task<IActionResult> GenerateNewQRCode(Guid qrCodeToken)
+    // [HttpPost("generate")]
+    [HttpPost("generate:{id}/qrcode")]
+    public async Task<IActionResult> GenerateNewQRCode(Guid id, Guid qrCodeToken)
     {
-        var business = await businessService.GenerateNewQRCodeAsync(qrCodeToken);
+        var userIdFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        if (userIdFromFromJwt == null)
+        {
+            logger.LogError("Erreur lors de la récupération de l'utilisateur  : {@0}", userIdFromFromJwt);
+            return StatusCode(StatusCodes.Status404NotFound, "Utilisateur introuvable ou accès refusé.");
+        }
+
+        var business = await businessService.GenerateNewQRCodeAsync(id, userIdFromFromJwt, qrCodeToken);
         if (business == null)
         {
             logger.LogInformation("QRCode non généré : {@0}", business);
@@ -55,8 +62,6 @@ public class BusinessController(
             logger.LogError("Erreur lors de la récupération de l'utilisateur  : {@0}", idFromFromJwt);
             return StatusCode(StatusCodes.Status404NotFound, "Utilisateur introuvable");
         }
-
-        logger.LogInformation("TOKEN décodé : {@0}", idFromFromJwt);
 
         if (request.Logo?.Length > 1 * 1024 * 1024)
         {

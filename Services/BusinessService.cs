@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using WaitifyApi.Constants;
 using WaitifyApi.Data;
@@ -38,6 +39,15 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
 
         logger.LogInformation("Nouveau QRCode généré : {@0}", JsonConvert.SerializeObject(qrCodeGenerated, Formatting.Indented));
         return qrCodeGenerated;
+    }
+
+    public async Task<Business> GetBusinessByIdWithActiveQueueAsync(Guid id)
+    {
+        var business = await context.Businesses
+        .FromSql($"SELECT id, is_queue_active, max_queue_size, average_service_time FROM businesses WHERE BusinessId = {id} AND is_active = TRUE")
+        .ToListAsync();
+
+        return business;
     }
 
     public async Task<Business?> FindBusinessByIdAsync(Guid id)

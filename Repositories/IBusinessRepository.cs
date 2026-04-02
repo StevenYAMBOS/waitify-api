@@ -18,7 +18,6 @@ namespace WaitifyApi.Repositories
         Task<string> GenerateNewQRCodeAsync(Guid businessId, string userId, Guid qrCodeToken);
         // Task<IEnumerable<Business>> GetAllBusinessesAsync();
         // Task<IEnumerable<Business>> GetAllPubishedBusinessesAsync();
-        // Task<Business> UpdateBusinessAsync(Guid articleId, UpdateBusinessDTO request);
         // Task<Business> TogglePublishBusinessAsync(Guid articleId, bool isPublished, string authorIdFromToken);
     }
 }

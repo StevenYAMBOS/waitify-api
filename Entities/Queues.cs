@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace WaitifyApi.Entities;
 
 [Table("queue_entries")]
-public class Queues
+public class Queue
 {
     [Column("id")]
     public Guid Id { get; set; }

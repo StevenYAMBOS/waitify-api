@@ -12,4 +12,5 @@ public class JoinQueueRequest
   [Phone]
   public string? Phone { get; set; }
   public string? ClientName { get; set; }
+  public string? Status { get; set; }
 }

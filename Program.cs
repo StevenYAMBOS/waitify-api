@@ -149,6 +149,7 @@ builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<FileStorageService>();
 builder.Services.AddScoped<IApplicationUserRepository, ApplicationUserService>();
 builder.Services.AddScoped<IBusinessRepository, BusinessService>();
+builder.Services.AddScoped<IQueueRepository, QueueService>();
 builder.Services.AddScoped<QRCodeGeneratorService>();
 // builder.Services.AddScoped<IContactService, ContactService>();
 // builder.Services.AddScoped<IEmailService, EmailService>();

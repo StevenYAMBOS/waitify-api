@@ -5,6 +5,7 @@ namespace WaitifyApi.Repositories
 {
   public interface IQueueRepository
   {
-    Task<(bool Success, IEnumerable<string>? Errors)> JoinQueueAsync(JoinQueueRequest request);
+    Task JoinQueueAsync(JoinQueueRequest request);
+    // Task<(bool Success, IEnumerable<string>? Errors)> JoinQueueAsync(JoinQueueRequest request);
   }
 }

@@ -4,14 +4,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace WaitifyApi.Entities;
 
 [Table("queue_entries")]
-public class Queue
+public class QueueEntries
 {
     [Column("id")]
     public Guid Id { get; set; }
 
     [Column("business_id")]
     [Required]
-    public string? BusinessId { get; set; }
+    public Guid BusinessId { get; set; }
     public virtual Business? Business { get; set; }
 
     [Column("phone", TypeName = "varchar(20)")]

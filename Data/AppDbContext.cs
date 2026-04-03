@@ -10,7 +10,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 {
 
     public DbSet<Business> Businesses { get; set; }
-    public DbSet<Queue> Queues { get; set; }
+    public DbSet<QueueEntries> Queues { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

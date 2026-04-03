@@ -1,6 +1,0 @@
-@WaitifyApi_HostAddress = http://localhost:5258
-
-GET {{WaitifyApi_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###

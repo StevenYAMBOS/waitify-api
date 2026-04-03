@@ -18,14 +18,14 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
         builder.Entity<ApplicationUser>(entity =>
         {
-            entity.ToTable("users");
+            entity.ToTable("Users");
             entity.Property(u => u.Role)
                   .HasConversion<string>();
         });
 
         builder.Entity<IdentityRole>(entity =>
         {
-            entity.ToTable("roles");
+            entity.ToTable("Roles");
         });
         builder.Entity<Business>(entity =>
         {

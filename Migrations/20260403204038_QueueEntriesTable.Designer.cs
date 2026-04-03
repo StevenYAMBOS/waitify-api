@@ -12,8 +12,8 @@ using WaitifyApi.Data;
 namespace WaitifyApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260403201413_QueueEntries")]
-    partial class QueueEntries
+    [Migration("20260403204038_QueueEntriesTable")]
+    partial class QueueEntriesTable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -378,67 +378,53 @@ namespace WaitifyApi.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .HasColumnType("uuid");
 
                     b.Property<int>("ActualServiceTime")
-                        .HasColumnType("integer")
-                        .HasColumnName("actual_service_time");
+                        .HasColumnType("integer");
 
                     b.Property<Guid>("BusinessId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("business_id");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CalledAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("called_at");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ClientName")
-                        .HasColumnType("varchar(100)")
-                        .HasColumnName("client_name");
+                        .HasColumnType("varchar(100)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("EstimatedWaitTime")
-                        .HasColumnType("integer")
-                        .HasColumnName("estimated_wait_time");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("LastSmsSentAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_sms_sent_at");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Phone")
                         .IsRequired()
-                        .HasColumnType("varchar(20)")
-                        .HasColumnName("phone");
+                        .HasColumnType("varchar(20)");
 
                     b.Property<int>("Position")
-                        .HasColumnType("integer")
-                        .HasColumnName("position");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("ServedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("served_at");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("SmsSentCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("sms_sent_count");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Status")
-                        .HasColumnType("varchar(50)")
-                        .HasColumnName("status");
+                        .HasColumnType("varchar(50)");
 
                     b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
+                        .HasColumnType("timestamp with time zone");
 
                     b.HasKey("Id");
 
                     b.HasIndex("BusinessId");
 
-                    b.ToTable("queue_entries");
+                    b.ToTable("QueueEntries");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

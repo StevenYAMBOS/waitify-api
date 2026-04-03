@@ -1,6 +1,6 @@
 # Base de données
 
-**Mise à jour :** 19-03-2026
+**Mise à jour :** 03-04-2026
 
 **Par :** [Steven YAMBOS](https://www.linkedin.com/in/steven-yambos/)
 
@@ -8,9 +8,9 @@
 
 ## Bonnes pratiques
 
-- Les tables sont au pluriel et en minuscule (exemple : `users`)
-- Les champs avec des références ont une majuscule et se terminent par `Id`
-- Utilisation des UUID comme clés primaires pour éviter les collisions
+- Les tables sont au pluriel et en PascalCase (exemple : `Users`).
+- Les champs sont en PascalCase `Id`.
+- Utilisation des UUID comme clés primaires pour éviter les collisions.
 - Contraintes de clés étrangères avec CASCADE pour maintenir l'intégrité
 - Tous les timestamps incluent la timezone (TIMESTAMP WITH TIME ZONE)
 - Utilisation de JSONB pour les données structurées variables
@@ -42,7 +42,7 @@ SET app.current_user_id = 'uuid-of-authenticated-user';
 
 ## Architecture multi-business
 
-L'architecture permet à un utilisateur de gérer plusieurs établissements via des plans tarifaires adaptés. La séparation entre `users` (compte utilisateur) et `businesses` (établissements) garantit une évolutivité maximale.
+L'architecture permet à un utilisateur de gérer plusieurs établissements via des plans tarifaires adaptés. La séparation entre `Users` (compte utilisateur) et `Businesses` (établissements) garantit une évolutivité maximale.
 
 ### Relation utilisateur-business
 
@@ -53,109 +53,109 @@ L'architecture permet à un utilisateur de gérer plusieurs établissements via 
 
 ## Tables principales
 
-### Table `users`
+### Table `Users`
 
-**Description :** Représente les comptes utilisateurs de la plateforme Waitify. Cette table stocke uniquement les informations personnelles et d'authentification. Les détails des établissements sont déportés dans la table `businesses` pour supporter le multi-établissement.
+**Description :** Représente les comptes utilisateurs de la plateforme Waitify. Cette table stocke uniquement les informations personnelles et d'authentification. Les détails des établissements sont déportés dans la table `Businesses` pour supporter le multi-établissement.
 
 ```sql
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    google_id VARCHAR(255),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255),
-    first_name VARCHAR(100),
-    last_name VARCHAR(100),
-    phone_number VARCHAR(20),
-    profile_picture VARCHAR(255),
-    is_active BOOLEAN DEFAULT true,
-    -- email_confirmed BOOLEAN DEFAULT false, // remplace `isActive`. Documentation -> https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.identity.identityuser-1.emailconfirmed?view=aspnetcore-10.0#microsoft-aspnetcore-identity-identityuser-1-emailconfirmed
-    auth_provider VARCHAR(50) DEFAULT 'google',
-    role VARCHAR(50) DEFAULT 'Owner',
-    subscription_status VARCHAR(50) DEFAULT 'trial',
-    SubscriptionPlanId UUID REFERENCES subscription_plans(id),
-    trial_ends_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    last_login TIMESTAMP WITH TIME ZONE
+CREATE TABLE Users (
+    Id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    GoogleId VARCHAR(255),
+    Email VARCHAR(255) UNIQUE NOT NULL,
+    Password VARCHAR(255),
+    FirstName VARCHAR(100),
+    LastName VARCHAR(100),
+    PhoneNumber VARCHAR(20),
+    ProfilePicture VARCHAR(255),
+    IsActive BOOLEAN DEFAULT true,
+    -- EmailConfirmed BOOLEAN DEFAULT false, // remplace `IsActive`. Documentation -> https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.identity.identityuser-1.emailconfirmed?view=aspnetcore-10.0#microsoft-aspnetcore-identity-identityuser-1-emailconfirmed
+    AuthProvider VARCHAR(50) DEFAULT 'google',
+    Role VARCHAR(50) DEFAULT 'Owner',
+    SubscriptionStatus VARCHAR(50) DEFAULT 'trial',
+    SubscriptionPlanId UUID REFERENCES SubscriptionPlans(Id),
+    TrialEndsAt TIMESTAMP WITH TIME ZONE,
+    CreatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UpdatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    LastLogin TIMESTAMP WITH TIME ZONE
 );
 
 -- Index pour les performances
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_subscription_plan ON users(SubscriptionPlanId);
-CREATE INDEX idx_users_subscription_status ON users(subscription_status);
-CREATE INDEX idx_users_active ON users(is_active) WHERE is_active = true;
+CREATE INDEX idx_users_email ON Users(Email);
+CREATE INDEX idx_users_subscription_plan ON Users(SubscriptionPlanId);
+CREATE INDEX idx_users_subscription_status ON Users(SubscriptionStatus);
+CREATE INDEX idx_users_active ON Users(IsActive) WHERE IsActive = true;
 
 -- Contraintes de validation
-ALTER TABLE users ADD CONSTRAINT check_email_format CHECK (email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
-ALTER TABLE users ADD CONSTRAINT check_subscription_status CHECK (subscription_status IN ('trial', 'active', 'suspended', 'cancelled'));
-ALTER TABLE users ADD CONSTRAINT check_auth_provider CHECK (auth_provider IN ('google', 'facebook'));
-ALTER TABLE users ADD CONSTRAINT check_role CHECK (role IN ('client', 'admin', 'owner'));
-ALTER TABLE users ADD CONSTRAINT check_phone_number_format CHECK (phone_number IS NULL OR phone_number ~ '^(\+33|0)[1-9][0-9]{8}$');
+ALTER TABLE Users ADD CONSTRAINT check_email_format CHECK (Email ~* '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$');
+ALTER TABLE Users ADD CONSTRAINT check_subscription_status CHECK (SubscriptionStatus IN ('trial', 'active', 'suspended', 'cancelled'));
+ALTER TABLE Users ADD CONSTRAINT check_auth_provider CHECK (AuthProvider IN ('google', 'facebook'));
+ALTER TABLE Users ADD CONSTRAINT check_role CHECK (Role IN ('client', 'admin', 'owner'));
+ALTER TABLE Users ADD CONSTRAINT check_phone_number_format CHECK (PhoneNumber IS NULL OR PhoneNumber ~ '^(\+33|0)[1-9][0-9]{8}$');
 ```
 
 **Explications des colonnes :**
 
-- `id` : Identifiant unique UUID généré automatiquement
-- `google_id` : Identifiant unique partagé par Google lors de l'inscription avec Google oAuth2
-- `email` : Adresse email unique servant d'identifiant de connexion
-- `password` : Hash bcrypt du mot de passe, jamais stocké en clair. ⚠️ Le mot de passe n'est pas `NOT NULL` car avec l'inscription avec Google on ne récupère pas le mot de passe de l'utilisateur ⚠️
-- `first_name` : Prénom de l'utilisateur
-- `last_name` : Nom de famille de l'utilisateur
-- `phone_number` : Numéro de téléphone de contact
-- `profile_picture` : Image de profile
-- `is_active` : Permet de suspendre un compte utilisateur globalement
-- `auth_provider` : Application de connexion
-- `role` : Rôle de l'utilisateur :
+- `Id` : Identifiant unique UUID généré automatiquement
+- `GoogleId` : Identifiant unique partagé par Google lors de l'inscription avec Google oAuth2
+- `Email` : Adresse email unique servant d'identifiant de connexion
+- `Password` : Hash bcrypt du mot de passe, jamais stocké en clair. ⚠️ Le mot de passe n'est pas `NOT NULL` car avec l'inscription avec Google on ne récupère pas le mot de passe de l'utilisateur ⚠️
+- `FirstName` : Prénom de l'utilisateur
+- `LastName` : Nom de famille de l'utilisateur
+- `PhoneNumber` : Numéro de téléphone de contact
+- `ProfilePicture` : Image de profile
+- `IsActive` : Permet de suspendre un compte utilisateur globalement
+- `AuthProvider` : Application de connexion
+- `Role` : Rôle de l'utilisateur :
   - `Client` : Clients.
   - `Owner` : Commerçants.
   - `Admin` : Développeurs.
-- `subscription_status` : État global de l'abonnement utilisateur
+- `SubscriptionStatus` : État global de l'abonnement utilisateur
 - `SubscriptionPlanId` : Référence vers le plan d'abonnement actuel
-- `trial_ends_at` : Date limite de la période d'essai gratuite de 14 jours
-- `created_at` : Timestamp de création du compte
-- `updated_at` : Timestamp de dernière modification
-- `last_login` : Timestamp de dernière connexion
+- `TrialEndsAt` : Date limite de la période d'essai gratuite de 14 jours
+- `CreatedAt` : Timestamp de création du compte
+- `UpdatedAt` : Timestamp de dernière modification
+- `LastLogin` : Timestamp de dernière connexion
 
-### Table `businesses`
+### Table `Businesses`
 
 **Description :** Représente chaque établissement géré par un utilisateur. Cette table contient tous les paramètres opérationnels spécifiques à chaque point de vente : configuration de la file d'attente, horaires, messages personnalisés.
 
 ```sql
-CREATE TABLE businesses (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    owner_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    name VARCHAR(255) NOT NULL,
-    business_type VARCHAR(100) NOT NULL,
-    phone_number VARCHAR(20),
-    logo VARCHAR(255),
-    address TEXT,
-    city VARCHAR(100),
-    zip_code VARCHAR(10),
-    country VARCHAR(50) DEFAULT 'France',
-    qr_code_token VARCHAR(255) UNIQUE NOT NULL,
-    average_service_time INTEGER DEFAULT 300,
-    is_queue_active BOOLEAN DEFAULT false,
-    is_queue_paused BOOLEAN DEFAULT false,
-    max_queue_size INTEGER DEFAULT 50,
-    opening_hours JSONB,
-    custom_message TEXT,
-    sms_notifications_enabled BOOLEAN DEFAULT true,
-    auto_advance_enabled BOOLEAN DEFAULT true,
-    client_timeout_minutes INTEGER DEFAULT 5,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE Businesses (
+    Id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    OwnerId UUID NOT NULL REFERENCES Users(Id) ON DELETE CASCADE,
+    Name VARCHAR(255) NOT NULL,
+    BusinessType VARCHAR(100) NOT NULL,
+    PhoneNumber VARCHAR(20),
+    Logo VARCHAR(255),
+    Address TEXT,
+    City VARCHAR(100),
+    ZipCode VARCHAR(10),
+    Country VARCHAR(50) DEFAULT 'France',
+    QrCodeToken VARCHAR(255) UNIQUE NOT NULL,
+    AverageServiceTime INTEGER DEFAULT 300,
+    IsQueueActive BOOLEAN DEFAULT false,
+    IsQueuePaused BOOLEAN DEFAULT false,
+    MaxQueueSize INTEGER DEFAULT 50,
+    OpeningHours JSONB,
+    CustomMessage TEXT,
+    SmsNotificationsEnabled BOOLEAN DEFAULT true,
+    AutoAdvanceEnabled BOOLEAN DEFAULT true,
+    ClientTimeoutMinutes INTEGER DEFAULT 5,
+    IsActive BOOLEAN DEFAULT true,
+    CreatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UpdatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Index pour les performances multi-business
-CREATE INDEX idx_businesses_user ON businesses(owner_id);
-CREATE INDEX idx_businesses_user_active ON businesses(owner_id, is_active);
-CREATE UNIQUE INDEX idx_businesses_qr_token ON businesses(qr_code_token);
-CREATE INDEX idx_businesses_type ON businesses(business_type);
-CREATE INDEX idx_businesses_active_by_user ON businesses(owner_id, created_at) WHERE is_active = true;
+CREATE INDEX idx_businesses_user ON Businesses(OwnerId);
+CREATE INDEX idx_businesses_user_active ON Businesses(OwnerId, IsActive);
+CREATE UNIQUE INDEX idx_businesses_qr_token ON Businesses(QrCodeToken);
+CREATE INDEX idx_businesses_type ON Businesses(BusinessType);
+CREATE INDEX idx_businesses_active_by_user ON Businesses(OwnerId, CreatedAt) WHERE IsActive = true;
 
 -- Contraintes de validation
-ALTER TABLE businesses ADD CONSTRAINT check_business_type CHECK (business_type IN (
+ALTER TABLE Businesses ADD CONSTRAINT check_business_type CHECK (BusinessType IN (
     'bakery', 'hairdresser', 'pharmacy', 'garage', 'restaurant',
     'medical_office', 'dentist', 'veterinary', 'optician', 'bank',
     'insurance', 'notary', 'lawyer', 'accountant', 'real_estate',
@@ -165,39 +165,39 @@ ALTER TABLE businesses ADD CONSTRAINT check_business_type CHECK (business_type I
     'vehicle_inspection', 'gas_station', 'auto_body', 'tire_service',
     'other'
 ));
-ALTER TABLE businesses ADD CONSTRAINT check_service_time_positive CHECK (average_service_time > 0);
-ALTER TABLE businesses ADD CONSTRAINT check_max_queue_reasonable CHECK (max_queue_size BETWEEN 1 AND 200);
-ALTER TABLE businesses ADD CONSTRAINT check_timeout_reasonable CHECK (client_timeout_minutes BETWEEN 1 AND 30);
-ALTER TABLE businesses ADD CONSTRAINT check_phone_number_format_business CHECK (phone_number IS NULL OR phone_number ~ '^(\+33|0)[1-9][0-9]{8}$');
+ALTER TABLE Businesses ADD CONSTRAINT check_service_time_positive CHECK (AverageServiceTime > 0);
+ALTER TABLE Businesses ADD CONSTRAINT check_max_queue_reasonable CHECK (MaxQueueSize BETWEEN 1 AND 200);
+ALTER TABLE Businesses ADD CONSTRAINT check_timeout_reasonable CHECK (ClientTimeoutMinutes BETWEEN 1 AND 30);
+ALTER TABLE Businesses ADD CONSTRAINT check_phone_number_format_business CHECK (PhoneNumber IS NULL OR PhoneNumber ~ '^(\+33|0)[1-9][0-9]{8}$');
 ```
 
 **Explications des colonnes :**
 
-- `id` : Identifiant unique UUID généré automatiquement
-- `owner_id` : Référence vers le propriétaire utilisateur de l'établissement
-- `name` : Nom commercial de l'établissement (ex: "Boulangerie Martin Centre-Ville")
-- `business_type` : Type d'activité utilisé pour les temps de service par défaut
-- `phone_number` : Numéro de téléphone spécifique à cet établissement
-- `logo` : Logo du commerce
-- `address` : Adresse physique complète de l'établissement
-- `city` : Ville où se situe l'établissement
-- `zip_code` : Code postal de l'établissement
-- `country` : Pays de l'établissement (par défaut France)
-- `qr_code_token` : Token unique pour identifier l'établissement via QR code
-- `average_service_time` : Temps moyen en secondes pour servir un client
-- `is_queue_active` : Contrôle global de la file d'attente (ouverte/fermée)
-- `is_queue_paused` : Pause temporaire sans fermer complètement
-- `max_queue_size` : Limite du nombre de clients simultanés
-- `opening_hours` : Horaires d'ouverture au format JSON par jour
-- `custom_message` : Message personnalisé inclus dans les SMS aux clients
-- `sms_notifications_enabled` : Active/désactive l'envoi de SMS pour cet établissement
-- `auto_advance_enabled` : Active le passage automatique au client suivant après timeout
-- `client_timeout_minutes` : Délai avant passage automatique au suivant
-- `is_active` : Permet de désactiver temporairement un établissement
-- `created_at` : Timestamp de création de l'établissement
-- `updated_at` : Timestamp de dernière modification
+- `Id` : Identifiant unique UUID généré automatiquement
+- `OwnerId` : Référence vers le propriétaire utilisateur de l'établissement
+- `Name` : Nom commercial de l'établissement (ex: "Boulangerie Martin Centre-Ville")
+- `BusinessType` : Type d'activité utilisé pour les temps de service par défaut
+- `PhoneNumber` : Numéro de téléphone spécifique à cet établissement
+- `Logo` : Logo du commerce
+- `Address` : Adresse physique complète de l'établissement
+- `City` : Ville où se situe l'établissement
+- `ZipCode` : Code postal de l'établissement
+- `Country` : Pays de l'établissement (par défaut France)
+- `QrCodeToken` : Token unique pour identifier l'établissement via QR code
+- `AverageServiceTime` : Temps moyen en secondes pour servir un client
+- `IsQueueActive` : Contrôle global de la file d'attente (ouverte/fermée)
+- `IsQueuePaused` : Pause temporaire sans fermer complètement
+- `MaxQueueSize` : Limite du nombre de clients simultanés
+- `OpeningHours` : Horaires d'ouverture au format JSON par jour
+- `CustomMessage` : Message personnalisé inclus dans les SMS aux clients
+- `SmsNotificationsEnabled` : Active/désactive l'envoi de SMS pour cet établissement
+- `AutoAdvanceEnabled` : Active le passage automatique au client suivant après timeout
+- `ClientTimeoutMinutes` : Délai avant passage automatique au suivant
+- `IsActive` : Permet de désactiver temporairement un établissement
+- `CreatedAt` : Timestamp de création de l'établissement
+- `UpdatedAt` : Timestamp de dernière modification
 
-**Format JSON pour opening_hours :**
+**Format JSON pour OpeningHours :**
 
 ```json
 {
@@ -211,66 +211,66 @@ ALTER TABLE businesses ADD CONSTRAINT check_phone_number_format_business CHECK (
 }
 ```
 
-### Table `queue_entries`
+### Table `QueueEntries`
 
 **Description :** Gère les inscriptions dans les files d'attente de chaque établissement. Cette table est le cœur opérationnel du système, stockant les positions, estimations de temps et le cycle de vie complet de chaque client.
 
 ```sql
-CREATE TABLE queue_entries (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    BusinessId UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
-    phone VARCHAR(20) NOT NULL,
-    client_name VARCHAR(100),
-    position INTEGER NOT NULL,
-    estimated_wait_time INTEGER,
-    status VARCHAR(50) DEFAULT 'waiting',
-    called_at TIMESTAMP WITH TIME ZONE,
-    served_at TIMESTAMP WITH TIME ZONE,
-    actual_service_time INTEGER,
-    sms_sent_count INTEGER DEFAULT 0,
-    last_sms_sent_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE QueueEntries (
+    Id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    BusinessId UUID NOT NULL REFERENCES Businesses(Id) ON DELETE CASCADE,
+    Phone VARCHAR(20) NOT NULL,
+    ClientName VARCHAR(100),
+    Position INTEGER NOT NULL,
+    EstimatedWaitTime INTEGER,
+    Status VARCHAR(50) DEFAULT 'waiting',
+    CalledAt TIMESTAMP WITH TIME ZONE,
+    ServedAt TIMESTAMP WITH TIME ZONE,
+    ActualServiceTime INTEGER,
+    SmsSentCount INTEGER DEFAULT 0,
+    LastSmsSentAt TIMESTAMP WITH TIME ZONE,
+    CreatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UpdatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Index optimisés pour le multi-business
-CREATE INDEX idx_queue_entries_business_status ON queue_entries(BusinessId, status);
-CREATE INDEX idx_queue_entries_active_position ON queue_entries(BusinessId, position) WHERE status = 'waiting';
-CREATE INDEX idx_queue_entries_business_created ON queue_entries(BusinessId, created_at);
-CREATE INDEX idx_queue_entries_phone_business ON queue_entries(phone, BusinessId);
-CREATE INDEX idx_queue_entries_waiting_by_business ON queue_entries(BusinessId, position, created_at) WHERE status = 'waiting';
+CREATE INDEX idx_queue_entries_business_status ON QueueEntries(BusinessId, Status);
+CREATE INDEX idx_queue_entries_active_position ON QueueEntries(BusinessId, Position) WHERE Status = 'waiting';
+CREATE INDEX idx_queue_entries_business_created ON QueueEntries(BusinessId, CreatedAt);
+CREATE INDEX idx_queue_entries_phone_business ON QueueEntries(Phone, BusinessId);
+CREATE INDEX idx_queue_entries_waiting_by_business ON QueueEntries(BusinessId, Position, CreatedAt) WHERE Status = 'waiting';
 
 -- Index pour requêtes cross-business (performance)
-CREATE INDEX idx_queue_entries_user_status ON queue_entries(
-    (SELECT UserId FROM businesses WHERE id = BusinessId),
-    status,
-    created_at
+CREATE INDEX idx_queue_entries_user_status ON QueueEntries(
+    (SELECT OwnerId FROM Businesses WHERE Id = BusinessId),
+    Status,
+    CreatedAt
 );
 
 -- Contraintes de validation
-ALTER TABLE queue_entries ADD CONSTRAINT check_position_positive CHECK (position > 0);
-ALTER TABLE queue_entries ADD CONSTRAINT check_status_valid CHECK (status IN ('waiting', 'called', 'served', 'missed', 'cancelled'));
-ALTER TABLE queue_entries ADD CONSTRAINT check_phone_format CHECK (phone ~ '^(\+33|0)[1-9][0-9]{8}$');
-ALTER TABLE queue_entries ADD CONSTRAINT check_estimated_wait_positive CHECK (estimated_wait_time IS NULL OR estimated_wait_time >= 0);
-ALTER TABLE queue_entries ADD CONSTRAINT check_called_before_served CHECK (called_at IS NULL OR served_at IS NULL OR served_at >= called_at);
+ALTER TABLE QueueEntries ADD CONSTRAINT check_position_positive CHECK (Position > 0);
+ALTER TABLE QueueEntries ADD CONSTRAINT check_status_valid CHECK (Status IN ('waiting', 'called', 'served', 'missed', 'cancelled'));
+ALTER TABLE QueueEntries ADD CONSTRAINT check_phone_format CHECK (Phone ~ '^(\+33|0)[1-9][0-9]{8}$');
+ALTER TABLE QueueEntries ADD CONSTRAINT check_estimated_wait_positive CHECK (EstimatedWaitTime IS NULL OR EstimatedWaitTime >= 0);
+ALTER TABLE QueueEntries ADD CONSTRAINT check_called_before_served CHECK (CalledAt IS NULL OR ServedAt IS NULL OR ServedAt >= CalledAt);
 ```
 
 **Explications des colonnes :**
 
-- `id` : Identifiant unique UUID généré automatiquement
+- `Id` : Identifiant unique UUID généré automatiquement
 - `BusinessId` : Référence vers l'établissement concerné
-- `phone` : Numéro de téléphone du client (format français validé)
-- `client_name` : Nom ou prénom du client (optionnel)
-- `position` : Rang dans la file d'attente, recalculé automatiquement
-- `estimated_wait_time` : Temps d'attente estimé en minutes au moment de l'inscription
-- `status` : État du client dans le processus (waiting/called/served/missed/cancelled)
-- `called_at` : Timestamp précis de l'appel du client par le commerçant
-- `served_at` : Timestamp de confirmation du service effectué
-- `actual_service_time` : Durée réelle du service en secondes pour améliorer les estimations
-- `sms_sent_count` : Nombre total de SMS envoyés à ce client pour le billing
-- `last_sms_sent_at` : Timestamp du dernier SMS pour éviter le spam
-- `created_at` : Timestamp d'inscription dans la file d'attente
-- `updated_at` : Timestamp de dernière modification du statut
+- `Phone` : Numéro de téléphone du client (format français validé)
+- `ClientName` : Nom ou prénom du client (optionnel)
+- `Position` : Rang dans la file d'attente, recalculé automatiquement
+- `EstimatedWaitTime` : Temps d'attente estimé en minutes au moment de l'inscription
+- `Status` : État du client dans le processus (waiting/called/served/missed/cancelled)
+- `CalledAt` : Timestamp précis de l'appel du client par le commerçant
+- `ServedAt` : Timestamp de confirmation du service effectué
+- `ActualServiceTime` : Durée réelle du service en secondes pour améliorer les estimations
+- `SmsSentCount` : Nombre total de SMS envoyés à ce client pour le billing
+- `LastSmsSentAt` : Timestamp du dernier SMS pour éviter le spam
+- `CreatedAt` : Timestamp d'inscription dans la file d'attente
+- `UpdatedAt` : Timestamp de dernière modification du statut
 
 **Cycle de vie d'une entrée :**
 
@@ -280,37 +280,37 @@ ALTER TABLE queue_entries ADD CONSTRAINT check_called_before_served CHECK (calle
 4. `missed` : Client absent lors de son appel (timeout)
 5. `cancelled` : Client a annulé sa place manuellement
 
-### Table `subscription_plans`
+### Table `SubscriptionPlans`
 
 **Description :** Définit les différents plans tarifaires avec leurs limites et fonctionnalités. Cette table permet une gestion flexible des offres commerciales et une évolution tarifaire sans modification du code.
 
 ```sql
-CREATE TABLE subscription_plans (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    name VARCHAR(100) UNIQUE NOT NULL,
-    price_cents INTEGER NOT NULL,
-    max_businesses INTEGER NOT NULL,
-    sms_quota_monthly INTEGER DEFAULT 1000,
-    features JSONB,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE SubscriptionPlans (
+    Id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    Name VARCHAR(100) UNIQUE NOT NULL,
+    PriceCents INTEGER NOT NULL,
+    MaxBusinesses INTEGER NOT NULL,
+    SmsQuotaMonthly INTEGER DEFAULT 1000,
+    Features JSONB,
+    IsActive BOOLEAN DEFAULT true,
+    CreatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UpdatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Index pour les requêtes fréquentes
-CREATE INDEX idx_subscription_plans_active ON subscription_plans(is_active);
-CREATE INDEX idx_subscription_plans_name ON subscription_plans(name);
+CREATE INDEX idx_subscription_plans_active ON SubscriptionPlans(IsActive);
+CREATE INDEX idx_subscription_plans_name ON SubscriptionPlans(Name);
 
 -- Contraintes de validation
-ALTER TABLE subscription_plans ADD CONSTRAINT check_price_positive CHECK (price_cents >= 0);
-ALTER TABLE subscription_plans ADD CONSTRAINT check_max_businesses_valid CHECK (max_businesses = -1 OR max_businesses > 0);
-ALTER TABLE subscription_plans ADD CONSTRAINT check_sms_quota_positive CHECK (sms_quota_monthly > 0);
+ALTER TABLE SubscriptionPlans ADD CONSTRAINT check_price_positive CHECK (PriceCents >= 0);
+ALTER TABLE SubscriptionPlans ADD CONSTRAINT check_max_businesses_valid CHECK (MaxBusinesses = -1 OR MaxBusinesses > 0);
+ALTER TABLE SubscriptionPlans ADD CONSTRAINT check_sms_quota_positive CHECK (SmsQuotaMonthly > 0);
 ```
 
 **Plans par défaut :**
 
 ```sql
-INSERT INTO subscription_plans (name, price_cents, max_businesses, sms_quota_monthly, features) VALUES
+INSERT INTO SubscriptionPlans (Name, PriceCents, MaxBusinesses, SmsQuotaMonthly, Features) VALUES
 ('basic', 1900, 1, 1000, '{"analytics": "basic", "support": "email", "api_access": false}'),
 ('pro', 4900, 5, 2500, '{"analytics": "advanced", "support": "priority", "api_access": true, "custom_branding": true}'),
 ('enterprise', 9900, -1, 5000, '{"analytics": "advanced", "support": "phone", "api_access": true, "custom_branding": true, "dedicated_manager": true}');
@@ -318,60 +318,60 @@ INSERT INTO subscription_plans (name, price_cents, max_businesses, sms_quota_mon
 
 **Explications des colonnes :**
 
-- `id` : Identifiant unique UUID généré automatiquement
-- `name` : Nom unique du plan affiché à l'utilisateur
-- `price_cents` : Prix mensuel en centimes d'euro
-- `max_businesses` : Nombre maximum d'établissements autorisés (-1 pour illimité)
-- `sms_quota_monthly` : Quota de SMS inclus dans l'abonnement mensuel
-- `features` : Fonctionnalités JSON incluses dans le plan
-- `is_active` : Indique si le plan est proposable aux nouveaux clients
-- `created_at` : Timestamp de création du plan
-- `updated_at` : Timestamp de dernière modification
+- `Id` : Identifiant unique UUID généré automatiquement
+- `Name` : Nom unique du plan affiché à l'utilisateur
+- `PriceCents` : Prix mensuel en centimes d'euro
+- `MaxBusinesses` : Nombre maximum d'établissements autorisés (-1 pour illimité)
+- `SmsQuotaMonthly` : Quota de SMS inclus dans l'abonnement mensuel
+- `Features` : Fonctionnalités JSON incluses dans le plan
+- `IsActive` : Indique si le plan est proposable aux nouveaux clients
+- `CreatedAt` : Timestamp de création du plan
+- `UpdatedAt` : Timestamp de dernière modification
 
-### Table `sms_logs`
+### Table `SmsLogs`
 
 **Description :** Journal exhaustif de tous les SMS envoyés par établissement. Essentiel pour la facturation multi-business, l'audit et le monitoring des performances par établissement.
 
 ```sql
-CREATE TABLE sms_logs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    BusinessId UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
-    QueueEntryId UUID REFERENCES queue_entries(id) ON DELETE SET NULL,
-    phone VARCHAR(20) NOT NULL,
-    message_type VARCHAR(50) NOT NULL,
-    message_content TEXT NOT NULL,
-    status VARCHAR(50) DEFAULT 'pending',
-    provider_response JSONB,
-    cost_cents INTEGER DEFAULT 3,
-    sent_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    delivered_at TIMESTAMP WITH TIME ZONE
+CREATE TABLE SmsLogs (
+    Id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    BusinessId UUID NOT NULL REFERENCES Businesses(Id) ON DELETE CASCADE,
+    QueueEntryId UUID REFERENCES QueueEntries(Id) ON DELETE SET NULL,
+    Phone VARCHAR(20) NOT NULL,
+    MessageType VARCHAR(50) NOT NULL,
+    MessageContent TEXT NOT NULL,
+    Status VARCHAR(50) DEFAULT 'pending',
+    ProviderResponse JSONB,
+    CostCents INTEGER DEFAULT 3,
+    SentAt TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    DeliveredAt TIMESTAMP WITH TIME ZONE
 );
 
 -- Index pour l'analyse multi-business
-CREATE INDEX idx_sms_logs_business_date ON sms_logs(BusinessId, sent_at);
-CREATE INDEX idx_sms_logs_business_type ON sms_logs(BusinessId, message_type);
-CREATE INDEX idx_sms_logs_user_period ON sms_logs((SELECT UserId FROM businesses WHERE id = BusinessId), sent_at);
-CREATE INDEX idx_sms_logs_status ON sms_logs(status);
+CREATE INDEX idx_sms_logs_business_date ON SmsLogs(BusinessId, SentAt);
+CREATE INDEX idx_sms_logs_business_type ON SmsLogs(BusinessId, MessageType);
+CREATE INDEX idx_sms_logs_user_period ON SmsLogs((SELECT OwnerId FROM Businesses WHERE Id = BusinessId), SentAt);
+CREATE INDEX idx_sms_logs_status ON SmsLogs(Status);
 
 -- Contraintes de validation
-ALTER TABLE sms_logs ADD CONSTRAINT check_message_type_valid CHECK (message_type IN ('confirmation', 'reminder', 'your_turn', 'missed', 'cancelled'));
-ALTER TABLE sms_logs ADD CONSTRAINT check_sms_status_valid CHECK (status IN ('pending', 'sent', 'delivered', 'failed'));
-ALTER TABLE sms_logs ADD CONSTRAINT check_cost_positive CHECK (cost_cents >= 0);
+ALTER TABLE SmsLogs ADD CONSTRAINT check_message_type_valid CHECK (MessageType IN ('confirmation', 'reminder', 'your_turn', 'missed', 'cancelled'));
+ALTER TABLE SmsLogs ADD CONSTRAINT check_sms_status_valid CHECK (Status IN ('pending', 'sent', 'delivered', 'failed'));
+ALTER TABLE SmsLogs ADD CONSTRAINT check_cost_positive CHECK (CostCents >= 0);
 ```
 
 **Explications des colonnes :**
 
-- `id` : Identifiant unique UUID généré automatiquement
+- `Id` : Identifiant unique UUID généré automatiquement
 - `BusinessId` : Référence vers l'établissement qui a envoyé le SMS
 - `QueueEntryId` : Référence vers l'entrée de queue concernée (optionnel pour SMS génériques)
-- `phone` : Numéro de téléphone destinataire du SMS
-- `message_type` : Catégorie du SMS pour classifier les communications
-- `message_content` : Texte exact envoyé, stocké pour audit et debugging
-- `status` : État de livraison du SMS (pending/sent/delivered/failed)
-- `provider_response` : Réponse JSON complète de l'API SMS pour troubleshooting
-- `cost_cents` : Coût unitaire en centimes pour la facturation précise
-- `sent_at` : Timestamp d'envoi du SMS
-- `delivered_at` : Confirmation de livraison par l'opérateur (webhook)
+- `Phone` : Numéro de téléphone destinataire du SMS
+- `MessageType` : Catégorie du SMS pour classifier les communications
+- `MessageContent` : Texte exact envoyé, stocké pour audit et debugging
+- `Status` : État de livraison du SMS (pending/sent/delivered/failed)
+- `ProviderResponse` : Réponse JSON complète de l'API SMS pour troubleshooting
+- `CostCents` : Coût unitaire en centimes pour la facturation précise
+- `SentAt` : Timestamp d'envoi du SMS
+- `DeliveredAt` : Confirmation de livraison par l'opérateur (webhook)
 
 **Types de messages SMS :**
 
@@ -381,171 +381,171 @@ ALTER TABLE sms_logs ADD CONSTRAINT check_cost_positive CHECK (cost_cents >= 0);
 - `missed` : "Votre tour chez [Business] est passé. Rescannez le QR code"
 - `cancelled` : "Votre place chez [Business] a été annulée"
 
-### Table `analytics_daily`
+### Table `AnalyticsDaily`
 
 **Description :** Métriques quotidiennes par établissement pour des tableaux de bord performants. Permet des comparaisons entre établissements d'un même utilisateur et des analyses de performance globales.
 
 ```sql
-CREATE TABLE analytics_daily (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    BusinessId UUID NOT NULL REFERENCES businesses(id) ON DELETE CASCADE,
-    date DATE NOT NULL,
-    total_clients_served INTEGER DEFAULT 0,
-    total_clients_missed INTEGER DEFAULT 0,
-    total_clients_cancelled INTEGER DEFAULT 0,
-    total_clients_registered INTEGER DEFAULT 0,
-    average_wait_time INTEGER,
-    average_service_time INTEGER,
-    peak_hour INTEGER,
-    peak_queue_size INTEGER,
-    abandonment_rate DECIMAL(5,2),
-    sms_sent_count INTEGER DEFAULT 0,
-    revenue_potential_lost INTEGER DEFAULT 0,
-    busiest_time_start TIME,
-    busiest_time_end TIME,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UNIQUE(BusinessId, date)
+CREATE TABLE AnalyticsDaily (
+    Id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    BusinessId UUID NOT NULL REFERENCES Businesses(Id) ON DELETE CASCADE,
+    Date DATE NOT NULL,
+    TotalClientsServed INTEGER DEFAULT 0,
+    TotalClientsMissed INTEGER DEFAULT 0,
+    TotalClientsCancelled INTEGER DEFAULT 0,
+    TotalClientsRegistered INTEGER DEFAULT 0,
+    AverageWaitTime INTEGER,
+    AverageServiceTime INTEGER,
+    PeakHour INTEGER,
+    PeakQueueSize INTEGER,
+    AbandonmentRate DECIMAL(5,2),
+    SmsSentCount INTEGER DEFAULT 0,
+    RevenuePotentialLost INTEGER DEFAULT 0,
+    BusiestTimeStart TIME,
+    BusiestTimeEnd TIME,
+    CreatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(BusinessId, Date)
 );
 
 -- Index pour les analyses multi-business
-CREATE INDEX idx_analytics_daily_business_date ON analytics_daily(BusinessId, date DESC);
-CREATE INDEX idx_analytics_daily_user_date ON analytics_daily((SELECT UserId FROM businesses WHERE id = BusinessId), date);
-CREATE INDEX idx_analytics_daily_date ON analytics_daily(date);
+CREATE INDEX idx_analytics_daily_business_date ON AnalyticsDaily(BusinessId, Date DESC);
+CREATE INDEX idx_analytics_daily_user_date ON AnalyticsDaily((SELECT OwnerId FROM Businesses WHERE Id = BusinessId), Date);
+CREATE INDEX idx_analytics_daily_date ON AnalyticsDaily(Date);
 
 -- Contraintes de validation
-ALTER TABLE analytics_daily ADD CONSTRAINT check_abandonment_rate_valid CHECK (abandonment_rate >= 0 AND abandonment_rate <= 100);
-ALTER TABLE analytics_daily ADD CONSTRAINT check_peak_hour_valid CHECK (peak_hour IS NULL OR (peak_hour >= 0 AND peak_hour <= 23));
-ALTER TABLE analytics_daily ADD CONSTRAINT check_totals_positive CHECK (
-    total_clients_served >= 0 AND
-    total_clients_missed >= 0 AND
-    total_clients_cancelled >= 0 AND
-    total_clients_registered >= 0
+ALTER TABLE AnalyticsDaily ADD CONSTRAINT check_abandonment_rate_valid CHECK (AbandonmentRate >= 0 AND AbandonmentRate <= 100);
+ALTER TABLE AnalyticsDaily ADD CONSTRAINT check_peak_hour_valid CHECK (PeakHour IS NULL OR (PeakHour >= 0 AND PeakHour <= 23));
+ALTER TABLE AnalyticsDaily ADD CONSTRAINT check_totals_positive CHECK (
+    TotalClientsServed >= 0 AND
+    TotalClientsMissed >= 0 AND
+    TotalClientsCancelled >= 0 AND
+    TotalClientsRegistered >= 0
 );
 ```
 
 **Explications des colonnes :**
 
-- `id` : Identifiant unique UUID généré automatiquement
+- `Id` : Identifiant unique UUID généré automatiquement
 - `BusinessId` : Référence vers l'établissement concerné par ces statistiques
-- `date` : Date des statistiques (unique par établissement)
-- `total_clients_served` : Nombre de clients effectivement servis dans la journée
-- `total_clients_missed` : Nombre de clients qui ont manqué leur tour (timeout)
-- `total_clients_cancelled` : Nombre de clients qui ont annulé leur place
-- `total_clients_registered` : Nombre total d'inscriptions dans la journée
-- `average_wait_time` : Temps d'attente moyen en minutes pour cette journée
-- `average_service_time` : Temps de service moyen en secondes par client
-- `peak_hour` : Heure (0-23) avec la plus longue file d'attente
-- `peak_queue_size` : Taille maximum de la file atteinte dans la journée
-- `abandonment_rate` : Pourcentage de clients ayant annulé ou manqué leur tour
-- `sms_sent_count` : Nombre total de SMS envoyés dans la journée
-- `revenue_potential_lost` : Estimation du manque à gagner des abandons en centimes
-- `busiest_time_start` : Heure de début de la période la plus chargée
-- `busiest_time_end` : Heure de fin de la période la plus chargée
-- `created_at` : Timestamp de génération de ces statistiques
+- `Date` : Date des statistiques (unique par établissement)
+- `TotalClientsServed` : Nombre de clients effectivement servis dans la journée
+- `TotalClientsMissed` : Nombre de clients qui ont manqué leur tour (timeout)
+- `TotalClientsCancelled` : Nombre de clients qui ont annulé leur place
+- `TotalClientsRegistered` : Nombre total d'inscriptions dans la journée
+- `AverageWaitTime` : Temps d'attente moyen en minutes pour cette journée
+- `AverageServiceTime` : Temps de service moyen en secondes par client
+- `PeakHour` : Heure (0-23) avec la plus longue file d'attente
+- `PeakQueueSize` : Taille maximum de la file atteinte dans la journée
+- `AbandonmentRate` : Pourcentage de clients ayant annulé ou manqué leur tour
+- `SmsSentCount` : Nombre total de SMS envoyés dans la journée
+- `RevenuePotentialLost` : Estimation du manque à gagner des abandons en centimes
+- `BusiestTimeStart` : Heure de début de la période la plus chargée
+- `BusiestTimeEnd` : Heure de fin de la période la plus chargée
+- `CreatedAt` : Timestamp de génération de ces statistiques
 
-### Table `billings`
+### Table `Billings`
 
 **Description :** Facturation consolidée par utilisateur incluant la consommation de tous ses établissements. Gère les abonnements multi-business avec détail de l'usage par établissement.
 
 ```sql
-CREATE TABLE billings (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    UserId UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    SubscriptionPlanId UUID NOT NULL REFERENCES subscription_plans(id),
-    billing_period_start DATE NOT NULL,
-    billing_period_end DATE NOT NULL,
-    base_price_cents INTEGER NOT NULL,
-    active_businesses_count INTEGER DEFAULT 1,
-    sms_included INTEGER DEFAULT 1000,
-    sms_used INTEGER DEFAULT 0,
-    sms_overage INTEGER DEFAULT 0,
-    sms_overage_cost_cents INTEGER DEFAULT 0,
-    sms_usage_by_business JSONB,
-    total_amount_cents INTEGER NOT NULL,
-    status VARCHAR(50) DEFAULT 'pending',
-    stripe_invoice_id VARCHAR(255),
-    stripe_payment_intent_id VARCHAR(255),
-    paid_at TIMESTAMP WITH TIME ZONE,
-    due_date DATE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE Billings (
+    Id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    UserId UUID NOT NULL REFERENCES Users(Id) ON DELETE CASCADE,
+    SubscriptionPlanId UUID NOT NULL REFERENCES SubscriptionPlans(Id),
+    BillingPeriodStart DATE NOT NULL,
+    BillingPeriodEnd DATE NOT NULL,
+    BasePriceCents INTEGER NOT NULL,
+    ActiveBusinessesCount INTEGER DEFAULT 1,
+    SmsIncluded INTEGER DEFAULT 1000,
+    SmsUsed INTEGER DEFAULT 0,
+    SmsOverage INTEGER DEFAULT 0,
+    SmsOverageCostCents INTEGER DEFAULT 0,
+    SmsUsageByBusiness JSONB,
+    TotalAmountCents INTEGER NOT NULL,
+    Status VARCHAR(50) DEFAULT 'pending',
+    StripeInvoiceId VARCHAR(255),
+    StripePaymentIntentId VARCHAR(255),
+    PaidAt TIMESTAMP WITH TIME ZONE,
+    DueDate DATE,
+    CreatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Index pour la facturation multi-business
-CREATE INDEX idx_billings_user_period ON billings(UserId, billing_period_start);
-CREATE INDEX idx_billings_status ON billings(status);
-CREATE INDEX idx_billings_due_date ON billings(due_date);
-CREATE INDEX idx_billings_subscription_plan ON billings(SubscriptionPlanId);
-CREATE INDEX idx_billings_unpaid_by_user ON billings(UserId, due_date) WHERE status IN ('pending', 'failed');
+CREATE INDEX idx_billings_user_period ON Billings(UserId, BillingPeriodStart);
+CREATE INDEX idx_billings_status ON Billings(Status);
+CREATE INDEX idx_billings_due_date ON Billings(DueDate);
+CREATE INDEX idx_billings_subscription_plan ON Billings(SubscriptionPlanId);
+CREATE INDEX idx_billings_unpaid_by_user ON Billings(UserId, DueDate) WHERE Status IN ('pending', 'failed');
 
 -- Contraintes de validation
-ALTER TABLE billings ADD CONSTRAINT check_amounts_positive CHECK (total_amount_cents >= 0 AND base_price_cents >= 0);
-ALTER TABLE billings ADD CONSTRAINT check_billing_status_valid CHECK (status IN ('pending', 'paid', 'failed', 'refunded', 'cancelled'));
-ALTER TABLE billings ADD CONSTRAINT check_sms_usage_logical CHECK (sms_overage >= 0 AND sms_used >= 0);
-ALTER TABLE billings ADD CONSTRAINT check_period_valid CHECK (billing_period_end > billing_period_start);
-ALTER TABLE billings ADD CONSTRAINT check_businesses_count_positive CHECK (active_businesses_count > 0);
-ALTER TABLE billings ADD CONSTRAINT check_billing_period_sequential CHECK (billing_period_start < billing_period_end);
-ALTER TABLE billings ADD CONSTRAINT check_sms_overage_calculation CHECK (
-    (sms_used <= sms_included AND sms_overage = 0) OR
-    (sms_used > sms_included AND sms_overage = sms_used - sms_included)
+ALTER TABLE Billings ADD CONSTRAINT check_amounts_positive CHECK (TotalAmountCents >= 0 AND BasePriceCents >= 0);
+ALTER TABLE Billings ADD CONSTRAINT check_billing_status_valid CHECK (Status IN ('pending', 'paid', 'failed', 'refunded', 'cancelled'));
+ALTER TABLE Billings ADD CONSTRAINT check_sms_usage_logical CHECK (SmsOverage >= 0 AND SmsUsed >= 0);
+ALTER TABLE Billings ADD CONSTRAINT check_period_valid CHECK (BillingPeriodEnd > BillingPeriodStart);
+ALTER TABLE Billings ADD CONSTRAINT check_businesses_count_positive CHECK (ActiveBusinessesCount > 0);
+ALTER TABLE Billings ADD CONSTRAINT check_billing_period_sequential CHECK (BillingPeriodStart < BillingPeriodEnd);
+ALTER TABLE Billings ADD CONSTRAINT check_sms_overage_calculation CHECK (
+    (SmsUsed <= SmsIncluded AND SmsOverage = 0) OR
+    (SmsUsed > SmsIncluded AND SmsOverage = SmsUsed - SmsIncluded)
 );
 ```
 
 **Explications des colonnes :**
 
-- `id` : Identifiant unique UUID généré automatiquement
+- `Id` : Identifiant unique UUID généré automatiquement
 - `UserId` : Référence vers l'utilisateur facturé
 - `SubscriptionPlanId` : Référence vers le plan d'abonnement utilisé pour cette période
-- `billing_period_start` : Date de début de la période de facturation
-- `billing_period_end` : Date de fin de la période de facturation
-- `base_price_cents` : Prix de base de l'abonnement en centimes
-- `active_businesses_count` : Nombre d'établissements actifs pendant la période
-- `sms_included` : Quota SMS compris dans l'abonnement mensuel
-- `sms_used` : Nombre total de SMS consommés pendant la période
-- `sms_overage` : SMS dépassant le quota (sms_used - sms_included si positif)
-- `sms_overage_cost_cents` : Facturation supplémentaire à 3 centimes par SMS
-- `sms_usage_by_business` : Détail JSON de la consommation par établissement
-- `total_amount_cents` : Montant total de la facture en centimes
-- `status` : État de la facture (pending/paid/failed/refunded/cancelled)
-- `stripe_invoice_id` : Référence de la facture Stripe
-- `stripe_payment_intent_id` : Référence Stripe pour le suivi des paiements
-- `paid_at` : Timestamp de confirmation du paiement
-- `due_date` : Date limite de paiement (généralement +30 jours)
-- `created_at` : Timestamp de génération de la facture
+- `BillingPeriodStart` : Date de début de la période de facturation
+- `BillingPeriodEnd` : Date de fin de la période de facturation
+- `BasePriceCents` : Prix de base de l'abonnement en centimes
+- `ActiveBusinessesCount` : Nombre d'établissements actifs pendant la période
+- `SmsIncluded` : Quota SMS compris dans l'abonnement mensuel
+- `SmsUsed` : Nombre total de SMS consommés pendant la période
+- `SmsOverage` : SMS dépassant le quota (SmsUsed - SmsIncluded si positif)
+- `SmsOverageCostCents` : Facturation supplémentaire à 3 centimes par SMS
+- `SmsUsageByBusiness` : Détail JSON de la consommation par établissement
+- `TotalAmountCents` : Montant total de la facture en centimes
+- `Status` : État de la facture (pending/paid/failed/refunded/cancelled)
+- `StripeInvoiceId` : Référence de la facture Stripe
+- `StripePaymentIntentId` : Référence Stripe pour le suivi des paiements
+- `PaidAt` : Timestamp de confirmation du paiement
+- `DueDate` : Date limite de paiement (généralement +30 jours)
+- `CreatedAt` : Timestamp de génération de la facture
 
-### Table `system_configs`
+### Table `SystemConfigs`
 
 **Description :** Configuration système centralisée incluant les paramètres spécifiques au multi-business comme les temps de service par défaut et les limites par plan.
 
 ```sql
-CREATE TABLE system_configs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    key VARCHAR(100) UNIQUE NOT NULL,
-    value TEXT NOT NULL,
-    data_type VARCHAR(20) DEFAULT 'string',
-    description TEXT,
-    is_public BOOLEAN DEFAULT false,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE SystemConfigs (
+    Id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    Key VARCHAR(100) UNIQUE NOT NULL,
+    Value TEXT NOT NULL,
+    DataType VARCHAR(20) DEFAULT 'string',
+    Description TEXT,
+    IsPublic BOOLEAN DEFAULT false,
+    UpdatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Index pour les accès fréquents
-CREATE INDEX idx_system_configs_key ON system_configs(key);
-CREATE INDEX idx_system_configs_public ON system_configs(is_public);
+CREATE INDEX idx_system_configs_key ON SystemConfigs(Key);
+CREATE INDEX idx_system_configs_public ON SystemConfigs(IsPublic);
 ```
 
 **Explications des colonnes :**
 
-- `id` : Identifiant unique UUID généré automatiquement
-- `key` : Clé unique de configuration (ex: "sms_cost_cents")
-- `value` : Valeur de la configuration stockée en texte
-- `data_type` : Type de donnée pour la validation (string/integer/decimal/boolean/json)
-- `description` : Description explicative de ce paramètre de configuration
-- `is_public` : Indique si cette configuration peut être lue par l'API publique
-- `updated_at` : Timestamp de dernière modification de cette configuration
+- `Id` : Identifiant unique UUID généré automatiquement
+- `Key` : Clé unique de configuration (ex: "sms_cost_cents")
+- `Value` : Valeur de la configuration stockée en texte
+- `DataType` : Type de donnée pour la validation (string/integer/decimal/boolean/json)
+- `Description` : Description explicative de ce paramètre de configuration
+- `IsPublic` : Indique si cette configuration peut être lue par l'API publique
+- `UpdatedAt` : Timestamp de dernière modification de cette configuration
 
 **Configuration initiale multi-business :**
 
 ```sql
-INSERT INTO system_configs (key, value, data_type, description, is_public) VALUES
+INSERT INTO SystemConfigs (Key, Value, DataType, Description, IsPublic) VALUES
 ('sms_cost_cents', '3', 'integer', 'Coût unitaire SMS en centimes', false),
 ('trial_duration_days', '14', 'integer', 'Durée essai gratuit', true),
 ('max_queue_size_default', '50', 'integer', 'Taille max file par défaut', true),
@@ -557,38 +557,38 @@ INSERT INTO system_configs (key, value, data_type, description, is_public) VALUE
 
 ```sql
 -- Activation RLS sur toutes les tables
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE businesses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE queue_entries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE sms_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE analytics_daily ENABLE ROW LEVEL SECURITY;
-ALTER TABLE billings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE Users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE Businesses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE QueueEntries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE SmsLogs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE AnalyticsDaily ENABLE ROW LEVEL SECURITY;
+ALTER TABLE Billings ENABLE ROW LEVEL SECURITY;
 
 -- Politiques sécurisées multi-business (adapté pour PostgreSQL pur)
-CREATE POLICY "Users manage own data" ON users
-    FOR ALL USING (id = current_setting('app.current_user_id')::UUID);
+CREATE POLICY "Users manage own data" ON Users
+    FOR ALL USING (Id = current_setting('app.current_user_id')::UUID);
 
-CREATE POLICY "Users manage own businesses" ON businesses
-    FOR ALL USING (UserId = current_setting('app.current_user_id')::UUID);
+CREATE POLICY "Users manage own businesses" ON Businesses
+    FOR ALL USING (OwnerId = current_setting('app.current_user_id')::UUID);
 
-CREATE POLICY "Users access queues via businesses" ON queue_entries
-    FOR ALL USING (current_setting('app.current_user_id')::UUID = (SELECT UserId FROM businesses WHERE id = BusinessId));
+CREATE POLICY "Users access queues via businesses" ON QueueEntries
+    FOR ALL USING (current_setting('app.current_user_id')::UUID = (SELECT OwnerId FROM Businesses WHERE Id = BusinessId));
 
-CREATE POLICY "Users access SMS logs via businesses" ON sms_logs
-    FOR SELECT USING (current_setting('app.current_user_id')::UUID = (SELECT UserId FROM businesses WHERE id = BusinessId));
+CREATE POLICY "Users access SMS logs via businesses" ON SmsLogs
+    FOR SELECT USING (current_setting('app.current_user_id')::UUID = (SELECT OwnerId FROM Businesses WHERE Id = BusinessId));
 
-CREATE POLICY "Users access analytics via businesses" ON analytics_daily
-    FOR SELECT USING (current_setting('app.current_user_id')::UUID = (SELECT UserId FROM businesses WHERE id = BusinessId));
+CREATE POLICY "Users access analytics via businesses" ON AnalyticsDaily
+    FOR SELECT USING (current_setting('app.current_user_id')::UUID = (SELECT OwnerId FROM Businesses WHERE Id = BusinessId));
 
-CREATE POLICY "Users access own billing" ON billings
+CREATE POLICY "Users access own billing" ON Billings
     FOR SELECT USING (UserId = current_setting('app.current_user_id')::UUID);
 
 -- Accès public via QR code (avec context setting)
-CREATE POLICY "Public queue access via QR token" ON queue_entries
+CREATE POLICY "Public queue access via QR token" ON QueueEntries
     FOR SELECT USING (
         BusinessId IN (
-            SELECT id FROM businesses
-            WHERE qr_code_token = current_setting('app.current_business_token', true)
+            SELECT Id FROM Businesses
+            WHERE QrCodeToken = current_setting('app.current_business_token', true)
         )
     );
 ```
@@ -600,37 +600,37 @@ CREATE POLICY "Public queue access via QR token" ON queue_entries
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $
 BEGIN
-    NEW.updated_at = NOW();
+    NEW.UpdatedAt = NOW();
     RETURN NEW;
 END;
 $ language 'plpgsql';
 
--- Application sur toutes les tables avec updated_at
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_businesses_updated_at BEFORE UPDATE ON businesses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_queue_entries_updated_at BEFORE UPDATE ON queue_entries FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_subscription_plans_updated_at BEFORE UPDATE ON subscription_plans FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Application sur toutes les tables avec UpdatedAt
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON Users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_businesses_updated_at BEFORE UPDATE ON Businesses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_queue_entries_updated_at BEFORE UPDATE ON QueueEntries FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_subscription_plans_updated_at BEFORE UPDATE ON SubscriptionPlans FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Recalcul automatique des positions par business
 CREATE OR REPLACE FUNCTION recalculate_queue_positions()
 RETURNS TRIGGER AS $
 BEGIN
-    UPDATE queue_entries
-    SET position = new_position
+    UPDATE QueueEntries
+    SET Position = new_position
     FROM (
-        SELECT id, ROW_NUMBER() OVER (ORDER BY created_at) as new_position
-        FROM queue_entries
+        SELECT Id, ROW_NUMBER() OVER (ORDER BY CreatedAt) as new_position
+        FROM QueueEntries
         WHERE BusinessId = COALESCE(NEW.BusinessId, OLD.BusinessId)
-        AND status = 'waiting'
+        AND Status = 'waiting'
     ) AS positioned
-    WHERE queue_entries.id = positioned.id;
+    WHERE QueueEntries.Id = positioned.Id;
 
     RETURN COALESCE(NEW, OLD);
 END;
 $ language 'plpgsql';
 
 CREATE TRIGGER recalculate_positions_after_change
-    AFTER UPDATE OF status OR DELETE ON queue_entries
+    AFTER UPDATE OF Status OR DELETE ON QueueEntries
     FOR EACH ROW EXECUTE FUNCTION recalculate_queue_positions();
 
 -- Contrainte pour limiter les business selon le plan
@@ -642,13 +642,13 @@ DECLARE
 BEGIN
     -- Récupérer le nombre de business actifs
     SELECT COUNT(*) INTO current_businesses
-    FROM businesses
-    WHERE UserId = NEW.id AND is_active = true;
+    FROM Businesses
+    WHERE OwnerId = NEW.Id AND IsActive = true;
 
     -- Récupérer la nouvelle limite
-    SELECT max_businesses INTO new_max_businesses
-    FROM subscription_plans
-    WHERE id = NEW.SubscriptionPlanId;
+    SELECT MaxBusinesses INTO new_max_businesses
+    FROM SubscriptionPlans
+    WHERE Id = NEW.SubscriptionPlanId;
 
     -- Vérifier si le changement de plan est valide
     IF new_max_businesses != -1 AND current_businesses > new_max_businesses THEN
@@ -661,7 +661,7 @@ END;
 $ language 'plpgsql';
 
 CREATE TRIGGER validate_plan_change_trigger
-    BEFORE UPDATE OF SubscriptionPlanId ON users
+    BEFORE UPDATE OF SubscriptionPlanId ON Users
     FOR EACH ROW EXECUTE FUNCTION validate_business_count_on_plan_change();
 ```
 
@@ -679,14 +679,14 @@ DECLARE
 BEGIN
     -- Compter les business actifs de l'utilisateur
     SELECT COUNT(*) INTO current_count
-    FROM businesses
-    WHERE UserId = NEW.UserId AND is_active = true;
+    FROM Businesses
+    WHERE OwnerId = NEW.OwnerId AND IsActive = true;
 
     -- Récupérer les limites du plan
-    SELECT sp.max_businesses, sp.name INTO max_allowed, plan_name
-    FROM users u
-    JOIN subscription_plans sp ON u.SubscriptionPlanId = sp.id
-    WHERE u.id = NEW.UserId;
+    SELECT sp.MaxBusinesses, sp.Name INTO max_allowed, plan_name
+    FROM Users u
+    JOIN SubscriptionPlans sp ON u.SubscriptionPlanId = sp.Id
+    WHERE u.Id = NEW.OwnerId;
 
     -- Vérifier la limite (-1 = illimité)
     IF max_allowed != -1 AND current_count >= max_allowed THEN
@@ -698,7 +698,7 @@ END;
 $ language 'plpgsql';
 
 CREATE TRIGGER check_business_limit_trigger
-    BEFORE INSERT ON businesses
+    BEFORE INSERT ON Businesses
     FOR EACH ROW EXECUTE FUNCTION check_business_limit();
 ```
 
@@ -722,38 +722,38 @@ DECLARE
     total_sms_used INTEGER := 0;
 BEGIN
     -- Récupérer info du plan
-    SELECT sp.price_cents, sp.sms_quota_monthly INTO plan_info
-    FROM users u
-    JOIN subscription_plans sp ON u.SubscriptionPlanId = sp.id
-    WHERE u.id = user_id;
+    SELECT sp.PriceCents, sp.SmsQuotaMonthly INTO plan_info
+    FROM Users u
+    JOIN SubscriptionPlans sp ON u.SubscriptionPlanId = sp.Id
+    WHERE u.Id = user_id;
 
     -- Calculer usage SMS par business
     FOR business_rec IN
-        SELECT b.id, b.name, COALESCE(SUM(1), 0) as sms_count
-        FROM businesses b
-        LEFT JOIN sms_logs sl ON b.id = sl.BusinessId
-            AND sl.sent_at >= period_start
-            AND sl.sent_at < period_end
-            AND sl.status = 'sent'
-        WHERE b.UserId = user_id AND b.is_active = true
-        GROUP BY b.id, b.name
+        SELECT b.Id, b.Name, COALESCE(SUM(1), 0) as sms_count
+        FROM Businesses b
+        LEFT JOIN SmsLogs sl ON b.Id = sl.BusinessId
+            AND sl.SentAt >= period_start
+            AND sl.SentAt < period_end
+            AND sl.Status = 'sent'
+        WHERE b.OwnerId = user_id AND b.IsActive = true
+        GROUP BY b.Id, b.Name
     LOOP
-        sms_usage := jsonb_set(sms_usage, ARRAY[business_rec.id::text],
-            jsonb_build_object('name', business_rec.name, 'sms_count', business_rec.sms_count));
+        sms_usage := jsonb_set(sms_usage, ARRAY[business_rec.Id::text],
+            jsonb_build_object('name', business_rec.Name, 'sms_count', business_rec.sms_count));
         total_sms_used := total_sms_used + business_rec.sms_count;
     END LOOP;
 
     -- Calculer dépassement
-    sms_overage := GREATEST(0, total_sms_used - plan_info.sms_quota_monthly);
+    sms_overage := GREATEST(0, total_sms_used - plan_info.SmsQuotaMonthly);
     overage_cost := sms_overage * 3; -- 3 centimes par SMS
 
     RETURN QUERY SELECT
-        plan_info.price_cents,
-        (SELECT COUNT(*)::INTEGER FROM businesses WHERE UserId = user_id AND is_active = true),
+        plan_info.PriceCents,
+        (SELECT COUNT(*)::INTEGER FROM Businesses WHERE OwnerId = user_id AND IsActive = true),
         total_sms_used,
         sms_overage,
         overage_cost,
-        plan_info.price_cents + overage_cost,
+        plan_info.PriceCents + overage_cost,
         jsonb_set(sms_usage, '{total}', total_sms_used::text::jsonb);
 END;
 $ language 'plpgsql';

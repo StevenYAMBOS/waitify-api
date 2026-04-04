@@ -41,13 +41,14 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         return qrCodeGenerated;
     }
 
-    /*     public async Task<Business> GetBusinessByIdWithActiveQueueAsync(Guid id)
+    /*     public async Task<Business?> GetBusinessByIdWithActiveQueueAsync(Guid id)
         {
-            var business = await context.Businesses
-            .FromSql($"SELECT id, is_queue_active, max_queue_size, average_service_time FROM businesses WHERE BusinessId = {id} AND is_active = TRUE")
+            FormattableString query = $"SELECT id, is_queue_active, max_queue_size, average_service_time FROM businesses WHERE BusinessId = {id} AND is_active = TRUE";
+            var business = await context.Businesses.FromSql(query)
+            .Where(b => b.Id == id)
             .ToListAsync();
 
-            return business;
+            return business.FirstOrDefault();
         } */
 
     public async Task<Business?> FindBusinessByIdAsync(Guid id)

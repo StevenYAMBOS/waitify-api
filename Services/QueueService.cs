@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.JsonPatch;
+using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using WaitifyApi.Constants;
 using WaitifyApi.Data;
@@ -26,12 +27,23 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
       throw new InvalidOperationException("La file d'attente est fermée pour l'entreprise.");
     }
 
+    if (await context.Queues.AnyAsync(queue => queue.Phone == request.Phone))
+    {
+      logger.LogError("Utilisateur avec ce numéro déjà dans la file d'attente : `{@0}`.", request.Phone);
+      throw new InvalidOperationException("Utilisateur avec ce numéro déjà dans la file d'attente.");
+    }
+
+    // if (business.MaxQueueSize.)
+
     var queueEntrie = new QueueEntries
     {
       Phone = request.Phone,
       ClientName = request.ClientName,
       Status = "waiting",
+      CreatedAt = DateTime.UtcNow,
     };
+
+    // Vérification file pas pleine à faire...
 
     context.Queues.Add(queueEntrie);
     await context.SaveChangesAsync();

@@ -290,3 +290,4 @@ __pycache__/
 
 ## Variables d'environnements
 .env
+PROMPT.md

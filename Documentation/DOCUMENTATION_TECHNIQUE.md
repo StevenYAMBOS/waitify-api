@@ -1,6 +1,6 @@
 # Documentation technique - Waitify API
 
-**Dernière mise à jour :** 19 Mars 2026  
+**Dernière mise à jour :** 05 Avril 2026  
 **Auteur :** Steven YAMBOS  
 **Version :** 1.0.0
 
@@ -196,8 +196,8 @@ Waitify digitalise complètement le processus :
 Lors de la création, le système :
 
 1. Génère un **UUID unique** pour l'établissement
-2. Crée un **`qr_code_token`** unique (UUID v4)
-3. Construit l'URL du QR Code : `https://app.waitify.fr/q/{qr_code_token}`
+2. Crée un **`QrCodeToken`** unique (UUID v4)
+3. Construit l'URL du QR Code : `https://app.waitify.fr/q/{QrCodeToken}`
 4. Génère l'image du QR Code (PDF/PNG) pour impression
 5. Définit les valeurs par défaut selon le type d'établissement
 
@@ -228,13 +228,13 @@ Chaque établissement peut être configuré avec :
 
 #### Cycle de vie d'une file
 
-Une file d'attente n'est **pas un objet explicite** en base de données. Elle existe implicitement via les entrées dans `queue_entries` avec le statut `waiting`.
+Une file d'attente n'est **pas un objet explicite** en base de données. Elle existe implicitement via les entrées dans `QueueEntries` avec le statut `waiting`.
 
 **États d'une file** :
 
-- **Inactive** : `is_queue_active = false` - Aucun client ne peut s'inscrire
-- **Active** : `is_queue_active = true` - Les clients peuvent s'inscrire
-- **En pause** : `is_queue_paused = true` - Temporairement suspendue
+- **Inactive** : `IsQueueActive = false` - Aucun client ne peut s'inscrire
+- **Active** : `IsQueueActive = true` - Les clients peuvent s'inscrire
+- **En pause** : `IsQueuePaused = true` - Temporairement suspendue
 
 #### Inscription d'un client
 
@@ -251,15 +251,15 @@ Une file d'attente n'est **pas un objet explicite** en base de données. Elle ex
    ↓
 5. Validations API :
    - Établissement actif et file ouverte
-   - File non pleine (max_queue_size)
+   - File non pleine (MaxQueueSize)
    - Client pas déjà inscrit (même téléphone + statut 'waiting')
    - Format téléphone valide (français)
    ↓
 6. Calcul position initiale : COUNT(waiting) + 1
    ↓
-7. Calcul temps d'attente : (clients devant × temps_service) / 60
+7. Calcul temps d'attente : (clients devant × AverageServiceTime) / 60
    ↓
-8. INSERT dans queue_entries
+8. INSERT dans QueueEntries
    ↓
 9. Trigger PostgreSQL recalcule toutes les positions
    ↓
@@ -270,7 +270,7 @@ Une file d'attente n'est **pas un objet explicite** en base de données. Elle ex
 
 Les positions sont **entièrement automatisées** via des **triggers PostgreSQL** :
 
-- **Calcul** : `ROW_NUMBER() OVER (ORDER BY created_at ASC)`
+- **Calcul** : `ROW_NUMBER() OVER (ORDER BY CreatedAt ASC)`
 - **Filtres** : Même `BusinessId` + `status = 'waiting'`
 - **Recalcul automatique** : Après chaque insertion, mise à jour ou suppression
 - **Cohérence garantie** : Atomicité transactionnelle, pas de race conditions
@@ -345,7 +345,7 @@ Le système envoie **5 types** de SMS :
 
 #### Gestion des quotas
 
-- **Suivi** : Chaque SMS est loggé dans `sms_logs` avec le coût
+- **Suivi** : Chaque SMS est loggé dans `SmsLogs` avec le coût
 - **Quotas mensuels** : Selon le plan d'abonnement
 - **Dépassement** : Facturation à 0,03€ par SMS supplémentaire
 - **Limitation** : Un SMS par type toutes les 5 minutes maximum (anti-spam)
@@ -413,26 +413,26 @@ La base de données utilise **PostgreSQL 15+** avec les extensions suivantes :
 
 ### Tables principales
 
-#### 1. `users` - Comptes utilisateurs
+#### 1. `Users` - Comptes utilisateurs
 
 **Description** : Représente les comptes utilisateurs de la plateforme. Stocke uniquement les informations personnelles et d'authentification.
 
 **Colonnes principales** :
 
-- `id` : UUID (clé primaire)
-- `google_id` : Identifiant Google OAuth (optionnel)
-- `email` : Adresse email unique (identifiant de connexion)
-- `password` : Hash bcrypt (peut être NULL pour OAuth)
-- `first_name`, `last_name` : Nom et prénom
-- `phone_number` : Numéro de téléphone
-- `profile_picture` : URL de la photo de profil
-- `is_active` : Compte actif/suspendu
-- `auth_provider` : 'google' ou 'facebook'
-- `role` : 'Client', 'Owner' ou 'Admin'
-- `subscription_status` : 'trial', 'active', 'suspended', 'cancelled'
-- `SubscriptionPlanId` : Référence vers `subscription_plans`
-- `trial_ends_at` : Date de fin de l'essai gratuit
-- `created_at`, `updated_at`, `last_login` : Timestamps
+- `Id` : UUID (clé primaire)
+- `GoogleId` : Identifiant Google OAuth (optionnel)
+- `Email` : Adresse email unique (identifiant de connexion)
+- `Password` : Hash bcrypt (peut être NULL pour OAuth)
+- `FirstName`, `LastName` : Nom et prénom
+- `PhoneNumber` : Numéro de téléphone
+- `ProfilePicture` : URL de la photo de profil
+- `IsActive` : Compte actif/suspendu
+- `AuthProvider` : 'google' ou 'facebook'
+- `Role` : 'Client', 'Owner' ou 'Admin'
+- `SubscriptionStatus` : 'trial', 'active', 'suspended', 'cancelled'
+- `SubscriptionPlanId` : Référence vers `SubscriptionPlans`
+- `TrialEndsAt` : Date de fin de l'essai gratuit
+- `CreatedAt`, `UpdatedAt`, `LastLogin` : Timestamps
 
 **Contraintes** :
 
@@ -440,29 +440,29 @@ La base de données utilise **PostgreSQL 15+** avec les extensions suivantes :
 - Numéro de téléphone format français (`+33` ou `0`)
 - Statut d'abonnement dans la liste autorisée
 
-#### 2. `businesses` - Établissements
+#### 2. `Businesses` - Établissements
 
 **Description** : Représente chaque établissement géré par un utilisateur. Contient tous les paramètres opérationnels.
 
 **Colonnes principales** :
 
-- `id` : UUID (clé primaire)
-- `UserId` : Référence vers `users` (propriétaire)
-- `name` : Nom commercial
-- `business_type` : Type d'activité (30+ types supportés)
-- `phone_number`, `address`, `city`, `zip_code`, `country` : Coordonnées
-- `qr_code_token` : Token unique pour le QR Code (UNIQUE)
-- `average_service_time` : Temps moyen en secondes
-- `is_queue_active` : File ouverte/fermée
-- `is_queue_paused` : File en pause
-- `max_queue_size` : Limite de clients (1-200)
-- `opening_hours` : Horaires au format JSONB
-- `custom_message` : Message personnalisé pour SMS
-- `sms_notifications_enabled` : Activation SMS
-- `auto_advance_enabled` : Passage automatique
-- `client_timeout_minutes` : Délai avant timeout (1-30 min)
-- `is_active` : Établissement actif/inactif
-- `created_at`, `updated_at` : Timestamps
+- `Id` : UUID (clé primaire)
+- `OwnerId` : Référence vers `Users` (propriétaire)
+- `Name` : Nom commercial
+- `BusinessType` : Type d'activité (30+ types supportés)
+- `PhoneNumber`, `Address`, `City`, `ZipCode`, `Country` : Coordonnées
+- `QrCodeToken` : Token unique pour le QR Code (UNIQUE)
+- `AverageServiceTime` : Temps moyen en secondes
+- `IsQueueActive` : File ouverte/fermée
+- `IsQueuePaused` : File en pause
+- `MaxQueueSize` : Limite de clients (1-200)
+- `OpeningHours` : Horaires au format JSONB
+- `CustomMessage` : Message personnalisé pour SMS
+- `SmsNotificationsEnabled` : Activation SMS
+- `AutoAdvanceEnabled` : Passage automatique
+- `ClientTimeoutMinutes` : Délai avant timeout (1-30 min)
+- `IsActive` : Établissement actif/inactif
+- `CreatedAt`, `UpdatedAt` : Timestamps
 
 **Format `opening_hours` (JSONB)** :
 
@@ -478,25 +478,25 @@ La base de données utilise **PostgreSQL 15+** avec les extensions suivantes :
 }
 ```
 
-#### 3. `queue_entries` - Entrées de file d'attente
+#### 3. `QueueEntries` - Entrées de file d'attente
 
 **Description** : Gère les inscriptions dans les files d'attente. Cœur opérationnel du système.
 
 **Colonnes principales** :
 
-- `id` : UUID (clé primaire)
-- `BusinessId` : Référence vers `businesses`
-- `phone` : Numéro de téléphone du client (format français)
-- `client_name` : Nom ou prénom (optionnel)
-- `position` : Rang dans la file (recalculé automatiquement)
-- `estimated_wait_time` : Temps d'attente estimé en minutes
-- `status` : 'waiting', 'called', 'served', 'missed', 'cancelled'
-- `called_at` : Timestamp de l'appel
-- `served_at` : Timestamp du service
-- `actual_service_time` : Durée réelle en secondes
-- `sms_sent_count` : Nombre de SMS envoyés
-- `last_sms_sent_at` : Dernier SMS envoyé
-- `created_at`, `updated_at` : Timestamps
+- `Id` : UUID (clé primaire)
+- `BusinessId` : Référence vers `Businesses`
+- `Phone` : Numéro de téléphone du client (format français)
+- `ClientName` : Nom ou prénom (optionnel)
+- `Position` : Rang dans la file (recalculé automatiquement)
+- `EstimatedWaitTime` : Temps d'attente estimé en minutes
+- `Status` : 'waiting', 'called', 'served', 'missed', 'cancelled'
+- `CalledAt` : Timestamp de l'appel
+- `ServedAt` : Timestamp du service
+- `ActualServiceTime` : Durée réelle en secondes
+- `SmsSentCount` : Nombre de SMS envoyés
+- `LastSmsSentAt` : Dernier SMS envoyé
+- `CreatedAt`, `UpdatedAt` : Timestamps
 
 **Index optimisés** :
 
@@ -504,98 +504,98 @@ La base de données utilise **PostgreSQL 15+** avec les extensions suivantes :
 - `idx_queue_entries_active_position` : Pour les clients en attente uniquement
 - `idx_queue_entries_waiting_by_business` : Pour le tri par position
 
-#### 4. `subscription_plans` - Plans d'abonnement
+#### 4. `SubscriptionPlans` - Plans d'abonnement
 
 **Description** : Définit les différents plans tarifaires avec leurs limites.
 
 **Colonnes principales** :
 
-- `id` : UUID (clé primaire)
-- `name` : Nom unique ('basic', 'pro', 'enterprise')
-- `price_cents` : Prix mensuel en centimes
-- `max_businesses` : Nombre maximum d'établissements (-1 = illimité)
-- `sms_quota_monthly` : Quota SMS inclus
-- `features` : Fonctionnalités au format JSONB
-- `is_active` : Plan proposable aux nouveaux clients
-- `created_at`, `updated_at` : Timestamps
+- `Id` : UUID (clé primaire)
+- `Name` : Nom unique ('basic', 'pro', 'enterprise')
+- `PriceCents` : Prix mensuel en centimes
+- `MaxBusinesses` : Nombre maximum d'établissements (-1 = illimité)
+- `SmsQuotaMonthly` : Quota SMS inclus
+- `Features` : Fonctionnalités au format JSONB
+- `IsActive` : Plan proposable aux nouveaux clients
+- `CreatedAt`, `UpdatedAt` : Timestamps
 
-#### 5. `sms_logs` - Journal des SMS
+#### 5. `SmsLogs` - Journal des SMS
 
 **Description** : Journal exhaustif de tous les SMS envoyés. Essentiel pour la facturation et l'audit.
 
 **Colonnes principales** :
 
-- `id` : UUID (clé primaire)
-- `BusinessId` : Référence vers `businesses`
-- `QueueEntryId` : Référence vers `queue_entries` (optionnel)
-- `phone` : Numéro destinataire
-- `message_type` : 'confirmation', 'reminder', 'your_turn', 'missed', 'cancelled'
-- `message_content` : Texte exact envoyé
-- `status` : 'pending', 'sent', 'delivered', 'failed'
-- `provider_response` : Réponse JSON de l'API SMS
-- `cost_cents` : Coût unitaire (3 centimes)
-- `sent_at`, `delivered_at` : Timestamps
+- `Id` : UUID (clé primaire)
+- `BusinessId` : Référence vers `Businesses`
+- `QueueEntryId` : Référence vers `QueueEntries` (optionnel)
+- `Phone` : Numéro destinataire
+- `MessageType` : 'confirmation', 'reminder', 'your_turn', 'missed', 'cancelled'
+- `MessageContent` : Texte exact envoyé
+- `Status` : 'pending', 'sent', 'delivered', 'failed'
+- `ProviderResponse` : Réponse JSON de l'API SMS
+- `CostCents` : Coût unitaire (3 centimes)
+- `SentAt`, `DeliveredAt` : Timestamps
 
-#### 6. `analytics_daily` - Statistiques quotidiennes
+#### 6. `AnalyticsDaily` - Statistiques quotidiennes
 
 **Description** : Métriques quotidiennes par établissement pour les tableaux de bord.
 
 **Colonnes principales** :
 
-- `id` : UUID (clé primaire)
-- `BusinessId` : Référence vers `businesses`
-- `date` : Date des statistiques (UNIQUE par établissement)
-- `total_clients_served` : Clients servis
-- `total_clients_missed` : Clients manqués
-- `total_clients_cancelled` : Clients annulés
-- `total_clients_registered` : Total d'inscriptions
-- `average_wait_time` : Temps d'attente moyen (minutes)
-- `average_service_time` : Temps de service moyen (secondes)
-- `peak_hour` : Heure de pointe (0-23)
-- `peak_queue_size` : Taille maximale de file
-- `abandonment_rate` : Taux d'abandon (%)
-- `sms_sent_count` : Nombre de SMS envoyés
-- `revenue_potential_lost` : Estimation manque à gagner (centimes)
-- `busiest_time_start`, `busiest_time_end` : Période la plus chargée
-- `created_at` : Timestamp de génération
+- `Id` : UUID (clé primaire)
+- `BusinessId` : Référence vers `Businesses`
+- `Date` : Date des statistiques (UNIQUE par établissement)
+- `TotalClientsServed` : Clients servis
+- `TotalClientsMissed` : Clients manqués
+- `TotalClientsCancelled` : Clients annulés
+- `TotalClientsRegistered` : Total d'inscriptions
+- `AverageWaitTime` : Temps d'attente moyen (minutes)
+- `AverageServiceTime` : Temps de service moyen (secondes)
+- `PeakHour` : Heure de pointe (0-23)
+- `PeakQueueSize` : Taille maximale de file
+- `AbandonmentRate` : Taux d'abandon (%)
+- `SmsSentCount` : Nombre de SMS envoyés
+- `RevenuePotentialLost` : Estimation manque à gagner (centimes)
+- `BusiestTimeStart`, `BusiestTimeEnd` : Période la plus chargée
+- `CreatedAt` : Timestamp de génération
 
-#### 7. `billings` - Facturation
+#### 7. `Billings` - Facturation
 
 **Description** : Facturation consolidée par utilisateur incluant tous ses établissements.
 
 **Colonnes principales** :
 
-- `id` : UUID (clé primaire)
-- `UserId` : Référence vers `users`
-- `SubscriptionPlanId` : Référence vers `subscription_plans`
-- `billing_period_start`, `billing_period_end` : Période de facturation
-- `base_price_cents` : Prix de base de l'abonnement
-- `active_businesses_count` : Nombre d'établissements actifs
-- `sms_included` : Quota SMS inclus
-- `sms_used` : SMS consommés
-- `sms_overage` : SMS dépassant le quota
-- `sms_overage_cost_cents` : Coût des SMS supplémentaires
-- `sms_usage_by_business` : Détail JSON par établissement
-- `total_amount_cents` : Montant total de la facture
-- `status` : 'pending', 'paid', 'failed', 'refunded', 'cancelled'
-- `stripe_invoice_id`, `stripe_payment_intent_id` : Références Stripe
-- `paid_at` : Timestamp de paiement
-- `due_date` : Date limite de paiement
-- `created_at` : Timestamp de génération
+- `Id` : UUID (clé primaire)
+- `UserId` : Référence vers `Users`
+- `SubscriptionPlanId` : Référence vers `SubscriptionPlans`
+- `BillingPeriodStart`, `BillingPeriodEnd` : Période de facturation
+- `BasePriceCents` : Prix de base de l'abonnement
+- `ActiveBusinessesCount` : Nombre d'établissements actifs
+- `SmsIncluded` : Quota SMS inclus
+- `SmsUsed` : SMS consommés
+- `SmsOverage` : SMS dépassant le quota
+- `SmsOverageCostCents` : Coût des SMS supplémentaires
+- `SmsUsageByBusiness` : Détail JSON par établissement
+- `TotalAmountCents` : Montant total de la facture
+- `Status` : 'pending', 'paid', 'failed', 'refunded', 'cancelled'
+- `StripeInvoiceId`, `StripePaymentIntentId` : Références Stripe
+- `PaidAt` : Timestamp de paiement
+- `DueDate` : Date limite de paiement
+- `CreatedAt` : Timestamp de génération
 
-#### 8. `system_configs` - Configuration système
+#### 8. `SystemConfigs` - Configuration système
 
 **Description** : Configuration centralisée pour les paramètres globaux.
 
 **Colonnes principales** :
 
-- `id` : UUID (clé primaire)
-- `key` : Clé unique de configuration
-- `value` : Valeur (stockée en texte)
-- `data_type` : 'string', 'integer', 'decimal', 'boolean', 'json'
-- `description` : Description du paramètre
-- `is_public` : Accessible via l'API publique
-- `updated_at` : Timestamp de modification
+- `Id` : UUID (clé primaire)
+- `Key` : Clé unique de configuration
+- `Value` : Valeur (stockée en texte)
+- `DataType` : 'string', 'integer', 'decimal', 'boolean', 'json'
+- `Description` : Description du paramètre
+- `IsPublic` : Accessible via l'API publique
+- `UpdatedAt` : Timestamp de modification
 
 ### Triggers PostgreSQL
 
@@ -687,13 +687,13 @@ estimated_wait_minutes = (clients_ahead × average_service_time) / 60
 
 **Variables** :
 
-- `clients_ahead` : Nombre de clients avec `status='waiting'` ET `created_at < current_client.created_at`
-- `average_service_time` : Depuis `businesses.average_service_time` (en secondes)
+- `clients_ahead` : Nombre de clients avec `Status='waiting'` ET `CreatedAt < current_client.CreatedAt`
+- `AverageServiceTime` : Depuis `Businesses.AverageServiceTime` (en secondes)
 
 **Exemple** :
 
 ```text
-Coiffeur : average_service_time = 2700s (45 min)
+Coiffeur : AverageServiceTime = 2700s (45 min)
 File actuelle : 2 clients en attente
 
 Nouveau client :
@@ -819,7 +819,7 @@ REFRESH MATERIALIZED VIEW queue_stats;
 4. Création ou connexion du compte
 5. Génération d'un token JWT
 
-**Note** : Pour OAuth, le champ `password` reste `NULL` dans la table `users`.
+**Note** : Pour OAuth, le champ `Password` reste `NULL` dans la table `Users`.
 
 ### Middleware d'authentification
 
@@ -842,7 +842,7 @@ REFRESH MATERIALIZED VIEW queue_stats;
 **Actions** :
 
 1. Récupération de l'ID de l'établissement depuis les paramètres
-2. Vérification en base que `businesses.UserId = req.user.id`
+2. Vérification en base que `Businesses.OwnerId = req.user.id`
 3. Erreur 403 si l'utilisateur n'est pas propriétaire
 
 ### Sécurité au niveau des données (RLS)
@@ -857,12 +857,12 @@ REFRESH MATERIALIZED VIEW queue_stats;
 
 **Tables protégées** :
 
-- `users` : Accès uniquement à son propre compte
-- `businesses` : Accès uniquement à ses propres établissements
-- `queue_entries` : Accès via les établissements
-- `sms_logs` : Accès via les établissements
-- `analytics_daily` : Accès via les établissements
-- `billings` : Accès uniquement à ses propres factures
+- `Users` : Accès uniquement à son propre compte
+- `Businesses` : Accès uniquement à ses propres établissements
+- `QueueEntries` : Accès via les établissements
+- `SmsLogs` : Accès via les établissements
+- `AnalyticsDaily` : Accès via les établissements
+- `Billings` : Accès uniquement à ses propres factures
 
 ### Validation des données
 

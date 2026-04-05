@@ -57,6 +57,11 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         return business;
     }
 
+    public async Task<Business?> FindBusinessByQrTokenAsync(Guid qrCodeToken)
+    {
+        return await context.Businesses.FirstOrDefaultAsync(b => b.QrCodeToken == qrCodeToken);
+    }
+
     public async Task<string> CreateBusinessAsync(string userId, BusinessRequest request)
     {
         var user = await userService.FindUserByIdAsync(userId);

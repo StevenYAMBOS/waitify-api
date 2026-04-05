@@ -1,10 +1,6 @@
-using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
-using WaitifyApi.Constants;
 using WaitifyApi.Data;
 using WaitifyApi.Entities;
-using WaitifyApi.Helpers;
 using WaitifyApi.Models;
 using WaitifyApi.Repositories;
 
@@ -12,41 +8,81 @@ namespace WaitifyApi.Services;
 
 public class QueueService(AppDbContext context, IApplicationUserRepository userService, IBusinessRepository businessService, ILogger<QueueService> logger) : IQueueRepository
 {
-  public async Task JoinQueueAsync(JoinQueueRequest request)
+  public async Task<JoinQueueResponse> JoinQueueAsync(JoinQueueRequest request)
   {
-    var business = await businessService.FindBusinessByIdAsync(request.BusinessId);
+    var business = await businessService.FindBusinessByQrTokenAsync(request.QrCodeToken);
+
     if (business == null)
     {
-      logger.LogError("Entreprise non trouvée.\n ID en base de données : `{@0}`.\n ID de la requête : `{@1}`.", business?.Id, request.BusinessId);
+      logger.LogError("Entreprise non trouvée pour le QR token : `{@0}`.", request.QrCodeToken);
       throw new KeyNotFoundException("Entreprise non trouvée.");
     }
 
-    if (business.IsQueueActive != true)
+    if (!business.IsQueueActive)
     {
       logger.LogError("La file d'attente est fermée pour l'entreprise `{@0}`.", business.Id);
-      throw new InvalidOperationException("La file d'attente est fermée pour l'entreprise.");
+      throw new InvalidOperationException("La file d'attente est fermée.");
     }
 
-    if (await context.Queues.AnyAsync(queue => queue.Phone == request.Phone))
+    // Vérification client pas déjà inscrit (même numéro + business + waiting)
+    bool alreadyInQueue = await context.Queues.AnyAsync(q =>
+      q.Phone == request.Phone &&
+      q.BusinessId == business.Id &&
+      q.Status == "waiting");
+
+    if (alreadyInQueue)
     {
-      logger.LogError("Utilisateur avec ce numéro déjà dans la file d'attente : `{@0}`.", request.Phone);
-      throw new InvalidOperationException("Utilisateur avec ce numéro déjà dans la file d'attente.");
+      logger.LogError("Numéro `{@0}` déjà dans la file d'attente du business `{@1}`.", request.Phone, business.Id);
+      throw new InvalidOperationException("Ce numéro est déjà dans la file d'attente.");
     }
 
-    // if (business.MaxQueueSize.)
+    // Vérification file pas pleine + compte les clients en attente pour le calcul du temps
+    int waitingCount = await context.Queues.CountAsync(q =>
+      q.BusinessId == business.Id &&
+      q.Status == "waiting");
 
-    var queueEntrie = new QueueEntries
+    if (waitingCount >= business.MaxQueueSize)
     {
+      logger.LogError("File d'attente pleine pour l'entreprise `{@0}`. Taille max : `{@1}`.", business.Id, business.MaxQueueSize);
+      throw new InvalidOperationException("La file d'attente est pleine.");
+    }
+
+    // Calcul du temps d'attente estimé
+    // Formule : (nombre_clients_avant * temps_service_moyen_en_secondes) / 60 → minutes
+    int estimatedWaitTime = (waitingCount * business.AverageServiceTime) / 60;
+
+    // Le trigger PostgreSQL calcule automatiquement la position
+    var queueEntry = new QueueEntries
+    {
+      BusinessId = business.Id,
       Phone = request.Phone,
       ClientName = request.ClientName,
       Status = "waiting",
+      EstimatedWaitTime = estimatedWaitTime,
+      Position = 0,
       CreatedAt = DateTime.UtcNow,
+      UpdatedAt = DateTime.UtcNow,
     };
 
-    // Vérification file pas pleine à faire...
-
-    context.Queues.Add(queueEntrie);
+    context.Queues.Add(queueEntry);
     await context.SaveChangesAsync();
-  }
 
+    // Récupérer la position calculée par le trigger
+    await context.Entry(queueEntry).ReloadAsync();
+
+    logger.LogInformation("Client `{@0}` inscrit en position `{@1}` pour l'entreprise `{@2}`.", request.Phone, queueEntry.Position, business.Id);
+
+    return new JoinQueueResponse
+    {
+      Id = queueEntry.Id,
+      BusinessId = business.Id,
+      BusinessName = business.Name,
+      Position = queueEntry.Position,
+      EstimatedWaitTime = estimatedWaitTime,
+      Phone = queueEntry.Phone,
+      ClientName = queueEntry.ClientName,
+      Status = queueEntry.Status,
+      CreatedAt = queueEntry.CreatedAt,
+    };
+  }
 }

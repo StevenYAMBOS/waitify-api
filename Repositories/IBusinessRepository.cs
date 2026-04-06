@@ -1,4 +1,3 @@
-using System.Drawing;
 using Microsoft.AspNetCore.JsonPatch;
 using WaitifyApi.Entities;
 using WaitifyApi.Models;
@@ -17,7 +16,7 @@ namespace WaitifyApi.Repositories
             UpdateBusinessLogoRequest request);
         Task DeleteBusinessAsync(Guid id);
         Task<string> GenerateNewQRCodeAsync(Guid businessId, string userId, Guid qrCodeToken);
-        Task<string> OpenOrCloseBusinessQueueAsync(Guid idBusiness, bool switchStatus);
+        Task<string> OpenOrCloseBusinessQueueAsync(Guid qrCodeToken, OpenOrCloseBusinessQueueRequest request);
 
         // Task<IEnumerable<Business>> GetAllBusinessesAsync();
         // Task<IEnumerable<Business>> GetAllPubishedBusinessesAsync();

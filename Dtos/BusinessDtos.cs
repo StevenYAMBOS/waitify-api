@@ -49,3 +49,8 @@ public record class UpdateBusinessLogoRequest
 {
     public IFormFile? NewLogoFile { get; set; }
 }
+
+public record class OpenOrCloseBusinessQueueRequest
+{
+    public bool IsQueueActive { get; set; }
+}

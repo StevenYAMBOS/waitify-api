@@ -1,3 +1,4 @@
+using Azure.Core;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
@@ -200,11 +201,11 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         }
     }
 
-    public async Task<string> OpenOrCloseBusinessQueueAsync(Guid idBusiness, bool switchStatus)
+    public async Task<string> OpenOrCloseBusinessQueueAsync(Guid qrCodeToken, OpenOrCloseBusinessQueueRequest request)
     {
         try
         {
-            var existingBusiness = await FindBusinessByIdAsync(idBusiness);
+            var existingBusiness = await FindBusinessByQrTokenAsync(qrCodeToken);
 
             if (existingBusiness == null)
             {
@@ -212,7 +213,7 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
                 throw new KeyNotFoundException("Entreprise non trouvée.");
             }
 
-            existingBusiness.IsQueueActive = switchStatus;
+            existingBusiness.IsQueueActive = request.IsQueueActive;
             existingBusiness.UpdatedAt = DateTime.UtcNow;
 
             context.Businesses.Update(existingBusiness);

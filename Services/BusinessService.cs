@@ -199,6 +199,35 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             throw new InvalidOperationException("Une erreur est survenue lors de la mise à jour du logo de l'entreprise.", ex);
         }
     }
+
+    public async Task<string> OpenOrCloseBusinessQueueAsync(Guid idBusiness, bool switchStatus)
+    {
+        try
+        {
+            var existingBusiness = await FindBusinessByIdAsync(idBusiness);
+
+            if (existingBusiness == null)
+            {
+                logger.LogError("Entreprise non trouvée : `{@0}`.", existingBusiness?.Id);
+                throw new KeyNotFoundException("Entreprise non trouvée.");
+            }
+
+            existingBusiness.IsQueueActive = switchStatus;
+            existingBusiness.UpdatedAt = DateTime.UtcNow;
+
+            context.Businesses.Update(existingBusiness);
+            await context.SaveChangesAsync();
+
+            logger.LogInformation("Status de la file d'attente de l'entreprise mis à jour avec succès : {@0}", JsonConvert.SerializeObject(existingBusiness.IsQueueActive, Formatting.Indented));
+            return "Status de la file d'attente de l'entreprise mis à jour avec succès";
+        }
+        catch (Exception ex)
+        {
+            logger.LogInformation("Erreur : {@0}", ex);
+            throw new InvalidOperationException("Une erreur est survenue lors de la mise à jour de l'entreprise.", ex);
+        }
+    }
+
     public async Task DeleteBusinessAsync(Guid id)
     {
         var business = await FindBusinessByIdAsync(id) ?? throw new KeyNotFoundException("Entreprise non trouvée.");

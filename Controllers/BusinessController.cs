@@ -146,6 +146,42 @@ public class BusinessController(
         }
     }
 
+    [HttpPatch("{id}/queue")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    [EnableRateLimiting("fixed")]
+    public async Task<IActionResult> OpenOrCloseBusinessQueue(Guid id, [FromForm] bool switchStatus)
+    {
+
+        var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        if (ownerIdFromToken == null)
+        {
+            logger.LogError("Impossible de récupérer l'ID de l'utilisateur depuis le token JWT.");
+            return Unauthorized("Utilisateur non authentifié.");
+        }
+
+        try
+        {
+            var business = await businessService.OpenOrCloseBusinessQueueAsync(
+                id,
+                switchStatus);
+            if (!switchStatus)
+            {
+                logger.LogError("Requête non valide {@0}.", switchStatus);
+                return BadRequest("Requête non valide.");
+            }
+            return Ok(business);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid("Vous n'êtes pas autorisé à modifier cette entreprise.");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erreur lors de la mise à jour du logo de l'entreprise {@0}.", id);
+            return StatusCode(StatusCodes.Status500InternalServerError, "Une erreur est survenue.");
+        }
+    }
+
     [HttpDelete("{id}")]
     [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<IActionResult> DeleteOneBusiness(Guid id)

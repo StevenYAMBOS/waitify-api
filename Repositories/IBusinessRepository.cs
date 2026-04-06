@@ -17,6 +17,8 @@ namespace WaitifyApi.Repositories
             UpdateBusinessLogoRequest request);
         Task DeleteBusinessAsync(Guid id);
         Task<string> GenerateNewQRCodeAsync(Guid businessId, string userId, Guid qrCodeToken);
+        Task<string> OpenOrCloseBusinessQueueAsync(Guid idBusiness, bool switchStatus);
+
         // Task<IEnumerable<Business>> GetAllBusinessesAsync();
         // Task<IEnumerable<Business>> GetAllPubishedBusinessesAsync();
         // Task<Business> TogglePublishBusinessAsync(Guid articleId, bool isPublished, string authorIdFromToken);

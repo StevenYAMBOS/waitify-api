@@ -19,8 +19,6 @@ public class BusinessController(
     ILogger<BusinessController> logger
 ) : ControllerBase
 {
-
-    // [HttpPost("generate")]
     [HttpPost("generate:{id}/qrcode")]
     public async Task<IActionResult> GenerateNewQRCode(Guid id, Guid qrCodeToken)
     {

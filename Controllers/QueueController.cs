@@ -13,6 +13,18 @@ public class QueueController(
     ILogger<QueueController> logger
 ) : ControllerBase
 {
+    [HttpGet("{id}")]
+    public async Task<IActionResult> FindBusinessById(Guid id)
+    {
+        var queue = await queueService.FindQueueByIdAsync(id);
+        if (queue == null)
+        {
+            logger.LogInformation("File d'attente avec l'id : `{id}` introuvable", id);
+            return StatusCode(StatusCodes.Status404NotFound, "File d'attente introuvable");
+        }
+        return Ok(queue);
+    }
+
     [HttpPost("join")]
     public async Task<IActionResult> JoinQueue([FromBody] JoinQueueRequest request)
     {

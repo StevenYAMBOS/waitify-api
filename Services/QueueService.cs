@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using WaitifyApi.Data;
 using WaitifyApi.Entities;
 using WaitifyApi.Models;
@@ -8,6 +9,14 @@ namespace WaitifyApi.Services;
 
 public class QueueService(AppDbContext context, IApplicationUserRepository userService, IBusinessRepository businessService, ILogger<QueueService> logger) : IQueueRepository
 {
+
+  public async Task<QueueEntries?> FindQueueByIdAsync(Guid id)
+  {
+    var queue = await context.Queues.FindAsync(id);
+    logger.LogInformation("File d'attente : {@0}", JsonConvert.SerializeObject(queue, Formatting.Indented));
+    return queue;
+  }
+
   public async Task<JoinQueueResponse> JoinQueueAsync(JoinQueueRequest request)
   {
     var business = await businessService.FindBusinessByQrTokenAsync(request.QrCodeToken);

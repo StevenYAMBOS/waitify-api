@@ -8,5 +8,6 @@ namespace WaitifyApi.Repositories
   {
     Task<QueueEntries?> FindQueueByIdAsync(Guid id);
     Task<JoinQueueResponse> JoinQueueAsync(JoinQueueRequest request);
+    Task<CallNextClientResponse> CallNextClientAsync(Guid businessId);
   }
 }

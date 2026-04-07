@@ -94,4 +94,55 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
       CreatedAt = queueEntry.CreatedAt,
     };
   }
+
+  public async Task<CallNextClientResponse> CallNextClientAsync(Guid businessId)
+  {
+    var business = await context.Businesses.FindAsync(businessId);
+
+    if (business == null)
+    {
+      logger.LogError("Entreprise non trouvée : `{@0}`.", businessId);
+      throw new KeyNotFoundException("Entreprise non trouvée.");
+    }
+
+    if (!business.IsQueueActive)
+    {
+      logger.LogError("La file d'attente est fermée pour l'entreprise `{@0}`.", businessId);
+      throw new InvalidOperationException("La file d'attente est fermée.");
+    }
+
+    // Récupérer le premier client en attente (position la plus basse)
+    var nextClient = await context.Queues
+      .Where(q => q.BusinessId == businessId && q.Status == "waiting")
+      .OrderBy(q => q.Position)
+      .FirstOrDefaultAsync();
+
+    if (nextClient == null)
+    {
+      logger.LogInformation("Aucun client en attente pour l'entreprise `{@0}`.", businessId);
+      throw new InvalidOperationException("Aucun client en attente dans la file.");
+    }
+
+    nextClient.Status = "called";
+    nextClient.CalledAt = DateTime.UtcNow;
+    nextClient.UpdatedAt = DateTime.UtcNow;
+
+    await context.SaveChangesAsync();
+
+    // Recharger pour récupérer la position recalculée par les triggers PostgreSQL
+    await context.Entry(nextClient).ReloadAsync();
+
+    logger.LogInformation("Client `{@0}` appelé pour l'entreprise `{@1}`.", nextClient.Phone, businessId);
+
+    return new CallNextClientResponse
+    {
+      Id = nextClient.Id,
+      BusinessId = nextClient.BusinessId,
+      Phone = nextClient.Phone,
+      ClientName = nextClient.ClientName,
+      Position = nextClient.Position,
+      Status = nextClient.Status,
+      CalledAt = nextClient.CalledAt,
+    };
+  }
 }

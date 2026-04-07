@@ -35,3 +35,13 @@ public class CallNextClientResponse
   public string? Status { get; set; }
   public DateTime? CalledAt { get; set; }
 }
+
+public class CancelQueueEntryResponse
+{
+  public Guid Id { get; set; }
+  public Guid BusinessId { get; set; }
+  public string? Phone { get; set; }
+  public string? ClientName { get; set; }
+  public string? Status { get; set; }
+  public DateTime UpdatedAt { get; set; }
+}

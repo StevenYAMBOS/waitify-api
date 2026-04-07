@@ -50,6 +50,31 @@ public class QueueController(
         }
     }
 
+    [HttpDelete("{id}/cancel")]
+    public async Task<IActionResult> CancelQueueEntry(Guid id)
+    {
+        try
+        {
+            var result = await queueService.CancelQueueEntryAsync(id);
+            return Ok(result);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            logger.LogError("Ressource introuvable : {@0}", ex.Message);
+            return NotFound(ex.Message);
+        }
+        catch (InvalidOperationException ex)
+        {
+            logger.LogError("Opération invalide : {@0}", ex.Message);
+            return BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erreur lors de l'annulation de l'entrée.");
+            return StatusCode(StatusCodes.Status500InternalServerError, "Une erreur est survenue.");
+        }
+    }
+
     [HttpPost("join")]
     public async Task<IActionResult> JoinQueue([FromBody] JoinQueueRequest request)
     {

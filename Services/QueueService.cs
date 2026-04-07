@@ -145,4 +145,38 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
       CalledAt = nextClient.CalledAt,
     };
   }
+
+  public async Task<CancelQueueEntryResponse> CancelQueueEntryAsync(Guid id)
+  {
+    var entry = await context.Queues.FindAsync(id);
+
+    if (entry == null)
+    {
+      logger.LogError("Entrée de file d'attente introuvable : `{@0}`.", id);
+      throw new KeyNotFoundException("Entrée de file d'attente introuvable.");
+    }
+
+    if (entry.Status != "waiting")
+    {
+      logger.LogError("Impossible d'annuler l'entrée `{@0}` avec le statut `{@1}`.", id, entry.Status);
+      throw new InvalidOperationException($"Impossible d'annuler une entrée avec le statut '{entry.Status}'.");
+    }
+
+    entry.Status = "cancelled";
+    entry.UpdatedAt = DateTime.UtcNow;
+
+    await context.SaveChangesAsync();
+
+    logger.LogInformation("Entrée `{@0}` annulée pour le client `{@1}`.", id, entry.Phone);
+
+    return new CancelQueueEntryResponse
+    {
+      Id = entry.Id,
+      BusinessId = entry.BusinessId,
+      Phone = entry.Phone,
+      ClientName = entry.ClientName,
+      Status = entry.Status,
+      UpdatedAt = entry.UpdatedAt,
+    };
+  }
 }

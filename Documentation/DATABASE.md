@@ -613,24 +613,23 @@ CREATE TRIGGER update_subscription_plans_updated_at BEFORE UPDATE ON Subscriptio
 
 -- Recalcul automatique des positions par business
 CREATE OR REPLACE FUNCTION recalculate_queue_positions()
-RETURNS TRIGGER AS $
+RETURNS TRIGGER AS $$
 BEGIN
-    UPDATE QueueEntries
-    SET Position = new_position
+    UPDATE "QueueEntries"
+    SET "Position" = new_position
     FROM (
-        SELECT Id, ROW_NUMBER() OVER (ORDER BY CreatedAt) as new_position
-        FROM QueueEntries
-        WHERE BusinessId = COALESCE(NEW.BusinessId, OLD.BusinessId)
-        AND Status = 'waiting'
+        SELECT "Id", ROW_NUMBER() OVER (ORDER BY "CreatedAt") as new_position
+        FROM "QueueEntries"
+        WHERE "BusinessId" = COALESCE(NEW."BusinessId", OLD."BusinessId")
+        AND "Status" = 'waiting'
     ) AS positioned
-    WHERE QueueEntries.Id = positioned.Id;
-
+    WHERE "QueueEntries"."Id" = positioned."Id";
     RETURN COALESCE(NEW, OLD);
 END;
-$ language 'plpgsql';
+$$ LANGUAGE plpgsql;
 
 CREATE TRIGGER recalculate_positions_after_change
-    AFTER UPDATE OF Status OR DELETE ON QueueEntries
+    AFTER UPDATE OF "Status" OR DELETE ON "QueueEntries"
     FOR EACH ROW EXECUTE FUNCTION recalculate_queue_positions();
 
 -- Contrainte pour limiter les business selon le plan

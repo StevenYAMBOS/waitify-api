@@ -179,4 +179,44 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
       UpdatedAt = entry.UpdatedAt,
     };
   }
+
+  public async Task<MarkClientAsServedResponse> MarkClientAsServedAsync(Guid id, MarkClientAsServedRequest request)
+  {
+    var entry = await context.Queues.FindAsync(id);
+
+    if (entry == null)
+    {
+      logger.LogError("Entrée de file d'attente introuvable : `{@0}`.", id);
+      throw new KeyNotFoundException("Entrée de file d'attente introuvable.");
+    }
+
+    if (entry.Status != "called")
+    {
+      logger.LogError("Impossible de marquer comme servi l'entrée `{@0}` avec le statut `{@1}`.", id, entry.Status);
+      throw new InvalidOperationException($"Impossible de marquer comme servi une entrée avec le statut '{entry.Status}'.");
+    }
+
+    entry.Status = "served";
+    entry.ServedAt = DateTime.UtcNow;
+    entry.UpdatedAt = DateTime.UtcNow;
+
+    if (request.ActualServiceTime.HasValue)
+      entry.ActualServiceTime = request.ActualServiceTime.Value;
+
+    await context.SaveChangesAsync();
+
+    logger.LogInformation("Client `{@0}` marqué comme servi pour l'entrée `{@1}`.", entry.Phone, id);
+
+    return new MarkClientAsServedResponse
+    {
+      Id = entry.Id,
+      BusinessId = entry.BusinessId,
+      Phone = entry.Phone,
+      ClientName = entry.ClientName,
+      Status = entry.Status,
+      CalledAt = entry.CalledAt,
+      ServedAt = entry.ServedAt,
+      ActualServiceTime = entry.ActualServiceTime == 0 ? null : entry.ActualServiceTime,
+    };
+  }
 }

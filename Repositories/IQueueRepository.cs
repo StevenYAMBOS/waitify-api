@@ -10,5 +10,6 @@ namespace WaitifyApi.Repositories
     Task<JoinQueueResponse> JoinQueueAsync(JoinQueueRequest request);
     Task<CallNextClientResponse> CallNextClientAsync(Guid businessId);
     Task<CancelQueueEntryResponse> CancelQueueEntryAsync(Guid id);
+    Task<MarkClientAsServedResponse> MarkClientAsServedAsync(Guid id, MarkClientAsServedRequest request);
   }
 }

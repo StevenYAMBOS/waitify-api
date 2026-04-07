@@ -45,3 +45,20 @@ public class CancelQueueEntryResponse
   public string? Status { get; set; }
   public DateTime UpdatedAt { get; set; }
 }
+
+public class MarkClientAsServedRequest
+{
+  public int? ActualServiceTime { get; set; }
+}
+
+public class MarkClientAsServedResponse
+{
+  public Guid Id { get; set; }
+  public Guid BusinessId { get; set; }
+  public string? Phone { get; set; }
+  public string? ClientName { get; set; }
+  public string? Status { get; set; }
+  public DateTime? CalledAt { get; set; }
+  public DateTime? ServedAt { get; set; }
+  public int? ActualServiceTime { get; set; }
+}

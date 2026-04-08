@@ -288,12 +288,12 @@ waiting (initial)
 
 **Transitions autorisées** :
 
-| De        | Vers        | Action             | Recalcul positions (C#)            |
-| --------- | ----------- | ------------------ | ---------------------------------- |
-| `waiting` | `called`    | Commerçant appelle | ✅ Oui — `RecalculatePositionsAsync` |
+| De        | Vers        | Action             | Recalcul positions (C#)                                  |
+| --------- | ----------- | ------------------ | -------------------------------------------------------- |
+| `waiting` | `called`    | Commerçant appelle | ✅ Oui — `RecalculatePositionsAsync`                     |
 | `called`  | `served`    | Client servi       | ❌ Non — le client était déjà sorti de la file `waiting` |
 | `called`  | `missed`    | Timeout 5 min      | ❌ Non — le client était déjà sorti de la file `waiting` |
-| `waiting` | `cancelled` | Client annule      | ✅ Oui — `RecalculatePositionsAsync` |
+| `waiting` | `cancelled` | Client annule      | ✅ Oui — `RecalculatePositionsAsync`                     |
 
 **États finaux** (ne recalculent plus) :
 

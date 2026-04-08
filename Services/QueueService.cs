@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using WaitifyApi.Data;
 using WaitifyApi.Entities;
+using WaitifyApi.Helpers;
 using WaitifyApi.Models;
 using WaitifyApi.Repositories;
 
@@ -60,7 +61,9 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     // Formule : (nombre_clients_avant * temps_service_moyen_en_secondes) / 60 → minutes
     int estimatedWaitTime = (waitingCount * business.AverageServiceTime) / 60;
 
-    // Le trigger PostgreSQL calcule automatiquement la position
+    // Calcul direct de la position via QueuePositionHelper (remplace l'ancien trigger PostgreSQL)
+    int position = QueuePositionHelper.CalculateNewPosition(waitingCount);
+
     var queueEntry = new QueueEntries
     {
       BusinessId = business.Id,
@@ -68,16 +71,13 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
       ClientName = request.ClientName,
       Status = "waiting",
       EstimatedWaitTime = estimatedWaitTime,
-      Position = 0,
+      Position = position,
       CreatedAt = DateTime.UtcNow,
       UpdatedAt = DateTime.UtcNow,
     };
 
     context.Queues.Add(queueEntry);
     await context.SaveChangesAsync();
-
-    // Récupérer la position calculée par le trigger
-    await context.Entry(queueEntry).ReloadAsync();
 
     logger.LogInformation("Client `{@0}` inscrit en position `{@1}` pour l'entreprise `{@2}`.", request.Phone, queueEntry.Position, business.Id);
 
@@ -129,8 +129,9 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
 
     await context.SaveChangesAsync();
 
-    // Recharger pour récupérer la position recalculée par les triggers PostgreSQL
-    await context.Entry(nextClient).ReloadAsync();
+    // Recalcul des positions des clients restants en attente (remplace l'ancien trigger PostgreSQL)
+    await QueuePositionHelper.RecalculatePositionsAsync(context, businessId);
+    await context.SaveChangesAsync();
 
     logger.LogInformation("Client `{@0}` appelé pour l'entreprise `{@1}`.", nextClient.Phone, businessId);
 
@@ -165,6 +166,10 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     entry.Status = "cancelled";
     entry.UpdatedAt = DateTime.UtcNow;
 
+    await context.SaveChangesAsync();
+
+    // Recalcul des positions des clients restants en attente (remplace l'ancien trigger PostgreSQL)
+    await QueuePositionHelper.RecalculatePositionsAsync(context, entry.BusinessId);
     await context.SaveChangesAsync();
 
     logger.LogInformation("Entrée `{@0}` annulée pour le client `{@1}`.", id, entry.Phone);

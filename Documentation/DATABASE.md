@@ -261,7 +261,7 @@ ALTER TABLE QueueEntries ADD CONSTRAINT check_called_before_served CHECK (Called
 - `BusinessId` : Référence vers l'établissement concerné
 - `Phone` : Numéro de téléphone du client (format français validé)
 - `ClientName` : Nom ou prénom du client (optionnel)
-- `Position` : Rang dans la file d'attente, recalculé automatiquement
+- `Position` : Rang dans la file d'attente, calculé et recalculé en C# via `QueuePositionHelper`
 - `EstimatedWaitTime` : Temps d'attente estimé en minutes au moment de l'inscription
 - `Status` : État du client dans le processus (waiting/called/served/missed/cancelled)
 - `CalledAt` : Timestamp précis de l'appel du client par le commerçant
@@ -611,26 +611,19 @@ CREATE TRIGGER update_businesses_updated_at BEFORE UPDATE ON Businesses FOR EACH
 CREATE TRIGGER update_queue_entries_updated_at BEFORE UPDATE ON QueueEntries FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_subscription_plans_updated_at BEFORE UPDATE ON SubscriptionPlans FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
--- Recalcul automatique des positions par business
-CREATE OR REPLACE FUNCTION recalculate_queue_positions()
-RETURNS TRIGGER AS $$
-BEGIN
-    UPDATE "QueueEntries"
-    SET "Position" = new_position
-    FROM (
-        SELECT "Id", ROW_NUMBER() OVER (ORDER BY "CreatedAt") as new_position
-        FROM "QueueEntries"
-        WHERE "BusinessId" = COALESCE(NEW."BusinessId", OLD."BusinessId")
-        AND "Status" = 'waiting'
-    ) AS positioned
-    WHERE "QueueEntries"."Id" = positioned."Id";
-    RETURN COALESCE(NEW, OLD);
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER recalculate_positions_after_change
-    AFTER UPDATE OF "Status" OR DELETE ON "QueueEntries"
-    FOR EACH ROW EXECUTE FUNCTION recalculate_queue_positions();
+-- ⚠️ SUPPRIMÉ : recalcul des positions désormais géré en C# via QueuePositionHelper
+-- Voir : /Helpers/QueuePositionHelper.cs
+--
+-- Ancien trigger (remplacé) :
+-- CREATE OR REPLACE FUNCTION recalculate_queue_positions() ...
+-- CREATE TRIGGER recalculate_positions_after_change
+--     AFTER UPDATE OF "Status" OR DELETE ON "QueueEntries"
+--     FOR EACH ROW EXECUTE FUNCTION recalculate_queue_positions();
+--
+-- Nouvelle logique C# :
+--   • Inscription  : Position = waitingCount + 1  (QueuePositionHelper.CalculateNewPosition)
+--   • Appel/Annul  : ROW_NUMBER sur les entrées waiting, triées par CreatedAt ASC
+--                    (QueuePositionHelper.RecalculatePositionsAsync)
 
 -- Contrainte pour limiter les business selon le plan
 CREATE OR REPLACE FUNCTION validate_business_count_on_plan_change()

@@ -136,7 +136,6 @@ Waitify digitalise complètement le processus :
 #### **PostgreSQL (Base de données)**
 
 - **Stockage** des données utilisateurs, établissements, files d'attente
-- **Triggers automatiques** pour le recalcul des positions
 - **Row Level Security (RLS)** pour l'isolation des données
 - **Contraintes d'intégrité** pour garantir la cohérence
 - **Index optimisés** pour les performances
@@ -144,6 +143,7 @@ Waitify digitalise complètement le processus :
 #### **ASP.NET (API)**
 
 - **Validation métier** des requêtes
+- **Calcul et recalcul des positions** dans la file (`QueuePositionHelper`)
 - **Calcul des temps d'attente** estimés
 - **Gestion des erreurs** et messages utilisateur
 - **Intégrations externes** (Stripe, SMS)
@@ -255,25 +255,23 @@ Une file d'attente n'est **pas un objet explicite** en base de données. Elle ex
    - Client pas déjà inscrit (même téléphone + statut 'waiting')
    - Format téléphone valide (français)
    ↓
-6. Calcul position initiale : COUNT(waiting) + 1
+6. Calcul position initiale : `QueuePositionHelper.CalculateNewPosition(waitingCount)` → `waitingCount + 1`
    ↓
 7. Calcul temps d'attente : (clients devant × AverageServiceTime) / 60
    ↓
-8. INSERT dans QueueEntries
+8. INSERT dans QueueEntries avec la position déjà calculée
    ↓
-9. Trigger PostgreSQL recalcule toutes les positions
-   ↓
-10. SMS de confirmation envoyé
+9. SMS de confirmation envoyé
 ```
 
 #### Gestion des positions
 
-Les positions sont **entièrement automatisées** via des **triggers PostgreSQL** :
+Les positions sont gérées en **C# via `QueuePositionHelper`** (classe statique dans `/Helpers/`), remplaçant l'ancien trigger PostgreSQL `recalculate_positions_after_change` :
 
-- **Calcul** : `ROW_NUMBER() OVER (ORDER BY CreatedAt ASC)`
-- **Filtres** : Même `BusinessId` + `status = 'waiting'`
-- **Recalcul automatique** : Après chaque insertion, mise à jour ou suppression
-- **Cohérence garantie** : Atomicité transactionnelle, pas de race conditions
+- **Calcul initial** : À l'inscription, `Position = nombre_clients_en_attente + 1` (via `CalculateNewPosition`)
+- **Recalcul** : `ROW_NUMBER()` appliqué en C# sur les entrées `waiting`, triées par `CreatedAt ASC` (via `RecalculatePositionsAsync`)
+- **Filtres** : Même `BusinessId` + `Status = 'waiting'`
+- **Déclenchement** : Après chaque transition de statut retirant un client de la file `waiting` (`called`, `cancelled`, `missed`)
 
 #### États d'une entrée de file
 
@@ -290,12 +288,12 @@ waiting (initial)
 
 **Transitions autorisées** :
 
-| De        | Vers        | Action             | Recalcul positions |
-| --------- | ----------- | ------------------ | ------------------ |
-| `waiting` | `called`    | Commerçant appelle | ✅ Oui             |
-| `called`  | `served`    | Client servi       | ✅ Oui             |
-| `called`  | `missed`    | Timeout 5 min      | ✅ Oui             |
-| `waiting` | `cancelled` | Client annule      | ✅ Oui             |
+| De        | Vers        | Action             | Recalcul positions (C#)            |
+| --------- | ----------- | ------------------ | ---------------------------------- |
+| `waiting` | `called`    | Commerçant appelle | ✅ Oui — `RecalculatePositionsAsync` |
+| `called`  | `served`    | Client servi       | ❌ Non — le client était déjà sorti de la file `waiting` |
+| `called`  | `missed`    | Timeout 5 min      | ❌ Non — le client était déjà sorti de la file `waiting` |
+| `waiting` | `cancelled` | Client annule      | ✅ Oui — `RecalculatePositionsAsync` |
 
 **États finaux** (ne recalculent plus) :
 

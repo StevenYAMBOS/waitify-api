@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace WaitifyApi.Models;
 
-public class JoinQueueRequest
+public record JoinQueueRequest
 {
   [Required]
   public Guid QrCodeToken { get; set; }
@@ -12,7 +12,7 @@ public class JoinQueueRequest
   public string? ClientName { get; set; }
 }
 
-public class JoinQueueResponse
+public record JoinQueueResponse
 {
   public Guid Id { get; set; }
   public Guid BusinessId { get; set; }
@@ -25,7 +25,7 @@ public class JoinQueueResponse
   public DateTime CreatedAt { get; set; }
 }
 
-public class CallNextClientResponse
+public record CallNextClientResponse
 {
   public Guid Id { get; set; }
   public Guid BusinessId { get; set; }
@@ -36,7 +36,7 @@ public class CallNextClientResponse
   public DateTime? CalledAt { get; set; }
 }
 
-public class CancelQueueEntryResponse
+public record CancelQueueEntryResponse
 {
   public Guid Id { get; set; }
   public Guid BusinessId { get; set; }
@@ -46,12 +46,12 @@ public class CancelQueueEntryResponse
   public DateTime UpdatedAt { get; set; }
 }
 
-public class MarkClientAsServedRequest
+public record MarkClientAsServedRequest
 {
   public int? ActualServiceTime { get; set; }
 }
 
-public class MarkClientAsServedResponse
+public record MarkClientAsServedResponse
 {
   public Guid Id { get; set; }
   public Guid BusinessId { get; set; }

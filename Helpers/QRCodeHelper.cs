@@ -4,7 +4,7 @@ using QRCoder;
 
 namespace WaitifyApi.Helpers;
 
-public class QRCodeGeneratorService
+public sealed class QRCodeGeneratorService
 {
     public async Task<string> GenerateQRCode(
         string url

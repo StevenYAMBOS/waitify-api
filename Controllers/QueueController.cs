@@ -14,7 +14,7 @@ public class QueueController(
 ) : ControllerBase
 {
     [HttpGet("{id}")]
-    public async Task<IActionResult> FindBusinessById(Guid id)
+    public async Task<IActionResult> FindQueueEntrieById(Guid id)
     {
         var queue = await queueService.FindQueueByIdAsync(id);
         if (queue == null)
@@ -25,12 +25,12 @@ public class QueueController(
         return Ok(queue);
     }
 
-    [HttpPost("{businessId}/call-next")]
-    public async Task<IActionResult> CallNextClient(Guid businessId)
+    [HttpPost("{id}/call-next")]
+    public async Task<IActionResult> CallNextClient(Guid id)
     {
         try
         {
-            var result = await queueService.CallNextClientAsync(businessId);
+            var result = await queueService.CallNextClientAsync(id);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)

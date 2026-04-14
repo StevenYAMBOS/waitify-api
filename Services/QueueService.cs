@@ -97,7 +97,9 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
 
   public async Task<CallNextClientResponse> CallNextClientAsync(Guid businessId)
   {
-    var business = await context.Businesses.FindAsync(businessId); // BusinessId == QrCodeToken !
+    // var business = await context.Businesses.FindAsync(businessId); // BusinessId == QrCodeToken !
+    var business = await businessService.FindBusinessByIdAsync(businessId);
+
 
     if (business == null)
     {

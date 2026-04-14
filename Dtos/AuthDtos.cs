@@ -4,7 +4,7 @@ using WaitifyApi.Enums;
 
 namespace WaitifyApi.Models;
 
-public class RegisterRequest
+public record RegisterRequest
 {
     // [EmailAddress]
     // [Required(ErrorMessage = "Ajouter une adresse email valide.")]
@@ -29,7 +29,7 @@ public class RegisterRequest
     public string? Role { get; set; }
 };
 
-public class LoginRequest
+public record LoginRequest
 {
     [Required]
     [EmailAddress]
@@ -39,7 +39,7 @@ public class LoginRequest
     public string? Password { get; set; }
 }
 
-public class AuthResponse
+public record AuthResponse
 {
     public string? FistName { get; set; }
     public string? LastName { get; set; }
@@ -47,7 +47,7 @@ public class AuthResponse
     public string? Token { get; set; }
 }
 
-public class UpdateProfilDTO
+public record UpdateProfilDTO
 {
     public string? Id { get; set; }
     [EmailAddress]
@@ -56,13 +56,13 @@ public class UpdateProfilDTO
     public string? LastName { get; set; }
 }
 
-public class TokenResponseDTO
+public record TokenResponseDTO
 {
     public required string AccessToken { get; set; }
     public required string RefreshToken { get; set; }
 }
 
-public class RefreshTokenRequestDTO
+public record RefreshTokenRequestDTO
 {
     public required string UserId { get; set; }
     public required string RefreshToken { get; set; }

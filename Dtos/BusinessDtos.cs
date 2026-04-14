@@ -1,9 +1,8 @@
-using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 
 namespace WaitifyApi.Models;
 
-public class BusinessRequest
+public record BusinessRequest
 {
     [Required(ErrorMessage = "Le nom est incorrecte.")]
     public string? Name { get; set; }
@@ -32,7 +31,7 @@ public class BusinessRequest
     public Guid QrCodeToken { get; set; }
 };
 
-/* public record class UpdateBusinessGeneralInfosRequest
+/* public record UpdateBusinessGeneralInfosRequest
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
@@ -45,12 +44,12 @@ public class BusinessRequest
     public string? Country { get; set; }
 } */
 
-public record class UpdateBusinessLogoRequest
+public record UpdateBusinessLogoRequest
 {
     public IFormFile? NewLogoFile { get; set; }
 }
 
-public record class OpenOrCloseBusinessQueueRequest
+public record OpenOrCloseBusinessQueueRequest
 {
     public bool IsQueueActive { get; set; }
 }

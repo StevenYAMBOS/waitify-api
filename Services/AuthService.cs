@@ -31,6 +31,10 @@ public class AuthService(UserManager<ApplicationUser> userManager,
             profilePictureUrl = await fileStorageService.UploadBlobAsync(request.ProfilePicture, userName, azureContainerName, allowedExtensions);
         }
 
+        TimeSpan TwoWeeks = new TimeSpan(360, 0, 0);
+        DateTime trialEndDate = DateTime.UtcNow.Add(TwoWeeks);
+
+
         var user = new ApplicationUser
         {
             FirstName = request.FirstName,
@@ -38,6 +42,7 @@ public class AuthService(UserManager<ApplicationUser> userManager,
             UserName = request.LastName + request.FirstName,
             Email = request.Email,
             Role = Role.Owner,
+            TrialEndsAt = trialEndDate,
             ProfilePicture = profilePictureUrl,
             CreatedAt = DateTime.UtcNow
         };

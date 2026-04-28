@@ -6,24 +6,24 @@ namespace WaitifyApi.Models;
 
 public record RegisterRequest
 {
-    // [EmailAddress]
-    // [Required(ErrorMessage = "Ajouter une adresse email valide.")]
+    [EmailAddress]
+    [Required(ErrorMessage = "Ajouter une adresse email valide.")]
     public string? Email { get; set; }
 
-    // [Required(ErrorMessage = "Le prénom doit être compris entre 2 100 caractères.")]
-    // [MaxLength(100)]
-    // [MinLength(2)]
+    [Required(ErrorMessage = "Le prénom doit être compris entre 2 100 caractères.")]
+    [MaxLength(100)]
+    [MinLength(2)]
     public string? FirstName { get; set; }
 
-    // [Required(ErrorMessage = "Le nom de famille doit être compris entre 2 100 caractères.")]
-    // [MaxLength(100)]
-    // [MinLength(2)]
+    [Required(ErrorMessage = "Le nom de famille doit être compris entre 2 100 caractères.")]
+    [MaxLength(100)]
+    [MinLength(2)]
     public string? LastName { get; set; }
 
     public IFormFile? ProfilePicture { get; set; }
 
-    // [Required]
-    // [PasswordPropertyText]
+    [PasswordPropertyText]
+    [Required]
     public string? Password { get; set; }
 
     public string? Role { get; set; }

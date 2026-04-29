@@ -51,6 +51,27 @@ public class BusinessController(
         return Ok(business);
     }
 
+
+    [HttpGet("all")]
+    public async Task<IActionResult> GetAllBusinesses()
+    {
+        var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        if (ownerIdFromToken == null)
+        {
+            logger.LogError("Impossible de récupérer l'ID de l'utilisateur depuis le token JWT.");
+            return Unauthorized("Utilisateur non authentifié.");
+        }
+
+        var businesses = await businessService.GetAllBusinessesAsync(ownerIdFromToken);
+        /*       if (businesses == null)
+              {
+                  logger.LogInformation("Entreprise avec l'id : `{id}` introuvable");
+                  return StatusCode(StatusCodes.Status404NotFound, "Entreprise introuvable");
+              } */
+        logger.LogInformation("ENTREPRISES : {@0}", JsonConvert.SerializeObject(businesses, Formatting.Indented));
+        return Ok(businesses);
+    }
+
     [HttpPost]
     public async Task<IActionResult> CreateBusiness([FromForm] BusinessRequest request)
     {

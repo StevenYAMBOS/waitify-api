@@ -54,5 +54,18 @@ namespace WaitifyApi.Services
             context.Users.Remove(user);
             await context.SaveChangesAsync();
         }
+
+        /*         public async Task<IEnumerable<Business>> GetBusinessesAsync(string id)
+                {
+                    var user = await FindUserByIdAsync(id) ?? throw new KeyNotFoundException("Utilisateur non trouvé.");
+                    var businesses = await businessService.GetAllBusinessesAsync(id);
+
+                    if (user.Id != id)
+                    {
+                        throw new UnauthorizedAccessException("Accès refusé");
+                    }
+
+                    return businesses;
+                } */
     }
 }

@@ -244,4 +244,42 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         context.Businesses.Remove(business);
         await context.SaveChangesAsync();
     }
+
+    public async Task<IEnumerable<Business>> GetAllBusinessesAsync(string id)
+    {
+        var user = await userService.FindUserByIdAsync(id);
+
+        if (user == null)
+        {
+            throw new KeyNotFoundException("Utilisateur non trouvé.");
+        }
+
+        var businesses = await context.Businesses.ToListAsync();
+
+        return businesses.Select(business => new Business
+        {
+            Id = business.Id,
+            Name = business.Name,
+            OwnerId = business.OwnerId,
+            BusinessType = business.BusinessType,
+            Logo = business.Logo,
+            Address = business.Address,
+            City = business.City,
+            ZipCode = business.ZipCode,
+            Country = business.Country,
+            QrCodeToken = business.QrCodeToken,
+            AverageServiceTime = business.AverageServiceTime,
+            IsQueueActive = business.IsQueueActive,
+            IsQueuePaused = business.IsQueuePaused,
+            MaxQueueSize = business.MaxQueueSize,
+            OpeningHours = business.OpeningHours,
+            CustomMessage = business.CustomMessage,
+            SmsNotificationsEnabled = business.SmsNotificationsEnabled,
+            AutoAdvanceEnabled = business.AutoAdvanceEnabled,
+            ClientTimeoutMinutes = business.ClientTimeoutMinutes,
+            IsActive = business.IsActive,
+            CreatedAt = business.CreatedAt,
+            UpdatedAt = business.UpdatedAt,
+        });
+    }
 }

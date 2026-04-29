@@ -40,7 +40,6 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
         return Ok(user);
     }
 
-
     [HttpPatch()]
     [Authorize(AuthenticationSchemes = "Bearer")]
     // [EnableRateLimiting("fixed")]

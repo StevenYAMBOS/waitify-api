@@ -8,6 +8,7 @@ namespace WaitifyApi.Repositories
     {
         Task<Business?> FindBusinessByIdAsync(Guid id);
         Task<Business?> FindBusinessByQrTokenAsync(Guid qrCodeToken);
+        Task<IEnumerable<Business>> GetAllBusinessesAsync(string id);
         Task<string> CreateBusinessAsync(string userId, BusinessRequest request);
         Task<(bool Success, Business? Business, string? Error)> UpdateBusinessAsync(Guid businessId, JsonPatchDocument<Business> patchDocument);
         Task<Business?> UpdateBusinessLogoAsync(

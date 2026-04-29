@@ -256,6 +256,15 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
 
         var businesses = await context.Businesses.ToListAsync();
 
+        foreach (Business business in businesses)
+        {
+            if (business.OwnerId != user?.Id.ToString())
+            {
+                logger.LogError("Accès interdit. L'id utilisateur est incorrecte.\n ID en base de données : `{@0}`.\n ID de la requête : `{@1}`.", user?.Id, id);
+                return null;
+            }
+        }
+
         return businesses.Select(business => new Business
         {
             Id = business.Id,

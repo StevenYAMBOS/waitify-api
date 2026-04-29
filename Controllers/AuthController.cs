@@ -1,6 +1,11 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using WaitifyApi.Data;
+using WaitifyApi.Entities;
 using WaitifyApi.Enums;
 using WaitifyApi.Models;
 using WaitifyApi.Repositories;
@@ -12,6 +17,7 @@ namespace WaitifyApi.Controllers
     [ApiController]
     public class AuthController(
         IAuthRepository authService,
+        SignInManager<ApplicationUser> signInManager,
         ILogger<AuthController> logger
     ) : ControllerBase
     {
@@ -53,6 +59,31 @@ namespace WaitifyApi.Controllers
 
             logger.LogInformation("Token : {0}", tokens?.AccessToken);
             return Ok(tokens);
+        }
+
+        [HttpGet("login/google")]
+        public async Task<IActionResult> GoogleLogin([FromQuery] string returnUrl, LinkGenerator linkGenerator)
+        {
+            var properties = signInManager.ConfigureExternalAuthenticationProperties("Google",
+                linkGenerator.GetPathByName(HttpContext, "GoogleLoginCallback")
+                + $"?returnUrl={returnUrl}");
+
+            return Challenge(properties, ["Google"]);
+        }
+
+        [HttpGet("login/google/callback")]
+        public async Task<IActionResult> GoogleCallBack([FromQuery] string returnUrl, IAuthRepository authService)
+        {
+            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+
+            if (!result.Succeeded)
+            {
+                return Unauthorized();
+            }
+
+            await authService.LoginWithGoogleAsync(result.Principal);
+
+            return Redirect(returnUrl);
         }
 
         [HttpPost("refresh")]

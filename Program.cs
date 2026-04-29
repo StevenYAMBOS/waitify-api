@@ -13,6 +13,10 @@ using WaitifyApi.Repositories;
 using WaitifyApi.Services;
 using Microsoft.OpenApi;
 using WaitifyApi.Helpers;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.Google;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -55,6 +59,8 @@ var issuer = Environment.GetEnvironmentVariable("AppSettingsIssuer");
 var audience = Environment.GetEnvironmentVariable("AppSettingsAudience");
 var databaseConfig = Environment.GetEnvironmentVariable("DatabaseConnection");
 var azureBlobStorageConnStrg = Environment.GetEnvironmentVariable("AzureBlobStorage");
+var auhtenticationGoogleClientId = Environment.GetEnvironmentVariable("AuhtenticationGoogleClientId");
+var auhtenticationGoogleSecret = Environment.GetEnvironmentVariable("AuhtenticationGoogleSecret");
 
 builder.Services
     .AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -79,7 +85,22 @@ builder.Services.AddAuthentication(options =>
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
     options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-}).AddJwtBearer(options =>
+}).AddCookie().AddGoogle(options =>
+{
+    if (auhtenticationGoogleClientId == null)
+    {
+        throw new ArgumentNullException(nameof(auhtenticationGoogleClientId));
+    }
+    if (auhtenticationGoogleSecret == null)
+    {
+        throw new ArgumentNullException(nameof(auhtenticationGoogleSecret));
+    }
+
+    options.ClientId = auhtenticationGoogleClientId;
+    options.ClientSecret = auhtenticationGoogleSecret;
+    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
 {
     options.Events = new JwtBearerEvents()
     {

@@ -4,10 +4,13 @@ using WaitifyApi.Entities;
 using WaitifyApi.Repositories;
 using WaitifyApi.Enums;
 using Newtonsoft.Json;
+using System.Security.Claims;
+using WaitifyApi.Exceptions;
 
 namespace WaitifyApi.Services;
 
-public class AuthService(UserManager<ApplicationUser> userManager,
+public class AuthService(
+    UserManager<ApplicationUser> userManager,
     TokenService tokenService,
     FileStorageService fileStorageService,
     ILogger<AuthService> logger) : IAuthRepository
@@ -117,5 +120,71 @@ public class AuthService(UserManager<ApplicationUser> userManager,
 
         var tokens = await GenerateTokensAsync(user);
         return (true, tokens, null);
+    }
+
+    public async Task LoginWithGoogleAsync(ClaimsPrincipal? claimsPrincipal)
+    {
+        if (claimsPrincipal == null)
+        {
+            throw new ExternalLoginProviderException("Google", "ClaimsPrincipal est `null`");
+        }
+
+        var email = claimsPrincipal.FindFirstValue(ClaimTypes.Email);
+
+        if (email == null)
+        {
+            throw new ExternalLoginProviderException("Google", "Email est `null`");
+        }
+
+        var user = await userManager.FindByEmailAsync(email);
+
+        if (user == null)
+        {
+            var newUser = new ApplicationUser
+            {
+                UserName = email,
+                Email = email,
+                FirstName = claimsPrincipal.FindFirstValue(ClaimTypes.GivenName) ?? string.Empty,
+                LastName = claimsPrincipal.FindFirstValue(ClaimTypes.Surname) ?? string.Empty,
+                // EmailConfirmed = true
+            };
+
+            var result = await userManager.CreateAsync(newUser);
+
+            if (!result.Succeeded)
+            {
+                throw new ExternalLoginProviderException("Google",
+                    $"Unable to create user: {string.Join(", ",
+                        result.Errors.Select(x => x.Description))}");
+            }
+
+            user = newUser;
+        }
+
+        var info = new UserLoginInfo("Google",
+            claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty,
+            "Google");
+
+        var loginResult = await userManager.AddLoginAsync(user, info);
+
+        if (!loginResult.Succeeded)
+        {
+            throw new ExternalLoginProviderException("Google",
+                $"Unable to login user: {string.Join(", ",
+                    loginResult.Errors.Select(x => x.Description))}");
+        }
+
+        var jwtToken = tokenService.CreateTokenAsync(user);
+        var refreshTokenValue = tokenService.GenerateRefreshToken();
+
+        var refreshTokenExpirationDateInUtc = DateTime.UtcNow.AddDays(7);
+
+        user.RefreshToken = refreshTokenValue;
+        // user.RefreshTokenExpiresAtUtc = refreshTokenExpirationDateInUtc;
+
+        await userManager.UpdateAsync(user);
+
+        // tokenService.WriteAuthTokenAsHttpOnlyCookie("ACCESS_TOKEN", jwtToken, expirationDateInUtc);
+        // tokenService.WriteAuthTokenAsHttpOnlyCookie("REFRESH_TOKEN", user.RefreshToken, refreshTokenExpirationDateInUtc);
     }
 }

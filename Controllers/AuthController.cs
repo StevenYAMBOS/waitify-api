@@ -9,6 +9,10 @@ using WaitifyApi.Entities;
 using WaitifyApi.Enums;
 using WaitifyApi.Models;
 using WaitifyApi.Repositories;
+using WaitifyApi.Services;
+using Google.Apis.Auth;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace WaitifyApi.Controllers
 {
@@ -17,6 +21,8 @@ namespace WaitifyApi.Controllers
     [ApiController]
     public class AuthController(
         IAuthRepository authService,
+        IApplicationUserRepository userService,
+        TokenService tokenService,
         SignInManager<ApplicationUser> signInManager,
         ILogger<AuthController> logger
     ) : ControllerBase
@@ -62,27 +68,28 @@ namespace WaitifyApi.Controllers
         }
 
         [HttpGet("login/google")]
-        public async Task<IActionResult> GoogleLogin([FromQuery] string returnUrl, LinkGenerator linkGenerator)
+        public IActionResult GoogleLogin([FromQuery] string returnUrl, LinkGenerator linkGenerator)
         {
-            var properties = signInManager.ConfigureExternalAuthenticationProperties("Google",
-                linkGenerator.GetPathByName(HttpContext, "GoogleLoginCallback")
-                + $"?returnUrl={returnUrl}");
+            var callbackUrl = linkGenerator.GetPathByName(HttpContext, "GoogleLoginCallback")
+                + $"?returnUrl={Uri.EscapeDataString(returnUrl)}";
+
+            var properties = signInManager.ConfigureExternalAuthenticationProperties(
+                "Google", callbackUrl);
 
             return Challenge(properties, ["Google"]);
         }
 
-        [HttpGet("login/google/callback")]
-        public async Task<IActionResult> GoogleCallBack([FromQuery] string returnUrl, IAuthRepository authService)
+        [HttpGet("signin-google")]
+        [EndpointName("GoogleLoginCallback")]
+        public async Task<IActionResult> GoogleLoginCallback([FromQuery] string returnUrl)
         {
-            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+            var result = await HttpContext.AuthenticateAsync(
+                CookieAuthenticationDefaults.AuthenticationScheme);
 
             if (!result.Succeeded)
-            {
                 return Unauthorized();
-            }
 
             await authService.LoginWithGoogleAsync(result.Principal);
-
             return Redirect(returnUrl);
         }
 

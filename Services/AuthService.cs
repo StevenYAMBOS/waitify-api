@@ -146,7 +146,7 @@ public class AuthService(
                 Email = email,
                 FirstName = claimsPrincipal.FindFirstValue(ClaimTypes.GivenName) ?? string.Empty,
                 LastName = claimsPrincipal.FindFirstValue(ClaimTypes.Surname) ?? string.Empty,
-                // EmailConfirmed = true
+                EmailConfirmed = true
             };
 
             var result = await userManager.CreateAsync(newUser);
@@ -165,13 +165,14 @@ public class AuthService(
             claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty,
             "Google");
 
-        var loginResult = await userManager.AddLoginAsync(user, info);
+        var existingLogins = await userManager.GetLoginsAsync(user);
+        var alreadyLinked = existingLogins.Any(l =>
+            l.LoginProvider == "Google" && l.ProviderKey == info.ProviderKey);
 
-        if (!loginResult.Succeeded)
+        if (!alreadyLinked)
         {
-            throw new ExternalLoginProviderException("Google",
-                $"Unable to login user: {string.Join(", ",
-                    loginResult.Errors.Select(x => x.Description))}");
+            var loginResult = await userManager.AddLoginAsync(user, info);
+            if (!loginResult.Succeeded) { /* throw */ }
         }
 
         var jwtToken = tokenService.CreateTokenAsync(user);

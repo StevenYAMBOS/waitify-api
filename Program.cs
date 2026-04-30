@@ -15,8 +15,7 @@ using Microsoft.OpenApi;
 using WaitifyApi.Helpers;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Authentication.Google;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -99,6 +98,10 @@ builder.Services.AddAuthentication(options =>
     options.ClientId = auhtenticationGoogleClientId;
     options.ClientSecret = auhtenticationGoogleSecret;
     options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+    options.SaveTokens = true;
+    options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
+    options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
+    // options.CallbackPath = "/signin-google";
 })
 .AddJwtBearer(options =>
 {
@@ -180,10 +183,11 @@ builder.Services.AddSingleton(x => new BlobServiceClient(azureBlobStorageConnStr
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(
+    options.AddPolicy("CorsPolicy",
         policy =>
         {
-            policy.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
+            policy.WithOrigins("http://localhost:4200", "http://localhost:5500").AllowAnyMethod().AllowAnyHeader()
+            .AllowCredentials();
         });
 });
 
@@ -203,7 +207,7 @@ using (var scope = app.Services.CreateScope())
 
 // app.UseRateLimiter();
 app.UseHttpsRedirection();
-app.UseCors();
+app.UseCors("CorsPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

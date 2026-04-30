@@ -27,6 +27,6 @@ public class ApplicationUser : IdentityUser
     public string? RefreshToken { get; set; }
     public DateTime? RefreshTokenExpiryTime { get; set; }
     public virtual ICollection<Business> Businesses { get; set; } = [];
-    // public string? GoogleId { get; set; }
-    // public string? AuthProvider { get; set; }
+    public string? GoogleId { get; set; }
+    public string? AuthProvider { get; set; }
 }

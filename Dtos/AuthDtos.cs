@@ -67,3 +67,8 @@ public record RefreshTokenRequestDTO
     public required string UserId { get; set; }
     public required string RefreshToken { get; set; }
 }
+
+public record GoogleLoginRequest
+{
+    public string? IdToken { get; set; }
+}

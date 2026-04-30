@@ -13,6 +13,12 @@ namespace WaitifyApi.Services
             return user;
         }
 
+        public async Task<ApplicationUser?> FindUserByEmailAsync(string email)
+        {
+            var user = await context.Users.FindAsync(email);
+            return user;
+        }
+
         public async Task<(bool Success, ApplicationUser? User, string? Error)> UpdateProfilAsync(string id, JsonPatchDocument<ApplicationUser> patchDocument)
         {
             try

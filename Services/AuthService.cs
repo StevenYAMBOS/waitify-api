@@ -137,6 +137,9 @@ public class AuthService(
         }
 
         var user = await userManager.FindByEmailAsync(email);
+        var GoogleApiKey = Environment.GetEnvironmentVariable("GoogleApiKey");
+        var GoogleProfilePicture = $"https://people.googleapis.com/v1/people/{claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier)}?personFields=photos&key=image&key={GoogleApiKey}";
+        // var GoogleProfilePictureUrl = GoogleProfilePicture[0].url;
 
         if (user == null)
         {
@@ -146,7 +149,14 @@ public class AuthService(
                 Email = email,
                 FirstName = claimsPrincipal.FindFirstValue(ClaimTypes.GivenName) ?? string.Empty,
                 LastName = claimsPrincipal.FindFirstValue(ClaimTypes.Surname) ?? string.Empty,
-                EmailConfirmed = true
+                EmailConfirmed = true,
+                AuthProvider = "Google",
+                GoogleId = claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty,
+                Role = Role.Owner,
+                PhoneNumber = claimsPrincipal.FindFirstValue(ClaimTypes.HomePhone) ?? claimsPrincipal.FindFirstValue(ClaimTypes.MobilePhone),
+                ProfilePicture = GoogleProfilePicture,
+                CreatedAt = DateTime.UtcNow,
+                LastLogin = DateTime.UtcNow
             };
 
             var result = await userManager.CreateAsync(newUser);

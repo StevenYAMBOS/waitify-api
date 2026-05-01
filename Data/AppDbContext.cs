@@ -40,7 +40,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(b => b.OwnerId);
             entity.HasIndex(b => b.QrCodeToken).IsUnique();
-            // entity.Property(b => b.QrCodeToken).HasValueGenerator<GuidValueGenerator>();
             entity.HasIndex(b => b.IsActive);
         });
 

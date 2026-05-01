@@ -101,6 +101,20 @@ builder.Services.AddAuthentication(options =>
     options.SaveTokens = true;
     options.ClaimActions.MapJsonKey(ClaimTypes.Email, "email");
     options.ClaimActions.MapJsonKey(ClaimTypes.Name, "name");
+    options.ClaimActions.MapJsonKey(ClaimTypes.NameIdentifier, "id");
+    options.ClaimActions.MapJsonKey(ClaimTypes.GivenName, "given_name");
+    options.ClaimActions.MapJsonKey(ClaimTypes.Surname, "family_name");
+    options.ClaimActions.MapJsonKey("urn:google:profile", "link");
+    options.ClaimActions.MapJsonKey("image", "picture");
+    options.Scope.Add("profile");
+    options.Events.OnCreatingTicket = (context) =>
+    {
+        var picture = context.User.GetProperty("picture").GetString();
+
+        context.Identity.AddClaim(new Claim("picture", picture));
+
+        return Task.CompletedTask;
+    };
     // options.CallbackPath = "/signin-google";
 })
 .AddJwtBearer(options =>

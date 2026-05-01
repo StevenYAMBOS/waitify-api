@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 using WaitifyApi.Entities;
 
 namespace WaitifyApi.Data;
@@ -37,9 +38,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .WithMany(o => o.Businesses)
                 .HasForeignKey(b => b.OwnerId)
                 .OnDelete(DeleteBehavior.Cascade);
-
             entity.HasIndex(b => b.OwnerId);
             entity.HasIndex(b => b.QrCodeToken).IsUnique();
+            // entity.Property(b => b.QrCodeToken).HasValueGenerator<GuidValueGenerator>();
             entity.HasIndex(b => b.IsActive);
         });
 
@@ -96,5 +97,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 "\"Status\" IN ('pending', 'sent', 'failed')"
             ));
         });
+
     }
 }

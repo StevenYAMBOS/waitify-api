@@ -139,6 +139,13 @@ public class AuthService(
         var user = await userManager.FindByEmailAsync(email);
         var GoogleApiKey = Environment.GetEnvironmentVariable("GoogleApiKey");
         var GoogleProfilePicture = $"https://people.googleapis.com/v1/people/{claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier)}?personFields=photos&key=image&key={GoogleApiKey}";
+        // using (HttpClient httpClient = new HttpClient())
+        // {
+        //     string s = await httpClient.GetStringAsync(GoogleProfilePicture);
+        //     dynamic deserializeObject = JsonConvert.DeserializeObject(s);
+        //     string thumbnailUrl = (string)deserializeObject.image.url;
+        //     byte[] thumbnail = await httpClient.GetByteArrayAsync(thumbnailUrl);
+        // }
         // var GoogleProfilePictureUrl = GoogleProfilePicture[0].url;
 
         if (user == null)
@@ -176,24 +183,26 @@ public class AuthService(
             "Google");
 
         var existingLogins = await userManager.GetLoginsAsync(user);
-        var alreadyLinked = existingLogins.Any(l =>
-            l.LoginProvider == "Google" && l.ProviderKey == info.ProviderKey);
-
-        if (!alreadyLinked)
+        if (!existingLogins.Any(l => l.LoginProvider == info.LoginProvider && l.ProviderKey == info.ProviderKey))
         {
             var loginResult = await userManager.AddLoginAsync(user, info);
-            if (!loginResult.Succeeded) { /* throw */ }
+
+            if (!loginResult.Succeeded)
+            {
+                throw new ExternalLoginProviderException("Google",
+                    $"Unable to login user: {string.Join(", ", loginResult.Errors.Select(x => x.Description))}");
+            }
         }
 
-        var jwtToken = tokenService.CreateTokenAsync(user);
-        var refreshTokenValue = tokenService.GenerateRefreshToken();
+        // var jwtToken = tokenService.CreateTokenAsync(user);
+        // var refreshTokenValue = tokenService.GenerateRefreshToken();
 
-        var refreshTokenExpirationDateInUtc = DateTime.UtcNow.AddDays(7);
+        // var refreshTokenExpirationDateInUtc = DateTime.UtcNow.AddDays(7);
 
-        user.RefreshToken = refreshTokenValue;
+        // user.RefreshToken = refreshTokenValue;
         // user.RefreshTokenExpiresAtUtc = refreshTokenExpirationDateInUtc;
 
-        await userManager.UpdateAsync(user);
+        // await userManager.UpdateAsync(user);
 
         // tokenService.WriteAuthTokenAsHttpOnlyCookie("ACCESS_TOKEN", jwtToken, expirationDateInUtc);
         // tokenService.WriteAuthTokenAsHttpOnlyCookie("REFRESH_TOKEN", user.RefreshToken, refreshTokenExpirationDateInUtc);

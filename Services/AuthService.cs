@@ -148,6 +148,9 @@ public class AuthService(
         // }
         // var GoogleProfilePictureUrl = GoogleProfilePicture[0].url;
 
+        TimeSpan TwoWeeks = new TimeSpan(360, 0, 0);
+        DateTime trialEndDate = DateTime.UtcNow.Add(TwoWeeks);
+
         if (user == null)
         {
             var newUser = new ApplicationUser
@@ -162,6 +165,7 @@ public class AuthService(
                 Role = Role.Owner,
                 PhoneNumber = claimsPrincipal.FindFirstValue(ClaimTypes.HomePhone) ?? claimsPrincipal.FindFirstValue(ClaimTypes.MobilePhone),
                 ProfilePicture = GoogleProfilePicture,
+                TrialEndsAt = trialEndDate,
                 CreatedAt = DateTime.UtcNow,
                 LastLogin = DateTime.UtcNow
             };

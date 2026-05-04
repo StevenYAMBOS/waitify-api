@@ -81,3 +81,13 @@ string base64String = Convert.ToBase64String(qrCodeAsPngByteArr, 0, qrCodeAsPngB
 
 var base64Png = $"<img src='data:image/png;base64,{base64String}' />";
 ```
+
+---
+
+## Authentification Google OAuth2
+
+Il ne semble pas y avoir de solution "générale". En tout cas, le endpoint par défaut a intégrer sur GCP est `/signin-google` -> `https://localhost:{port}/signin-google`.
+
+J'ai d'abord testé la solution officielle proposée par [Microsoft](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/social/?view=aspnetcore-9.0&tabs=visual-studio). Cependant elle ne propose pas d'intégration avec des controlleurs ni de démonstration avec l'URL à tester (exemple : `https://localhost:{port}/signin-google` ne fonctionne pas, donc c'est quoi l'URL a testé ?).
+
+La solution que j'ai intégré est [celle-ci](https://github.com/RemigiuszZalewski/Google-Authentication-.net-react).

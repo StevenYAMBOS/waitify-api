@@ -198,17 +198,17 @@ public class AuthService(
             }
         }
 
-        // var jwtToken = tokenService.CreateTokenAsync(user);
-        // var refreshTokenValue = tokenService.GenerateRefreshToken();
+        /*         var jwtToken = tokenService.CreateTokenAsync(user);
+                var refreshTokenValue = tokenService.GenerateRefreshToken();
 
-        // var refreshTokenExpirationDateInUtc = DateTime.UtcNow.AddDays(7);
+                var refreshTokenExpirationDateInUtc = DateTime.UtcNow.AddDays(7);
 
-        // user.RefreshToken = refreshTokenValue;
-        // user.RefreshTokenExpiresAtUtc = refreshTokenExpirationDateInUtc;
+                user.RefreshToken = refreshTokenValue;
+                user.RefreshTokenExpiresAtUtc = refreshTokenExpirationDateInUtc;
 
-        // await userManager.UpdateAsync(user);
+                await userManager.UpdateAsync(user);
 
-        // tokenService.WriteAuthTokenAsHttpOnlyCookie("ACCESS_TOKEN", jwtToken, expirationDateInUtc);
-        // tokenService.WriteAuthTokenAsHttpOnlyCookie("REFRESH_TOKEN", user.RefreshToken, refreshTokenExpirationDateInUtc);
+                tokenService.WriteAuthTokenAsHttpOnlyCookie("ACCESS_TOKEN", jwtToken, expirationDateInUtc);
+                tokenService.WriteAuthTokenAsHttpOnlyCookie("REFRESH_TOKEN", user.RefreshToken, refreshTokenExpirationDateInUtc); */
     }
 }

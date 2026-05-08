@@ -189,8 +189,8 @@ builder.Services.AddScoped<IApplicationUserRepository, ApplicationUserService>()
 builder.Services.AddScoped<IBusinessRepository, BusinessService>();
 builder.Services.AddScoped<IQueueRepository, QueueService>();
 builder.Services.AddScoped<QRCodeGeneratorService>();
+builder.Services.AddScoped<IEmailRepository, EmailService>();
 // builder.Services.AddScoped<IContactService, ContactService>();
-// builder.Services.AddScoped<IEmailService, EmailService>();
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(databaseConfig));
 builder.Services.AddSingleton(x => new BlobServiceClient(azureBlobStorageConnStrg));

@@ -13,6 +13,7 @@ public class AuthService(
     UserManager<ApplicationUser> userManager,
     TokenService tokenService,
     FileStorageService fileStorageService,
+    IEmailRepository emailService,
     ILogger<AuthService> logger) : IAuthRepository
 {
     public async Task<(bool Success, string? Token, IEnumerable<string>? Errors)> RegisterAsync(RegisterRequest request)
@@ -63,6 +64,9 @@ public class AuthService(
 
         var token = await tokenService.CreateTokenAsync(user);
         logger.LogInformation("Token de connexion : {@0}", JsonConvert.SerializeObject(token, Formatting.Indented));
+
+        await emailService.RegisterEmail(request?.Email);
+        logger.LogInformation("Email '{0}' envoyé avec succès : ");
 
         return (true, token, null);
     }

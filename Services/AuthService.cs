@@ -69,9 +69,13 @@ public class AuthService(
         var UserName = $"{request?.FirstName} {request?.LastName}";
         var createdAt = DateTime.UtcNow.ToString();
         string url = "https://waitify.fr/unsusbcribe";
+        string UserId = user.Id;
+        var TrialEndDate = trialEndDate.ToString();
 
         await emailService.RegisterEmail(Email, UserName, createdAt, url);
-        logger.LogInformation("Email envoyé avec succès.");
+        await emailService.NewUserAcquiredEmail(Email, UserName, UserId, createdAt, TrialEndDate);
+
+        logger.LogInformation("Emails envoyé avec succès.");
 
         return (true, token, null);
     }

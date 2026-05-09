@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Bienvenue sur Waitify</title>
+    <style>
+        /* Styles généraux pour les clients email qui supportent <style> */
+        .responsive-table {
+            width: 100% !important;
+            max-width: 600px !important;
+            margin: 0 auto !important;
+        }
+        @media only screen and (max-width: 600px) {
+            .stack-cell {
+                display: block !important;
+                width: 100% !important;
+                text-align: center !important;
+                padding: 10px 0 !important;
+            }
+            .cta-button {
+                display: inline-block !important;
+                width: 80% !important;
+                text-align: center !important;
+            }
+            .content-padding {
+                padding-left: 20px !important;
+                padding-right: 20px !important;
+            }
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #F9FAFB; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    
+    <!-- Conteneur principal -->
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F9FAFB" style="background-color: #F9FAFB;">
+        <tr>
+            <td align="center" style="padding: 32px 16px;">
+                
+                <!-- Email container : largeur max 600px -->
+                <table class="responsive-table" width="600" cellpadding="0" cellspacing="0" border="0" bgcolor="#FFFFFF" style="max-width: 600px; width: 100%; background-color: #FFFFFF; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); border: 1px solid #E5E7EB;">
+                    
+                    <!-- HEADER : Logo + bandeau primaire -->
+                    <tr>
+                        <td align="center" bgcolor="#2563EB" style="background-color: #2563EB; padding: 32px 24px; border-radius: 12px 12px 0 0;">
+                            <img src="https://app.waitify.fr/assets/logo-white.png" alt="Waitify" width="160" style="display: block; border: 0; width: 160px; max-width: 100%; height: auto;" />
+                            <p style="margin: 12px 0 0 0; font-size: 14px; color: #EFF6FF; font-weight: 400;">La gestion de files d'attente virtuelles par QR Code</p>
+                        </td>
+                    </tr>
+                    
+                    <!-- CORPS PRINCIPAL -->
+                    <tr>
+                        <td class="content-padding" style="padding: 40px 32px;">
+                            
+                            <!-- Message de bienvenue -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td>
+                                        <h1 style="font-size: 24px; font-weight: 700; color: #111827; margin: 0 0 8px 0; line-height: 1.3;">Bonjour {userName},</h1>
+                                        <p style="font-size: 16px; line-height: 1.6; color: #111827; margin: 16px 0 0 0;">
+                                            Félicitations et merci pour votre confiance. Votre espace commerçant <strong>Waitify</strong> a été créé avec succès. 
+                                            Nous sommes ravis de vous accompagner dans la digitalisation de votre file d'attente.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Récapitulatif informations compte (Card) -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F9FAFB" style="background-color: #F9FAFB; border-radius: 12px; border: 1px solid #E5E7EB; margin: 32px 0;">
+                                <tr>
+                                    <td style="padding: 20px 24px;">
+                                        <h2 style="font-size: 16px; font-weight: 600; color: #111827; margin: 0 0 16px 0;">Récapitulatif de votre compte</h2>
+                                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td width="120" style="padding: 8px 0; font-size: 14px; color: #6B7280; vertical-align: top;">Email :</td>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #111827; font-weight: 500;">{receiver}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #6B7280; vertical-align: top;">Date d'inscription :</td>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #111827; font-weight: 500;">{createdAt}</td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #6B7280; vertical-align: top;">Période d'essai :</td>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #111827; font-weight: 500;">14 jours gratuits</td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Badge d'information (inspiré §5.2 de Design.md) -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#EFF6FF" style="background-color: #EFF6FF; border-radius: 8px; margin: 24px 0;">
+                                <tr>
+                                    <td style="padding: 14px 20px;">
+                                        <p style="margin: 0; font-size: 14px; color: #2563EB; font-weight: 500;">
+                                            ⚡ Votre première étape : créer votre premier établissement
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- CTA PRINCIPAL : Créer mon entreprise -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 24px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="https://app.waitify.fr/business" style="display: inline-block; background-color: #2563EB; color: #FFFFFF; font-size: 16px; font-weight: 600; text-decoration: none; padding: 12px 32px; border-radius: 8px; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">CRÉER MON ENTREPRISE</a>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align="center" style="padding-top: 12px;">
+                                        <p style="margin: 0; font-size: 13px; color: #6B7280;">Ajoutez votre établissement, générez votre QR Code et ouvrez votre file d'attente virtuelle</p>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- CTA SECONDAIRE : Prendre un abonnement -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 16px 0 24px 0;">
+                                <tr>
+                                    <td align="center">
+                                        <a href="https://app.waitify.fr/user/profile" style="display: inline-block; background-color: transparent; color: #2563EB; font-size: 14px; font-weight: 600; text-decoration: none; padding: 10px 24px; border-radius: 8px; border: 1.5px solid #2563EB;">Prendre un abonnement</a>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                            <!-- Paragraphe rassurant + support -->
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin: 32px 0 0 0; border-top: 1px solid #E5E7EB;">
+                                <tr>
+                                    <td style="padding-top: 32px;">
+                                        <p style="font-size: 14px; line-height: 1.6; color: #111827; margin: 0 0 16px 0;">
+                                            Notre équipe est là pour vous aider à chaque étape. Besoin d'un conseil, d'une démo personnalisée ou d'un coup de main pour configurer votre première file ? 
+                                            <strong>Répondez simplement à cet email</strong> — nous vous répondrons personnellement.
+                                        </p>
+                                        <p style="font-size: 14px; color: #6B7280; margin: 0;">
+                                            À très vite sur Waitify,
+                                        </p>
+                                        <p style="font-size: 14px; font-weight: 600; color: #111827; margin: 8px 0 0 0;">
+                                            L'équipe Waitify
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                            
+                        </td>
+                    </tr>
+                    
+                    <!-- FOOTER (légal + désinscription) -->
+                    <tr>
+                        <td bgcolor="#F9FAFB" style="background-color: #F9FAFB; padding: 24px 32px; border-top: 1px solid #E5E7EB; border-radius: 0 0 12px 12px;">
+                            <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td align="center">
+                                        <p style="margin: 0 0 8px 0; font-size: 12px; color: #6B7280; line-height: 1.4;">
+                                            <a href="{{unsubscribe_link}}" style="color: #6B7280; text-decoration: underline;">Se désinscrire</a> 
+                                            de ces emails de bienvenue.
+                                        </p>
+                                        <p style="margin: 0 0 8px 0; font-size: 12px; color: #6B7280; line-height: 1.4;">
+                                            Waitify — 10 rue de la Paix, 75002 Paris, France
+                                        </p>
+                                        <p style="margin: 0; font-size: 12px; color: #9CA3AF;">
+                                            © 2025 Waitify. Tous droits réservés. 
+                                            <a href="https://waitify.fr/cgv" style="color: #2563EB; text-decoration: underline;">CGV</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    
+                </table>
+                <!-- Fin container email -->
+                
+                <!-- Message supplémentaire invisible dans l'email mais utile -->
+                <p style="margin: 24px 0 0 0; font-size: 11px; color: #9CA3AF; text-align: center;">
+                    Cet email a été envoyé à {email_utilisateur} dans le cadre de la création de votre compte Waitify.
+                </p>
+                
+            </td>
+        </tr>
+    </table>
+    <!-- Fin conteneur principal -->
+    
+</body>
+</html>

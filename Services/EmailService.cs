@@ -22,6 +22,14 @@ public class EmailService(ILogger<EmailService> logger, IWebHostEnvironment envi
             email.To.Add(new MailboxAddress("Destinataire", receiver));
             email.Subject = "Bienvenue chez Waitify !";
 
+            logger.LogInformation("Email destinataire : {@0}", receiver);
+            logger.LogInformation("Pseudo utilisateur : {@0}", userName);
+            logger.LogInformation("Date d'envoi : {@0}", createdAt);
+            logger.LogInformation("Lien se désinscrire : {@0}", url);
+            logger.LogInformation("Serveur SMTP : {@0}", smtpServer);
+            logger.LogInformation("Utilisateur SMTP : {@0}", smtpUser);
+            logger.LogInformation("Port SMTP : {@0}", port);
+
             string body = PopulateBody(userName, receiver, createdAt, url);
 
             var builder = new BodyBuilder()
@@ -31,13 +39,12 @@ public class EmailService(ILogger<EmailService> logger, IWebHostEnvironment envi
             ;
             email.Body = builder.ToMessageBody();
 
-            /*
-            var builder = new BodyBuilder();
-            using (StreamReader SourceReader = File.OpenText("Utils/RegisterEmail.html"))
-                builder.HtmlBody = SourceReader.ReadToEnd();
+            // var builder = new BodyBuilder();
+            // using (StreamReader SourceReader = File.OpenText("Utils/RegisterEmail.html"))
+            //     builder.HtmlBody = SourceReader.ReadToEnd();
 
-            email.Body = builder.ToMessageBody();
-            */
+            // email.Body = builder.ToMessageBody();
+
 
             using var smtp = new SmtpClient();
 
@@ -56,11 +63,17 @@ public class EmailService(ILogger<EmailService> logger, IWebHostEnvironment envi
     private string PopulateBody(string userName, string receiver, string createdAt, string url)
     {
         string body = string.Empty;
-        string path = Path.Combine(environment.WebRootPath, "Utils/RegisterEmail.html");
-        using (StreamReader reader = new StreamReader(path))
+        using (StreamReader SourceReader = File.OpenText("Utils/RegisterEmail.html"))
         {
-            body = reader.ReadToEnd();
+            body = SourceReader.ReadToEnd();
         }
+
+        // string path = Path.Combine(environment.WebRootPath, "Utils/RegisterEmail.html");
+        // using (StreamReader reader = new StreamReader(path))
+        // {
+        //     body = reader.ReadToEnd();
+        // }
+
         body = body.Replace("{userName}", userName);
         body = body.Replace("{receiver}", receiver);
         body = body.Replace("{createdAt}", createdAt);

@@ -65,12 +65,13 @@ public class AuthService(
         var token = await tokenService.CreateTokenAsync(user);
         logger.LogInformation("Token de connexion : {@0}", JsonConvert.SerializeObject(token, Formatting.Indented));
 
-        var UserName = $"{request.FirstName} + ' ' + {request.LastName}";
+        var Email = request?.Email;
+        var UserName = $"{request?.FirstName} {request?.LastName}";
         var createdAt = DateTime.UtcNow.ToString();
         string url = "https://waitify.fr/unsusbcribe";
 
-        await emailService.RegisterEmail(request?.Email, UserName, createdAt, url);
-        logger.LogInformation("Email '{0}' envoyé avec succès : ");
+        await emailService.RegisterEmail(Email, UserName, createdAt, url);
+        logger.LogInformation("Email envoyé avec succès.");
 
         return (true, token, null);
     }

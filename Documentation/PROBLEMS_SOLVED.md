@@ -91,3 +91,16 @@ Il ne semble pas y avoir de solution "générale". En tout cas, le endpoint par 
 J'ai d'abord testé la solution officielle proposée par [Microsoft](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/social/?view=aspnetcore-9.0&tabs=visual-studio). Cependant elle ne propose pas d'intégration avec des controlleurs ni de démonstration avec l'URL à tester (exemple : `https://localhost:{port}/signin-google` ne fonctionne pas, donc c'est quoi l'URL a testé ?).
 
 La solution que j'ai intégré est [celle-ci](https://github.com/RemigiuszZalewski/Google-Authentication-.net-react).
+
+---
+
+## Email template avec paramètres
+
+Meilleure documentation ici -> https://www.aspsnippets.com/Articles/4250/Send-Email-with-HTML-Templates-using-MailKit-in-ASPNet-Core/.
+
+Pour faire simple, on crée une méthode privée (enfant) qui va stocker les paramètres et l'envoie de l'email puis on appelle cette méthode dans la méthode parente pour envoyer l'email avec le serveur SMTP.
+
+Autres liens utiles (concernant l'appel des chemins des templates) :
+
+- [Stack Overflow (réponse acceptée)](https://stackoverflow.com/questions/42478814/send-email-using-html-template-with-mailkit-in-net-core-application).
+- [Stack Overflow (réponse de Cinchoo)](https://stackoverflow.com/questions/10623656/streamreader-to-a-relative-filepath).

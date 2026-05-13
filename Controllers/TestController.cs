@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Newtonsoft.Json;
+using WaitifyApi.Helpers;
 using WaitifyApi.Services;
 
 namespace WaitifyApi.Controllers
@@ -18,7 +19,7 @@ namespace WaitifyApi.Controllers
         {
             var message = "Hello World !";
             Console.WriteLine(message);
-            logger.LogInformation("Token de connexion : {0}", JsonConvert.SerializeObject(message, Formatting.Indented));
+            logger.LogInformation("Message : {@0}", JsonResponseHelper.JsonConversion(message));
 
             return message;
         }

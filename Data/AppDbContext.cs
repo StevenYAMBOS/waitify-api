@@ -13,6 +13,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<QueueEntries> Queues { get; set; }
     public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
     public DbSet<SmsLog> SmsLogs { get; set; }
+    public DbSet<Contact> Contacts { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

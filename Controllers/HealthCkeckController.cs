@@ -3,6 +3,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Threading.Tasks;
+using WaitifyApi.Helpers;
 
 namespace WaitifyApi.Controllers;
 
@@ -19,6 +20,16 @@ public class HealthController(ILogger<HealthController> logger, HealthCheckServi
         var report = await _service.CheckHealthAsync();
 
         _logger.LogInformation("Get Health Information : {@0}", report);
+
+        return report.Status == HealthStatus.Healthy ? Ok(report) : StatusCode((int)HttpStatusCode.ServiceUnavailable, report);
+    }
+
+    [HttpGet("azure")]
+    public async Task<IActionResult> GetAzureBlobStorageService()
+    {
+        var report = await _service.CheckHealthAsync();
+
+        _logger.LogInformation("Get Health Information : {@0}", JsonResponseHelper.JsonConversion(report));
 
         return report.Status == HealthStatus.Healthy ? Ok(report) : StatusCode((int)HttpStatusCode.ServiceUnavailable, report);
     }

@@ -108,7 +108,6 @@ public class EmailService(ILogger<EmailService> logger) : IEmailRepository
         body = body.Replace("{url}", url);
         return body;
     }
-
     public async Task SendContactEmail(string sender, string subject, string body, IFormFile file)
     {
         try

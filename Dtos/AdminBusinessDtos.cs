@@ -31,13 +31,6 @@ public record AdminBusinessRequest
     public Guid QrCodeToken { get; set; }
 };
 
-public record AdminCreateBusinessResponse
-{
-    public bool Created;
-    public string? Message;
-    public string? Error;
-};
-
 /* public record AdminUpdateBusinessGeneralInfosRequest
 {
     public Guid Id { get; set; }

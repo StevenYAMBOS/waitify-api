@@ -16,6 +16,7 @@ using WaitifyApi.Helpers;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -115,7 +116,6 @@ builder.Services.AddAuthentication(options =>
 
         return Task.CompletedTask;
     };
-    // options.CallbackPath = "/signin-google";
 })
 .AddJwtBearer(options =>
 {
@@ -196,6 +196,36 @@ builder.Services.AddScoped<IContactRepository, ContactService>();
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(databaseConfig));
 builder.Services.AddSingleton(x => new BlobServiceClient(azureBlobStorageConnStrg));
 
+builder.Services.AddRateLimiter(options =>
+{
+    options.OnRejected = async (context, token) =>
+{
+    context.HttpContext.Response.StatusCode = 429;
+    if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
+    {
+        await context.HttpContext.Response.WriteAsync(
+            $"Too many requests. Please try again after {retryAfter.TotalMinutes} minute(s). " +
+            $"Read more about our rate limits at https://example.org/docs/ratelimiting.", cancellationToken: token);
+    }
+    else
+    {
+        await context.HttpContext.Response.WriteAsync(
+            "Too many requests. Please try again later. " +
+            "Read more about our rate limits at https://example.org/docs/ratelimiting.", cancellationToken: token);
+    }
+};
+    options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.User.Identity?.Name ?? httpContext.Request.Headers.Host.ToString(),
+            factory: partition => new FixedWindowRateLimiterOptions
+            {
+                AutoReplenishment = true,
+                PermitLimit = 10,
+                QueueLimit = 0,
+                Window = TimeSpan.FromMinutes(1)
+            }));
+});
+
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("CorsPolicy",
@@ -222,7 +252,7 @@ using (var scope = app.Services.CreateScope())
     await RoleHelper.EnsureRolesCreated(roleManager);
 }
 
-// app.UseRateLimiter();
+app.UseRateLimiter();
 app.UseHttpsRedirection();
 app.UseCors("CorsPolicy");
 app.UseAuthentication();

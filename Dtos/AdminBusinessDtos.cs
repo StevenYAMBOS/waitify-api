@@ -27,8 +27,8 @@ public record AdminBusinessRequest
     [Required(ErrorMessage = "Le pays est obligatoire.")]
     public string Country { get; set; } = "France";
 
-    [Required(ErrorMessage = "Le QRCode est obligatoire.")]
-    public Guid QrCodeToken { get; set; }
+    // [Required(ErrorMessage = "Le QRCode est obligatoire.")]
+    // public Guid QrCodeToken { get; set; }
 };
 
 /* public record AdminUpdateBusinessGeneralInfosRequest

@@ -1,6 +1,4 @@
 using Microsoft.AspNetCore.JsonPatch;
-using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using WaitifyApi.Constants;
 using WaitifyApi.Data;
 using WaitifyApi.Entities;
@@ -23,7 +21,7 @@ public class AdminBusinessService(AppDbContext context, IApplicationUserReposito
 
         string? logoUrl = null;
         string businessName = $"{request.Name}";
-        string azureContainerName = Environment.GetEnvironmentVariable("AzureBlobBusinessesContainer")!;
+        string azureContainerName = AppConstants.Azure.BusinessesContainer;
         Guid qrCodeToken = Guid.NewGuid();
 
         if (request.Logo is not null)
@@ -50,7 +48,7 @@ public class AdminBusinessService(AppDbContext context, IApplicationUserReposito
         context.Businesses.Add(business);
         await context.SaveChangesAsync();
 
-        var url = AppConstants.WaitifyUrl + "/q/" + qrCodeToken;
+        var url = AppConstants.Config.WaitifyUrl + "/q/" + qrCodeToken;
         var qrCodeGenerated = await qRCodeHelper.GenerateQRCode(url);
 
         logger.LogInformation("ID entreprise : {@0}", business.Id);
@@ -63,9 +61,10 @@ public class AdminBusinessService(AppDbContext context, IApplicationUserReposito
         throw new NotImplementedException();
     }
 
-    public Task<Business?> AdminFindBusinessByIdAsync(string businessId)
+    public async Task<Business?> AdminFindBusinessByIdAsync(Guid businessId)
     {
-        throw new NotImplementedException();
+        var business = await context.Businesses.FindAsync(businessId);
+        return business;
     }
 
     public Task<string> AdminGenerateNewQRCodeAsync(Guid businessId, string userId, Guid qrCodeToken)

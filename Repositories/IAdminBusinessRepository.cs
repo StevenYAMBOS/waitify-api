@@ -9,7 +9,7 @@ namespace WaitifyApi.Repositories;
 public interface IAdminBusinessRepository
 {
     Task<string> AdminCreateBusinessAsync(string userId, AdminBusinessRequest request);
-    Task<Business?> AdminFindBusinessByIdAsync(string businessId);
+    Task<Business?> AdminFindBusinessByIdAsync(Guid businessId);
     Task<IEnumerable<Business>> AdminGetAllBusinessesAsync();
     Task<IEnumerable<Business>> AdminGetBusinessesOfUserAsync(string userId);
     Task<(bool Success, Business? Business, string? Error)> AdminUpdateBusinessAsync(Guid businessId, JsonPatchDocument<Business> patchDocument);

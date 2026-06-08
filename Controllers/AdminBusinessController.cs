@@ -1,9 +1,5 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
-using Newtonsoft.Json;
-using WaitifyApi.Entities;
 using WaitifyApi.Helpers;
 using WaitifyApi.Models;
 using WaitifyApi.Repositories;
@@ -11,7 +7,7 @@ using WaitifyApi.Services;
 
 namespace WaitifyApi.Controllers;
 
-[Route("api/admin/business")]
+[Route("api/admin-business")]
 [EnableRateLimiting("fixed")]
 [ApiController]
 public class AdminBusinessController(
@@ -21,7 +17,7 @@ public class AdminBusinessController(
 ) : ControllerBase
 {
     [HttpPost]
-    public async Task<IActionResult> CreateBusiness([FromForm] AdminBusinessRequest request)
+    public async Task<IActionResult> AdminCreateBusiness([FromForm] AdminBusinessRequest request)
     {
         var idFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
         if (idFromFromJwt == null)
@@ -35,15 +31,29 @@ public class AdminBusinessController(
             return StatusCode(StatusCodes.Status400BadRequest, "La taille du fichier ne doit pas excéder 1MB.");
         }
 
-        var business = await adminBusinessService.AdminCreateBusinessAsync(idFromFromJwt, request);
+        var newBusinessCreated = await adminBusinessService.AdminCreateBusinessAsync(idFromFromJwt, request);
 
-        if (business == null)
+        if (newBusinessCreated == null)
         {
             logger.LogError("Erreur lors de la création de l'entreprise.");
             return StatusCode(StatusCodes.Status404NotFound, "Erreur lors de la création de l'entreprise.");
         }
 
-        logger.LogInformation("Entreprise créé : {@0}", JsonResponseHelper.JsonConversion(business));
+        logger.LogInformation("Entreprise créé : {@0}", JsonResponseHelper.JsonConversion(newBusinessCreated));
+        return Ok(newBusinessCreated);
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> AdminGetBusinessById(Guid id)
+    {
+        var business = await adminBusinessService.AdminFindBusinessByIdAsync(id);
+        if (business == null)
+        {
+            logger.LogInformation("Entreprise avec l'id : `{id}` introuvable", id);
+            return StatusCode(StatusCodes.Status404NotFound, "Entreprise introuvable");
+        }
+        logger.LogInformation("ENTREPRISE : {@0}", JsonResponseHelper.JsonConversion(business));
         return Ok(business);
     }
+
 }

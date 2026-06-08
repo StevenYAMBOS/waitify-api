@@ -35,7 +35,7 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             throw new KeyNotFoundException("Utilisateur non trouvé.");
         }
 
-        var url = AppConstants.WaitifyUrl + "/q/" + qrCodeToken;
+        var url = AppConstants.Config.WaitifyUrl + "/q/" + qrCodeToken;
         var qrCodeGenerated = await qRCodeHelper.GenerateQRCode(url);
 
         logger.LogInformation("Nouveau QRCode généré : {@0}", JsonConvert.SerializeObject(qrCodeGenerated, Formatting.Indented));
@@ -101,7 +101,7 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         context.Businesses.Add(business);
         await context.SaveChangesAsync();
 
-        var url = AppConstants.WaitifyUrl + "/q/" + qrCodeToken;
+        var url = AppConstants.Config.WaitifyUrl + "/q/" + qrCodeToken;
         var qrCodeGenerated = await qRCodeHelper.GenerateQRCode(url);
 
         logger.LogInformation("ID entreprise : {@0}", business.Id);

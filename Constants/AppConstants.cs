@@ -14,4 +14,14 @@ public static class AppConstants
         public static string UsersContainer = Environment.GetEnvironmentVariable("AzureBlobUsersContainer")!;
         public static string BusinessesContainer = Environment.GetEnvironmentVariable("AzureBlobBusinessesContainer")!;
     }
+
+    public record Roles
+    {
+        public const string Admin = "Admin";
+    }
+
+    public record Authorization
+    {
+        public const string Denied = "Accès non autorisé";
+    }
 }

@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using WaitifyApi.Constants;
 using WaitifyApi.Data;
 using WaitifyApi.Entities;
+using WaitifyApi.Enums;
 using WaitifyApi.Helpers;
 using WaitifyApi.Models;
 using WaitifyApi.Repositories;
@@ -290,5 +291,28 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             CreatedAt = business.CreatedAt,
             UpdatedAt = business.UpdatedAt,
         });
+    }
+
+    public async Task<GetAllWaitifyBusinessesResponse> GetAllWaitifyBusinessesAsync(string userId)
+    {
+        var user = await userService.FindUserByIdAsync(userId);
+        var role = user?.Role;
+        var businesses = await context.Businesses.ToListAsync();
+        var businessesCount = await context.Businesses.CountAsync();
+
+        if (role != Role.Admin)
+        {
+            logger.LogInformation(AppConstants.Authorization.Denied);
+            throw new ArgumentException(AppConstants.Authorization.Denied);
+        }
+
+        var response = new GetAllWaitifyBusinessesResponse
+        {
+            Count = businessesCount,
+            Businesses = businesses
+        };
+
+        return response;
+
     }
 }

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using WaitifyApi.Entities;
 
 namespace WaitifyApi.Models;
 
@@ -79,4 +80,10 @@ public record BusinessResponseDto
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+}
+
+public record GetAllWaitifyBusinessesResponse
+{
+    public int Count { get; set; } = 0;
+    public IEnumerable<Business?>? Businesses { get; set; } = null;
 }

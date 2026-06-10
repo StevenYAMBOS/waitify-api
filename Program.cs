@@ -195,6 +195,7 @@ builder.Services.AddScoped<IContactRepository, ContactService>();
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(databaseConfig));
 builder.Services.AddSingleton(x => new BlobServiceClient(azureBlobStorageConnStrg));
 
+/* 
 builder.Services.AddRateLimiter(options =>
 {
     options.OnRejected = async (context, token) =>
@@ -223,7 +224,8 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(1)
             }));
-});
+}); 
+*/
 
 builder.Services.AddCors(options =>
 {
@@ -251,7 +253,7 @@ using (var scope = app.Services.CreateScope())
     await RoleHelper.EnsureRolesCreated(roleManager);
 }
 
-app.UseRateLimiter();
+// app.UseRateLimiter();
 app.UseHttpsRedirection();
 app.UseCors("CorsPolicy");
 app.UseAuthentication();

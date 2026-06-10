@@ -3,7 +3,10 @@ using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using Newtonsoft.Json;
+using WaitifyApi.Constants;
 using WaitifyApi.Entities;
+using WaitifyApi.Enums;
+using WaitifyApi.Helpers;
 using WaitifyApi.Models;
 using WaitifyApi.Repositories;
 using WaitifyApi.Services;
@@ -51,7 +54,6 @@ public class BusinessController(
         return Ok(business);
     }
 
-
     [HttpGet("all")]
     public async Task<IActionResult> GetAllOwnerBusinesses()
     {
@@ -69,6 +71,22 @@ public class BusinessController(
                   return StatusCode(StatusCodes.Status404NotFound, "Entreprise introuvable");
               } */
         logger.LogInformation("ENTREPRISES : {@0}", JsonConvert.SerializeObject(businesses, Formatting.Indented));
+        return Ok(businesses);
+    }
+
+    [HttpGet("admin-all")]
+    [Authorize(Roles = AppConstants.Roles.Admin)]
+    public async Task<IActionResult> GetAllWaitifyBusinesses(Guid userId)
+    {
+        var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        if (ownerIdFromToken == null)
+        {
+            logger.LogError("Impossible de récupérer l'ID de l'utilisateur depuis le token JWT.");
+            return Unauthorized("Utilisateur non authentifié.");
+        }
+
+        var businesses = await businessService.GetAllWaitifyBusinessesAsync(ownerIdFromToken);
+        logger.LogInformation("ENTREPRISES WAITIFY : {@0}", JsonResponseHelper.JsonConversion(businesses));
         return Ok(businesses);
     }
 
@@ -98,7 +116,6 @@ public class BusinessController(
         logger.LogInformation("Entreprise créé : {@0}", JsonConvert.SerializeObject(business, Formatting.Indented));
         return Ok(business);
     }
-
 
     [HttpPatch("{id}")]
     [Authorize(AuthenticationSchemes = "Bearer")]

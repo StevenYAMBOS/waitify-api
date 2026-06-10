@@ -53,7 +53,7 @@ public class BusinessController(
 
 
     [HttpGet("all")]
-    public async Task<IActionResult> GetAllBusinesses()
+    public async Task<IActionResult> GetAllOwnerBusinesses()
     {
         var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
         if (ownerIdFromToken == null)
@@ -62,7 +62,7 @@ public class BusinessController(
             return Unauthorized("Utilisateur non authentifié.");
         }
 
-        var businesses = await businessService.GetAllBusinessesAsync(ownerIdFromToken);
+        var businesses = await businessService.GetAllOwnerBusinessesAsync(ownerIdFromToken);
         /*       if (businesses == null)
               {
                   logger.LogInformation("Entreprise avec l'id : `{id}` introuvable");

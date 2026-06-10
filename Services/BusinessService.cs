@@ -245,7 +245,7 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         await context.SaveChangesAsync();
     }
 
-    public async Task<IEnumerable<Business>> GetAllBusinessesAsync(string id)
+    public async Task<IEnumerable<Business>> GetAllOwnerBusinessesAsync(string id)
     {
         var user = await userService.FindUserByIdAsync(id);
 

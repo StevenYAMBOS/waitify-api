@@ -61,6 +61,22 @@ namespace WaitifyApi.Services
             await context.SaveChangesAsync();
         }
 
+        public async Task AdminDeleteUserAsync(string userId)
+        {
+            var user = await FindUserByIdAsync(userId) ?? throw new KeyNotFoundException("Utilisateur non trouvé.");
+
+            if (user.ProfilePicture != null)
+            {
+                string blobUrl = Environment.GetEnvironmentVariable("AzureGenericBlobsUrl")!;
+                string azureContainerName = Environment.GetEnvironmentVariable("AzureBlobUsersContainer")!;
+                string blobFileName = user.ProfilePicture.Replace(blobUrl + azureContainerName, "");
+                await fileStorageService.DeleteBlobSnapshotsAsync(blobFileName, azureContainerName);
+            }
+
+            context.Users.Remove(user);
+            await context.SaveChangesAsync();
+        }
+
         /*         public async Task<IEnumerable<Business>> GetBusinessesAsync(string id)
                 {
                     var user = await FindUserByIdAsync(id) ?? throw new KeyNotFoundException("Utilisateur non trouvé.");

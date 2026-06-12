@@ -8,4 +8,5 @@ public interface IApplicationUserRepository
     Task<ApplicationUser?> FindUserByEmailAsync(string email);
     Task<(bool Success, ApplicationUser? User, string? Error)> UpdateProfilAsync(string id, JsonPatchDocument<ApplicationUser> patchDocument);
     Task DeleteProfilAsync(string id);
+    Task AdminDeleteUserAsync(string userId);
 }

@@ -76,7 +76,7 @@ public class BusinessController(
 
     [HttpGet("admin-all")]
     [Authorize(Roles = AppConstants.Roles.Admin)]
-    public async Task<IActionResult> GetAllWaitifyBusinesses(Guid userId)
+    public async Task<IActionResult> GetAllWaitifyBusinesses()
     {
         var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
         if (ownerIdFromToken == null)

@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using WaitifyApi.Constants;
+
 
 // using Microsoft.AspNetCore.RateLimiting;
 using WaitifyApi.Entities;
@@ -16,7 +18,6 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
 {
     [HttpGet()]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    // [EnableRateLimiting("fixed")]
     public async Task<IActionResult> GetUserProfil()
     {
 
@@ -42,7 +43,6 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
 
     [HttpPatch()]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    // [EnableRateLimiting("fixed")]
     public async Task<IActionResult> UpdateUserProfil([FromBody] JsonPatchDocument<ApplicationUser> patchDocument)
     {
         if (patchDocument == null)
@@ -72,7 +72,6 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
 
     [HttpDelete()]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    // [EnableRateLimiting("fixed")]
     public async Task<IActionResult> DeleteUserProfile()
     {
         var idFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
@@ -86,6 +85,30 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
         {
             logger.LogInformation("Utilisateur '{0}' supprimé avec succès.", idFromFromJwt);
             await userProfilService.DeleteProfilAsync(idFromFromJwt);
+            return NoContent();
+        }
+        catch (KeyNotFoundException)
+        {
+            StatusCode(StatusCodes.Status500InternalServerError);
+            return NotFound();
+        }
+    }
+
+    [HttpDelete("{userId}")]
+    [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
+    public async Task<IActionResult> AdminDeleteUserProfile(string userId)
+    {
+        var idFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        if (idFromFromJwt == null)
+        {
+            logger.LogError("Erreur lors de la récupération de l'utilisateur  : {@0}", idFromFromJwt);
+            return StatusCode(StatusCodes.Status404NotFound, "Utilisateur introuvable");
+        }
+
+        try
+        {
+            logger.LogInformation("Utilisateur '{0}' supprimé avec succès.", userId);
+            await userProfilService.AdminDeleteUserAsync(userId);
             return NoContent();
         }
         catch (KeyNotFoundException)

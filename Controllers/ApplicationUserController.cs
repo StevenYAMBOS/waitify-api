@@ -94,7 +94,7 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
         }
     }
 
-    [HttpDelete("{userId}")]
+    [HttpDelete("admin")]
     [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
     public async Task<IActionResult> AdminDeleteUserProfile(string userId)
     {

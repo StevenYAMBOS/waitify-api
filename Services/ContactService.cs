@@ -1,21 +1,24 @@
 
 
 using Microsoft.EntityFrameworkCore;
+using WaitifyApi.Constants;
 using WaitifyApi.Data;
 using WaitifyApi.Dtos;
 using WaitifyApi.Entities;
+using WaitifyApi.Enums;
+using WaitifyApi.Helpers;
 using WaitifyApi.Models;
 using WaitifyApi.Repositories;
 
 namespace WaitifyApi.Services;
 
-public class ContactService(AppDbContext context, FileStorageService fileService, IEmailRepository emailService, ILogger<ContactService> logger) : IContactRepository
+public class ContactService(AppDbContext context, FileStorageService fileService, IEmailRepository emailService, ApplicationUserService userService, ILogger<ContactService> logger) : IContactRepository
 {
     public async Task<Contact> SendContactInfoAsync(SendContactInfoDto request)
     {
         string? fileUrl = null;
         string contactName = request?.Email;
-        string azureContainerName = Environment.GetEnvironmentVariable("AzureBlobContactContainer")!;
+        string azureContainerName = AppConstants.Azure.ContactsContainer;
 
         if (request.File is not null)
         {
@@ -49,11 +52,27 @@ public class ContactService(AppDbContext context, FileStorageService fileService
         return contact;
     }
 
-    public async Task<IEnumerable<Contact>> GetContactsAsync()
+    public async Task<AdminGetAllWaitifyContactsResponse> AdminGetAllWaitifyContactsAsync(string userId)
     {
+        var user = await userService.FindUserByIdAsync(userId);
+        var role = user?.Role;
         var contacts = await context.Contacts.ToListAsync();
-        logger.LogInformation("LISTE DES DEMANDES : {@0}", contacts);
-        return contacts;
+        var contactsCount = await context.Contacts.CountAsync();
+
+        if (role != Role.Admin)
+        {
+            logger.LogInformation(AppConstants.Authorization.Denied);
+            throw new ArgumentException(AppConstants.Authorization.Denied);
+        }
+
+        var response = new AdminGetAllWaitifyContactsResponse
+        {
+            Count = contactsCount,
+            Contacts = contacts
+        };
+
+        logger.LogInformation("LISTE DES DEMANDES : {@0}", JsonResponseHelper.JsonConversion(contacts));
+        return response;
     }
 
     public async Task DeleteContatAsync(Guid contactId)

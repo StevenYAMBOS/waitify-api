@@ -9,7 +9,7 @@ public interface IContactRepository
 {
     Task<Contact> SendContactInfoAsync(SendContactInfoDto request);
     Task<Contact?> FindContactByIdAsync(Guid contactId);
-    Task<IEnumerable<Contact>> GetContactsAsync();
+    Task<AdminGetAllWaitifyContactsResponse> AdminGetAllWaitifyContactsAsync(string userId);
     Task DeleteContatAsync(Guid contactId);
 
 }

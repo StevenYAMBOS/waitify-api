@@ -107,7 +107,7 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
 
         try
         {
-            logger.LogInformation("Utilisateur '{0}' supprimé avec succès.", userId);
+            logger.LogInformation("Utilisateur '{@0}' supprimé avec succès.", userId);
             await userProfilService.AdminDeleteUserAsync(userId);
             return NoContent();
         }

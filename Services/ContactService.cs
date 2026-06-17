@@ -12,7 +12,7 @@ using WaitifyApi.Repositories;
 
 namespace WaitifyApi.Services;
 
-public class ContactService(AppDbContext context, FileStorageService fileService, IEmailRepository emailService, ApplicationUserService userService, ILogger<ContactService> logger) : IContactRepository
+public class ContactService(AppDbContext context, FileStorageService fileService, IEmailRepository emailService, IApplicationUserRepository userService, ILogger<ContactService> logger) : IContactRepository
 {
     public async Task<Contact> SendContactInfoAsync(SendContactInfoDto request)
     {

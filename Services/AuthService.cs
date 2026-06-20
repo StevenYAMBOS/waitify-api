@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using System.Security.Claims;
 using WaitifyApi.Exceptions;
 using Microsoft.Extensions.Options;
+using WaitifyApi.Constants;
 
 namespace WaitifyApi.Services;
 
@@ -71,7 +72,7 @@ public class AuthService(
         var Email = request?.Email;
         var UserName = $"{request?.FirstName} {request?.LastName}";
         var createdAt = DateTime.UtcNow.ToString();
-        string url = "https://waitify.fr/unsusbcribe";
+        string url = AppConstants.Config.WaitifyUnsuscribeUrl;
         string UserId = user.Id;
         var TrialEndDate = trialEndDate.ToString();
 
@@ -188,6 +189,11 @@ public class AuthService(
             }
 
             user = newUser;
+
+            string url = AppConstants.Config.WaitifyUnsuscribeUrl;
+
+            await emailService.RegisterEmail(user.Email, user.UserName, user.CreatedAt.ToString(), url);
+            await emailService.NewUserAcquiredEmail(user.Email, user.UserName, user.Id, user.CreatedAt.ToString(), trialEndDate.ToString());
         }
 
         var info = new UserLoginInfo("Google",
@@ -223,7 +229,6 @@ public class AuthService(
             byte[] thumbnail = await httpClient.GetByteArrayAsync(thumbnailUrl);
             user.ProfilePicture = thumbnailUrl;
         }
-
 
         await userManager.UpdateAsync(user);
 

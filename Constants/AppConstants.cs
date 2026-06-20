@@ -6,6 +6,7 @@ public static class AppConstants
     public record Config
     {
         public const string WaitifyUrl = "https://waitify.fr";
+        public const string WaitifyUnsuscribeUrl = "https://waitify.fr/unsusbcribe";
 
     }
 

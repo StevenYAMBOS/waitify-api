@@ -461,3 +461,201 @@ Les cas suivants lèvent une `ExternalLoginProviderException` non interceptée d
 - La photo de profil stockée dans `ProfilePicture` est une URL d'API Google People (non une image directe) et nécessite une clé API valide pour être utilisée.
 - L'émission de token JWT post-authentification Google est actuellement désactivée (code commenté). L'intégration front-end ne peut pas récupérer de JWT à l'issue de ce flux en l'état.
 - Aucun email de bienvenue n'est envoyé lors d'une inscription via Google (contrairement au flux `POST /api/auth/register`).
+
+---
+
+### Routes file d'attente
+
+---
+
+### `POST /api/queue/join` – Rejoindre une file d'attente
+
+#### Description
+
+Permet à un client d'intégrer la file d'attente d'une entreprise en scannant son QR code. L'endpoint est destiné aux clients finaux (public non authentifié). Avant d'inscrire le client, le serveur vérifie que la file est ouverte, que le numéro de téléphone n'est pas déjà présent dans la file et que la capacité maximale n'est pas atteinte.
+
+---
+
+#### Requête HTTP
+
+- **Méthode :** `POST`
+- **Chemin :** `/api/queue/join`
+- **Authentification requise :** Non
+
+##### Headers obligatoires
+
+| Header         | Valeur             |
+|----------------|--------------------|
+| `Content-Type` | `application/json` |
+
+##### Headers optionnels
+
+_Aucun header optionnel identifié dans le code._
+
+##### Body (`application/json`)
+
+| Champ         | Type     | Obligatoire | Contraintes                      | Description                                                          |
+|---------------|----------|-------------|----------------------------------|----------------------------------------------------------------------|
+| `qrCodeToken` | `Guid`   | ✅ Oui      | UUID valide                      | Identifiant QR code de l'entreprise, lu depuis le QR scanné.        |
+| `phone`       | `string` | ✅ Oui      | Format téléphone (`[Phone]`)     | Numéro de téléphone du client. Doit être unique dans la file active. |
+| `clientName`  | `string` | ❌ Non      | —                                | Nom affiché du client.                                               |
+
+```json
+{
+  "qrCodeToken": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "phone": "+33612345678",
+  "clientName": "Jean Dupont"
+}
+```
+
+---
+
+#### Comportement serveur
+
+1. Recherche de l'entreprise correspondant au `qrCodeToken` via `FindBusinessByQrTokenAsync`.
+2. Si aucune entreprise trouvée → `404 Not Found`.
+3. Si `business.IsQueueActive == false` → `400 Bad Request` (file fermée).
+4. Vérification de l'unicité du numéro de téléphone : si `phone` est déjà présent dans la file de cette entreprise avec le statut `"waiting"` → `400 Bad Request`.
+5. Comptage des clients en attente (`status == "waiting"`) pour cette entreprise.
+6. Si `waitingCount >= business.MaxQueueSize` → `400 Bad Request` (file pleine).
+7. Calcul du temps d'attente estimé : `estimatedWaitTime = (waitingCount × business.AverageServiceTime) / 60` (résultat en minutes, division entière).
+8. Calcul de la position via `QueuePositionHelper.CalculateNewPosition(waitingCount)`.
+9. Création de l'entrée `QueueEntries` avec le statut `"waiting"` et persistance en base.
+10. Retour de `JoinQueueResponse`.
+
+> **Note :** `business.AverageServiceTime` est exprimé en secondes (valeur par défaut : `300` s). Le temps estimé retourné est en minutes.
+
+---
+
+#### Réponses
+
+##### ✅ `200 OK` – Inscription réussie
+
+```json
+{
+  "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+  "businessId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "businessName": "Ma Boulangerie",
+  "position": 3,
+  "estimatedWaitTime": 10,
+  "phone": "+33612345678",
+  "clientName": "Jean Dupont",
+  "status": "waiting",
+  "createdAt": "2026-06-20T14:32:00Z"
+}
+```
+
+| Champ               | Type       | Description                                              |
+|---------------------|------------|----------------------------------------------------------|
+| `id`                | `Guid`     | Identifiant unique de l'entrée en file d'attente.        |
+| `businessId`        | `Guid`     | Identifiant de l'entreprise.                             |
+| `businessName`      | `string`   | Nom de l'entreprise.                                     |
+| `position`          | `int`      | Position du client dans la file (commence à 1).          |
+| `estimatedWaitTime` | `int`      | Temps d'attente estimé en minutes.                       |
+| `phone`             | `string`   | Numéro de téléphone du client.                           |
+| `clientName`        | `string`   | Nom du client (peut être `null` si non fourni).          |
+| `status`            | `string`   | Toujours `"waiting"` à la création.                      |
+| `createdAt`         | `DateTime` | Horodatage UTC de l'inscription.                         |
+
+---
+
+##### ❌ `400 Bad Request` – File d'attente fermée
+
+Retourné si `business.IsQueueActive == false`.
+
+```
+La file d'attente est fermée.
+```
+
+---
+
+##### ❌ `400 Bad Request` – Numéro déjà en file
+
+Retourné si le numéro `phone` est déjà présent avec le statut `"waiting"` pour cette entreprise.
+
+```
+Ce numéro est déjà dans la file d'attente.
+```
+
+---
+
+##### ❌ `400 Bad Request` – File pleine
+
+Retourné si le nombre de clients en attente est supérieur ou égal à `business.MaxQueueSize` (défaut : `50`).
+
+```
+La file d'attente est pleine.
+```
+
+---
+
+##### ❌ `404 Not Found` – Entreprise introuvable
+
+Retourné si aucune entreprise ne correspond au `qrCodeToken` fourni.
+
+```
+Entreprise non trouvée.
+```
+
+---
+
+##### ❌ `500 Internal Server Error` – Erreur inattendue
+
+Retourné pour toute exception non couverte par les cas ci-dessus.
+
+```
+Une erreur est survenue.
+```
+
+---
+
+#### Exemple de requête
+
+```http
+POST /api/queue/join HTTP/1.1
+Host: [À compléter]
+Content-Type: application/json
+
+{
+  "qrCodeToken": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "phone": "+33612345678",
+  "clientName": "Jean Dupont"
+}
+```
+
+---
+
+#### Exemple de réponse (`200 OK`)
+
+```json
+{
+  "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+  "businessId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "businessName": "Ma Boulangerie",
+  "position": 3,
+  "estimatedWaitTime": 10,
+  "phone": "+33612345678",
+  "clientName": "Jean Dupont",
+  "status": "waiting",
+  "createdAt": "2026-06-20T14:32:00Z"
+}
+```
+
+---
+
+#### Dépendances internes
+
+| Composant                    | Rôle                                                                                      |
+|------------------------------|-------------------------------------------------------------------------------------------|
+| `BusinessService`            | Résolution de l'entreprise depuis le `qrCodeToken` (`FindBusinessByQrTokenAsync`).        |
+| `AppDbContext` (`Queues`)    | Vérification de doublon, comptage des clients en attente, persistance de l'entrée.        |
+| `QueuePositionHelper`        | Calcul de la position d'insertion (`CalculateNewPosition`).                               |
+
+---
+
+#### Notes
+
+- L'endpoint ne nécessite aucune authentification : il est conçu pour être appelé depuis un formulaire public accessible après scan du QR code.
+- L'endpoint est soumis au rate limiter `"fixed"` (`[EnableRateLimiting("fixed")]`) configuré au niveau du contrôleur `QueueController`.
+- La vérification du doublon porte uniquement sur les entrées avec `status == "waiting"` : un client ayant déjà été `"called"`, `"served"` ou `"cancelled"` peut se réinscrire avec le même numéro.
+- Le temps d'attente estimé (`estimatedWaitTime`) est une valeur entière calculée par division entière ; pour une file vide (`waitingCount == 0`), la valeur retournée est `0`.

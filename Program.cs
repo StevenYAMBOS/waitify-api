@@ -123,14 +123,16 @@ builder.Services.AddAuthentication(options =>
     {
         OnMessageReceived = msg =>
         {
+            msg.Token = msg.Request.Cookies["waitify_token"];
             var token = msg?.Request.Headers.Authorization.ToString();
             string path = msg?.Request.Path ?? "";
-            if (!string.IsNullOrEmpty(token))
+            if (!string.IsNullOrEmpty(msg.Token))
 
             {
                 Console.WriteLine("Access token");
                 Console.WriteLine($"URL: {path}");
-                Console.WriteLine($"Token: {token}\r\n");
+                Console.WriteLine($"JWT Token: {token}\r\n");
+                Console.WriteLine($"Google Token: {msg.Token}\r\n");
             }
             else
             {
@@ -191,6 +193,12 @@ builder.Services.AddScoped<IQueueRepository, QueueService>();
 builder.Services.AddScoped<QRCodeGeneratorService>();
 builder.Services.AddScoped<IEmailRepository, EmailService>();
 builder.Services.AddScoped<IContactRepository, ContactService>();
+
+
+builder.Services.AddScoped<IAuthTokenProcessor, AuthTokenProcessor>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+
 
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(databaseConfig));
 builder.Services.AddSingleton(x => new BlobServiceClient(azureBlobStorageConnStrg));

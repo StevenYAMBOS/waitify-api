@@ -12,6 +12,7 @@ namespace WaitifyApi.Services;
 public class AuthService(
     UserManager<ApplicationUser> userManager,
     TokenService tokenService,
+    IAuthTokenProcessor authTokenProcessor,
     FileStorageService fileStorageService,
     IEmailRepository emailService,
     ILogger<AuthService> logger) : IAuthRepository
@@ -135,7 +136,7 @@ public class AuthService(
         return (true, tokens, null);
     }
 
-    public async Task LoginWithGoogleAsync(ClaimsPrincipal? claimsPrincipal)
+    public async Task<string> LoginWithGoogleAsync(ClaimsPrincipal? claimsPrincipal)
     {
         if (claimsPrincipal == null)
         {
@@ -211,17 +212,22 @@ public class AuthService(
             }
         }
 
-        /*         var jwtToken = tokenService.CreateTokenAsync(user);
-                var refreshTokenValue = tokenService.GenerateRefreshToken();
 
-                var refreshTokenExpirationDateInUtc = DateTime.UtcNow.AddDays(7);
+        var (jwtToken, expirationDateInUtc) = authTokenProcessor.GenerateJwtToken(user);
+        var refreshTokenValue = authTokenProcessor.GenerateRefreshToken();
 
-                user.RefreshToken = refreshTokenValue;
-                user.RefreshTokenExpiresAtUtc = refreshTokenExpirationDateInUtc;
+        var refreshTokenExpirationDateInUtc = DateTime.UtcNow.AddDays(7);
 
-                await userManager.UpdateAsync(user);
+        user.RefreshToken = refreshTokenValue;
+        user.RefreshTokenExpiryTime = refreshTokenExpirationDateInUtc;
 
-                tokenService.WriteAuthTokenAsHttpOnlyCookie("ACCESS_TOKEN", jwtToken, expirationDateInUtc);
-                tokenService.WriteAuthTokenAsHttpOnlyCookie("REFRESH_TOKEN", user.RefreshToken, refreshTokenExpirationDateInUtc); */
+        await userManager.UpdateAsync(user);
+
+        logger.LogInformation("Google JWT Token : {@0}", jwtToken);
+
+        authTokenProcessor.WriteAuthTokenAsHttpOnlyCookie("waitify_token", jwtToken, expirationDateInUtc);
+        authTokenProcessor.WriteAuthTokenAsHttpOnlyCookie("REFRESH_TOKEN", user.RefreshToken, refreshTokenExpirationDateInUtc);
+
+        return jwtToken;
     }
 }

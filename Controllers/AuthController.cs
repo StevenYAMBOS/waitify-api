@@ -16,11 +16,12 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 
 namespace WaitifyApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/auth")]
     [EnableRateLimiting("fixed")]
     [ApiController]
     public class AuthController(
         IAuthRepository authService,
+        IAccountService accountService,
         IApplicationUserRepository userService,
         TokenService tokenService,
         SignInManager<ApplicationUser> signInManager,
@@ -63,7 +64,7 @@ namespace WaitifyApi.Controllers
                 return Unauthorized(new { error });
             }
 
-            logger.LogInformation("Token : {0}", tokens?.AccessToken);
+            logger.LogInformation("Token : {@0}", tokens?.AccessToken);
             return Ok(tokens);
         }
 
@@ -76,10 +77,12 @@ namespace WaitifyApi.Controllers
             var properties = signInManager.ConfigureExternalAuthenticationProperties(
                 "Google", callbackUrl);
 
+            logger.LogInformation("CALLBACK URL : {@0}", callbackUrl);
+
             return Challenge(properties, ["Google"]);
         }
 
-        [HttpGet("signin-google")]
+        [HttpGet("google/callback")]
         [EndpointName("GoogleLoginCallback")]
         public async Task<IActionResult> GoogleLoginCallback([FromQuery] string returnUrl)
         {
@@ -89,8 +92,13 @@ namespace WaitifyApi.Controllers
             if (!result.Succeeded)
                 return Unauthorized();
 
-            await authService.LoginWithGoogleAsync(result.Principal);
-            return Redirect(returnUrl);
+            var jwtToken = await authService.LoginWithGoogleAsync(result.Principal);
+
+            string authUrl = returnUrl + "?token=" + Uri.EscapeDataString(jwtToken);
+
+            logger.LogInformation("RETURN URL : {@0}", returnUrl);
+
+            return Redirect(authUrl);
         }
 
         [HttpPost("refresh")]

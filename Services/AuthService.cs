@@ -6,6 +6,7 @@ using WaitifyApi.Enums;
 using Newtonsoft.Json;
 using System.Security.Claims;
 using WaitifyApi.Exceptions;
+using Microsoft.Extensions.Options;
 
 namespace WaitifyApi.Services;
 
@@ -15,6 +16,7 @@ public class AuthService(
     IAuthTokenProcessor authTokenProcessor,
     FileStorageService fileStorageService,
     IEmailRepository emailService,
+    IOptions<PeopleApiPhotos> options,
     ILogger<AuthService> logger) : IAuthRepository
 {
     public async Task<(bool Success, string? Token, IEnumerable<string>? Errors)> RegisterAsync(RegisterRequest request)
@@ -152,15 +154,7 @@ public class AuthService(
 
         var user = await userManager.FindByEmailAsync(email);
         var GoogleApiKey = Environment.GetEnvironmentVariable("GoogleApiKey");
-        var GoogleProfilePicture = $"https://people.googleapis.com/v1/people/{claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier)}?personFields=photos&key=image&key={GoogleApiKey}";
-        // using (HttpClient httpClient = new HttpClient())
-        // {
-        //     string s = await httpClient.GetStringAsync(GoogleProfilePicture);
-        //     dynamic deserializeObject = JsonConvert.DeserializeObject(s);
-        //     string thumbnailUrl = (string)deserializeObject.image.url;
-        //     byte[] thumbnail = await httpClient.GetByteArrayAsync(thumbnailUrl);
-        // }
-        // var GoogleProfilePictureUrl = GoogleProfilePicture[0].url;
+        var GoogleProfilePicture = $"https://people.googleapis.com/v1/people/{claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier)}?personFields=photos&key={GoogleApiKey}";
 
         TimeSpan TwoWeeks = new TimeSpan(360, 0, 0);
         DateTime trialEndDate = DateTime.UtcNow.Add(TwoWeeks);
@@ -178,7 +172,7 @@ public class AuthService(
                 GoogleId = claimsPrincipal.FindFirstValue(ClaimTypes.NameIdentifier) ?? string.Empty,
                 Role = Role.Owner,
                 PhoneNumber = claimsPrincipal.FindFirstValue(ClaimTypes.HomePhone) ?? claimsPrincipal.FindFirstValue(ClaimTypes.MobilePhone),
-                ProfilePicture = GoogleProfilePicture,
+                ProfilePicture = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRglS-Qi4t9NLrCFtsFPv1vBYiVWzv1kvdemqQWVNVmuA&s=10",
                 TrialEndsAt = trialEndDate,
                 CreatedAt = DateTime.UtcNow,
                 LastLogin = DateTime.UtcNow
@@ -220,6 +214,16 @@ public class AuthService(
 
         user.RefreshToken = refreshTokenValue;
         user.RefreshTokenExpiryTime = refreshTokenExpirationDateInUtc;
+
+        using (HttpClient httpClient = new HttpClient())
+        {
+            string s = await httpClient.GetStringAsync(GoogleProfilePicture);
+            dynamic deserializeObject = JsonConvert.DeserializeObject(s);
+            string thumbnailUrl = (string)deserializeObject.photos[0].url;
+            byte[] thumbnail = await httpClient.GetByteArrayAsync(thumbnailUrl);
+            user.ProfilePicture = thumbnailUrl;
+        }
+
 
         await userManager.UpdateAsync(user);
 

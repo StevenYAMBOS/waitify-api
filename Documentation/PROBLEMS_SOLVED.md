@@ -92,6 +92,13 @@ J'ai d'abord testé la solution officielle proposée par [Microsoft](https://lea
 
 La solution que j'ai intégré est [celle-ci](https://github.com/RemigiuszZalewski/Google-Authentication-.net-react).
 
+### Récupérer profil picture utilisateur
+
+Liens utils :
+
+- https://stackoverflow.com/questions/62703154/google-authentication-get-user-profile-picture
+- https://stackoverflow.com/questions/13297563/read-and-parse-a-json-file-in-c-sharp
+
 ---
 
 ## Email template avec paramètres

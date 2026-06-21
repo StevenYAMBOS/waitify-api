@@ -41,8 +41,22 @@ public class BusinessController(
         return Ok(business);
     }
 
+    [HttpGet("info/{qrCodeToken}")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetBusinessByQRCodeToken(Guid qrCodeToken)
+    {
+        var business = await businessService.FindBusinessByQrTokenAsync(qrCodeToken);
+        if (business == null)
+        {
+            logger.LogInformation("Entreprise avec le qrCodeToken : `{qrCodeToken}` introuvable", qrCodeToken);
+            return StatusCode(StatusCodes.Status404NotFound, "Entreprise introuvable");
+        }
+        logger.LogInformation("Entreprise : {@0}", JsonConvert.SerializeObject(business, Formatting.Indented));
+        return Ok(business);
+    }
+
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetBusiness(Guid id)
+    public async Task<IActionResult> GetBusinessById(Guid id)
     {
         var business = await businessService.FindBusinessByIdAsync(id);
         if (business == null)

@@ -534,7 +534,7 @@ _Aucun header optionnel identifié dans le code._
 ```json
 {
   "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
-  "businessId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "businessQrCodeToken": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "businessName": "Ma Boulangerie",
   "position": 3,
   "estimatedWaitTime": 10,
@@ -545,17 +545,17 @@ _Aucun header optionnel identifié dans le code._
 }
 ```
 
-| Champ               | Type       | Description                                              |
-|---------------------|------------|----------------------------------------------------------|
-| `id`                | `Guid`     | Identifiant unique de l'entrée en file d'attente.        |
-| `businessId`        | `Guid`     | Identifiant de l'entreprise.                             |
-| `businessName`      | `string`   | Nom de l'entreprise.                                     |
-| `position`          | `int`      | Position du client dans la file (commence à 1).          |
-| `estimatedWaitTime` | `int`      | Temps d'attente estimé en minutes.                       |
-| `phone`             | `string`   | Numéro de téléphone du client.                           |
-| `clientName`        | `string`   | Nom du client (peut être `null` si non fourni).          |
-| `status`            | `string`   | Toujours `"waiting"` à la création.                      |
-| `createdAt`         | `DateTime` | Horodatage UTC de l'inscription.                         |
+| Champ                  | Type       | Description                                              |
+|------------------------|------------|----------------------------------------------------------|
+| `id`                   | `Guid`     | Identifiant unique de l'entrée en file d'attente.        |
+| `businessQrCodeToken`  | `Guid`     | QR token de l'entreprise (remplace `businessId`).        |
+| `businessName`         | `string`   | Nom de l'entreprise.                                     |
+| `position`             | `int`      | Position du client dans la file (commence à 1).          |
+| `estimatedWaitTime`    | `int`      | Temps d'attente estimé en minutes.                       |
+| `phone`                | `string`   | Numéro de téléphone du client.                           |
+| `clientName`           | `string`   | Nom du client (peut être `null` si non fourni).          |
+| `status`               | `string`   | Toujours `"waiting"` à la création.                      |
+| `createdAt`            | `DateTime` | Horodatage UTC de l'inscription.                         |
 
 ---
 
@@ -630,7 +630,7 @@ Content-Type: application/json
 ```json
 {
   "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
-  "businessId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "businessQrCodeToken": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "businessName": "Ma Boulangerie",
   "position": 3,
   "estimatedWaitTime": 10,
@@ -817,3 +817,347 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - L'endpoint est soumis au rate limiter `"fixed"` configuré au niveau du contrôleur `BusinessController`.
 - La vérification de l'utilisateur dans `GenerateNewQRCodeAsync` présente une anomalie : `FindUserByIdAsync` est appelé sans `await`, ce qui signifie que la variable `existingUser` est en réalité une `Task<ApplicationUser>` et non un `ApplicationUser`. La condition `existingUser?.Id.ToString() == userId` compare l'ID de la tâche (entier) à un GUID, et sera toujours `false`. La vérification effective du propriétaire repose donc uniquement sur la comparaison `userId != business.OwnerId`.
 - Le QR code généré encode l'URL `{WaitifyUrl}/q/{qrCodeToken}` avec un niveau de correction d'erreur `ECCLevel.Q` (≈ 25 % de capacité de correction).
+
+---
+
+### `GET /api/queue/{id}` – Récupérer une entrée de file d'attente
+
+#### Description
+
+Récupère les détails d'une entrée de file d'attente par son identifiant unique. Endpoint destiné aux usages internes (tableau de bord gérant, suivi client).
+
+---
+
+#### Requête HTTP
+
+- **Méthode :** `GET`
+- **Chemin :** `/api/queue/{id}`
+- **Authentification requise :** Non
+
+##### Paramètres de chemin (Path parameters)
+
+| Paramètre | Type   | Obligatoire | Description                                      |
+|-----------|--------|-------------|--------------------------------------------------|
+| `id`      | `Guid` | ✅ Oui      | Identifiant unique de l'entrée en file d'attente. |
+
+---
+
+#### Comportement serveur
+
+1. Recherche de l'entrée via `FindQueueByIdAsync(id)`.
+2. Si introuvable → `404 Not Found`.
+3. Retour de l'entité `QueueEntries` complète.
+
+---
+
+#### Réponses
+
+##### ✅ `200 OK` – Succès
+
+Retourne l'entité `QueueEntries` complète (tous les champs de l'entité).
+
+##### ❌ `404 Not Found` – Entrée introuvable
+
+```
+File d'attente introuvable
+```
+
+---
+
+### `POST /api/queue/{qrCodeToken}/call-next` – Appeler le prochain client
+
+#### Description
+
+Appelle le prochain client en attente dans la file de l'entreprise identifiée par son `qrCodeToken`. Passe le statut du client de `"waiting"` à `"called"` et recalcule les positions des clients restants.
+
+> **Note de sécurité :** L'entreprise est identifiée par son `QrCodeToken` (et non par son `Id` interne), conformément à la politique de sécurité de l'API.
+
+---
+
+#### Requête HTTP
+
+- **Méthode :** `POST`
+- **Chemin :** `/api/queue/{qrCodeToken}/call-next`
+- **Authentification requise :** Non (à sécuriser côté front-end)
+
+##### Paramètres de chemin (Path parameters)
+
+| Paramètre      | Type   | Obligatoire | Description                                   |
+|----------------|--------|-------------|-----------------------------------------------|
+| `qrCodeToken`  | `Guid` | ✅ Oui      | QR token unique de l'entreprise concernée.    |
+
+##### Body
+
+Aucun body attendu.
+
+---
+
+#### Comportement serveur
+
+1. Recherche de l'entreprise via `FindBusinessByQrTokenAsync(qrCodeToken)`.
+2. Si introuvable → `404 Not Found`.
+3. Si `business.IsQueueActive == false` → `400 Bad Request`.
+4. Récupération du client ayant la position la plus basse avec le statut `"waiting"`.
+5. Si aucun client en attente → `400 Bad Request`.
+6. Passage du statut à `"called"`, mise à jour de `CalledAt` et `UpdatedAt`.
+7. Recalcul des positions des clients restants en `"waiting"` (`QueuePositionHelper.RecalculatePositionsAsync`).
+8. Persistance et retour de `CallNextClientResponse`.
+
+---
+
+#### Réponses
+
+##### ✅ `200 OK` – Succès
+
+```json
+{
+  "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+  "businessQrCodeToken": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "phone": "+33612345678",
+  "clientName": "Jean Dupont",
+  "position": 1,
+  "status": "called",
+  "calledAt": "2026-06-20T14:45:00Z"
+}
+```
+
+| Champ                 | Type       | Description                                        |
+|-----------------------|------------|----------------------------------------------------|
+| `id`                  | `Guid`     | Identifiant de l'entrée en file d'attente.         |
+| `businessQrCodeToken` | `Guid`     | QR token de l'entreprise.                          |
+| `phone`               | `string`   | Numéro de téléphone du client.                     |
+| `clientName`          | `string`   | Nom du client (peut être `null`).                  |
+| `position`            | `int`      | Position au moment de l'appel.                     |
+| `status`              | `string`   | Toujours `"called"` après succès.                  |
+| `calledAt`            | `DateTime` | Horodatage UTC de l'appel.                         |
+
+##### ❌ `400 Bad Request` – File fermée
+
+```
+La file d'attente est fermée.
+```
+
+##### ❌ `400 Bad Request` – Aucun client en attente
+
+```
+Aucun client en attente dans la file.
+```
+
+##### ❌ `404 Not Found` – Entreprise introuvable
+
+```
+Entreprise non trouvée.
+```
+
+##### ❌ `500 Internal Server Error` – Erreur inattendue
+
+```
+Une erreur est survenue.
+```
+
+---
+
+#### Dépendances internes
+
+| Composant             | Rôle                                                                                 |
+|-----------------------|--------------------------------------------------------------------------------------|
+| `BusinessService`     | Résolution de l'entreprise via `FindBusinessByQrTokenAsync`.                         |
+| `AppDbContext`        | Requête sur la file, mise à jour du statut, persistance.                             |
+| `QueuePositionHelper` | Recalcul des positions après appel (`RecalculatePositionsAsync`).                    |
+
+---
+
+### `DELETE /api/queue/{id}/cancel` – Annuler une entrée de file d'attente
+
+#### Description
+
+Annule l'entrée d'un client dans la file d'attente. Seules les entrées avec le statut `"waiting"` peuvent être annulées. Les positions des clients restants sont recalculées après annulation.
+
+---
+
+#### Requête HTTP
+
+- **Méthode :** `DELETE`
+- **Chemin :** `/api/queue/{id}/cancel`
+- **Authentification requise :** Non
+
+##### Paramètres de chemin (Path parameters)
+
+| Paramètre | Type   | Obligatoire | Description                                      |
+|-----------|--------|-------------|--------------------------------------------------|
+| `id`      | `Guid` | ✅ Oui      | Identifiant unique de l'entrée en file d'attente. |
+
+##### Body
+
+Aucun body attendu.
+
+---
+
+#### Comportement serveur
+
+1. Recherche de l'entrée via `FindAsync(id)`.
+2. Si introuvable → `404 Not Found`.
+3. Si `entry.Status != "waiting"` → `400 Bad Request`.
+4. Passage du statut à `"cancelled"`, mise à jour de `UpdatedAt`.
+5. Recalcul des positions des clients restants en `"waiting"`.
+6. Persistance et retour de `CancelQueueEntryResponse`.
+
+---
+
+#### Réponses
+
+##### ✅ `200 OK` – Succès
+
+```json
+{
+  "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+  "businessQrCodeToken": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "phone": "+33612345678",
+  "clientName": "Jean Dupont",
+  "status": "cancelled",
+  "updatedAt": "2026-06-20T14:50:00Z"
+}
+```
+
+| Champ                 | Type       | Description                                  |
+|-----------------------|------------|----------------------------------------------|
+| `id`                  | `Guid`     | Identifiant de l'entrée.                     |
+| `businessQrCodeToken` | `Guid`     | QR token de l'entreprise.                    |
+| `phone`               | `string`   | Numéro de téléphone du client.               |
+| `clientName`          | `string`   | Nom du client (peut être `null`).            |
+| `status`              | `string`   | Toujours `"cancelled"` après succès.         |
+| `updatedAt`           | `DateTime` | Horodatage UTC de l'annulation.              |
+
+##### ❌ `400 Bad Request` – Statut incompatible
+
+Retourné si l'entrée n'est pas en statut `"waiting"`.
+
+```
+Impossible d'annuler une entrée avec le statut '<statut>'.
+```
+
+##### ❌ `404 Not Found` – Entrée introuvable
+
+```
+Entrée de file d'attente introuvable.
+```
+
+##### ❌ `500 Internal Server Error` – Erreur inattendue
+
+```
+Une erreur est survenue.
+```
+
+---
+
+#### Notes
+
+- La vérification du statut ne porte que sur `"waiting"` : un client `"called"` ou `"served"` ne peut pas être annulé via cet endpoint.
+
+---
+
+### `PATCH /api/queue/{id}/served` – Marquer un client comme servi
+
+#### Description
+
+Marque un client comme servi. Seules les entrées avec le statut `"called"` peuvent être marquées comme servies. Permet d'enregistrer optionnellement le temps de service réel.
+
+---
+
+#### Requête HTTP
+
+- **Méthode :** `PATCH`
+- **Chemin :** `/api/queue/{id}/served`
+- **Authentification requise :** Non
+
+##### Headers obligatoires
+
+| Header         | Valeur             |
+|----------------|--------------------|
+| `Content-Type` | `application/json` |
+
+##### Paramètres de chemin (Path parameters)
+
+| Paramètre | Type   | Obligatoire | Description                                      |
+|-----------|--------|-------------|--------------------------------------------------|
+| `id`      | `Guid` | ✅ Oui      | Identifiant unique de l'entrée en file d'attente. |
+
+##### Body (`application/json`)
+
+| Champ               | Type  | Obligatoire | Description                                              |
+|---------------------|-------|-------------|----------------------------------------------------------|
+| `actualServiceTime` | `int` | ❌ Non      | Durée réelle du service en secondes. Ignoré si `null`.   |
+
+```json
+{
+  "actualServiceTime": 240
+}
+```
+
+---
+
+#### Comportement serveur
+
+1. Recherche de l'entrée via `FindAsync(id)`.
+2. Si introuvable → `404 Not Found`.
+3. Si `entry.Status != "called"` → `400 Bad Request`.
+4. Passage du statut à `"served"`, mise à jour de `ServedAt` et `UpdatedAt`.
+5. Si `actualServiceTime` est fourni → stockage dans `entry.ActualServiceTime`.
+6. Persistance et retour de `MarkClientAsServedResponse`.
+
+---
+
+#### Réponses
+
+##### ✅ `200 OK` – Succès
+
+```json
+{
+  "id": "d290f1ee-6c54-4b01-90e6-d701748f0851",
+  "businessQrCodeToken": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "phone": "+33612345678",
+  "clientName": "Jean Dupont",
+  "status": "served",
+  "calledAt": "2026-06-20T14:45:00Z",
+  "servedAt": "2026-06-20T14:49:00Z",
+  "actualServiceTime": 240
+}
+```
+
+| Champ                 | Type       | Description                                                        |
+|-----------------------|------------|--------------------------------------------------------------------|
+| `id`                  | `Guid`     | Identifiant de l'entrée.                                           |
+| `businessQrCodeToken` | `Guid`     | QR token de l'entreprise.                                          |
+| `phone`               | `string`   | Numéro de téléphone du client.                                     |
+| `clientName`          | `string`   | Nom du client (peut être `null`).                                  |
+| `status`              | `string`   | Toujours `"served"` après succès.                                  |
+| `calledAt`            | `DateTime` | Horodatage UTC de l'appel du client.                               |
+| `servedAt`            | `DateTime` | Horodatage UTC de la fin du service.                               |
+| `actualServiceTime`   | `int?`     | Temps de service réel en secondes (`null` si non renseigné).       |
+
+##### ❌ `400 Bad Request` – Statut incompatible
+
+Retourné si l'entrée n'est pas en statut `"called"`.
+
+```
+Impossible de marquer comme servi une entrée avec le statut '<statut>'.
+```
+
+##### ❌ `404 Not Found` – Entrée introuvable
+
+```
+Entrée de file d'attente introuvable.
+```
+
+##### ❌ `500 Internal Server Error` – Erreur inattendue
+
+```
+Une erreur est survenue.
+```
+
+---
+
+#### Notes
+
+- `actualServiceTime` retourné est `null` si la valeur stockée est `0` (valeur par défaut EF Core).
+- Aucun recalcul de positions n'est effectué : les clients en `"called"` ne font plus partie de la file `"waiting"`.

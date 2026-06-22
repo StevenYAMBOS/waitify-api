@@ -25,12 +25,12 @@ public class QueueController(
         return Ok(queue);
     }
 
-    [HttpPost("{id}/call-next")]
-    public async Task<IActionResult> CallNextClient(Guid id)
+    [HttpPost("{qrCodeToken}/call-next")]
+    public async Task<IActionResult> CallNextClient(Guid qrCodeToken)
     {
         try
         {
-            var result = await queueService.CallNextClientAsync(id);
+            var result = await queueService.CallNextClientAsync(qrCodeToken);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)

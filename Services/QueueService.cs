@@ -61,23 +61,23 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     // Vérification client pas déjà inscrit (même numéro + business + waiting)
     bool alreadyInQueue = await context.Queues.AnyAsync(q =>
       q.Phone == request.Phone &&
-      q.BusinessQrCodeToken == business.Id &&
+      q.BusinessQrCodeToken == business.QrCodeToken &&
       q.Status == AppConstants.Queues.Status.Waiting);
 
     if (alreadyInQueue)
     {
-      logger.LogError("Numéro `{@0}` déjà dans la file d'attente du business `{@1}`.", request.Phone, business.Id);
+      logger.LogError("Numéro `{@0}` déjà dans la file d'attente du business `{@1}`.", request.Phone, business.QrCodeToken);
       throw new InvalidOperationException("Ce numéro est déjà dans la file d'attente.");
     }
 
     // Vérification file pas pleine + compte les clients en attente pour le calcul du temps
     int waitingCount = await context.Queues.CountAsync(q =>
-      q.BusinessQrCodeToken == business.Id &&
+      q.BusinessQrCodeToken == business.QrCodeToken &&
       q.Status == "waiting");
 
     if (waitingCount >= business.MaxQueueSize)
     {
-      logger.LogError("File d'attente pleine pour l'entreprise `{@0}`. Taille max : `{@1}`.", business.Id, business.MaxQueueSize);
+      logger.LogError("File d'attente pleine pour l'entreprise `{@0}`. Taille max : `{@1}`.", business.QrCodeToken, business.MaxQueueSize);
       throw new InvalidOperationException("La file d'attente est pleine.");
     }
 
@@ -90,7 +90,7 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
 
     var queueEntry = new QueueEntries
     {
-      BusinessQrCodeToken = business.Id,
+      BusinessQrCodeToken = business.QrCodeToken,
       Phone = request.Phone,
       ClientName = request.ClientName,
       Status = "waiting",
@@ -103,12 +103,12 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     context.Queues.Add(queueEntry);
     await context.SaveChangesAsync();
 
-    logger.LogInformation("Client `{@0}` inscrit en position `{@1}` pour l'entreprise `{@2}`.", request.Phone, queueEntry.Position, business.Id);
+    logger.LogInformation("Client `{@0}` inscrit en position `{@1}` pour l'entreprise `{@2}`.", request.Phone, queueEntry.Position, business.QrCodeToken);
 
     return new JoinQueueResponse
     {
       Id = queueEntry.Id,
-      BusinessQrCodeToken = business.Id,
+      BusinessQrCodeToken = business.QrCodeToken,
       BusinessName = business.Name,
       Position = queueEntry.Position,
       EstimatedWaitTime = estimatedWaitTime,
@@ -119,34 +119,31 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     };
   }
 
-  public async Task<CallNextClientResponse> CallNextClientAsync(Guid businessId)
+  public async Task<CallNextClientResponse> CallNextClientAsync(Guid qrCodeToken)
   {
-    // var business = await context.Businesses.FindAsync(businessId); // BusinessQrCodeToken == BusinessQrCodeToken !
-    // Pour le moment on utilise l'id (`BusinessQrCodeToken`) de l'entreprise au lieu du `QRCodeToken` pour identifier l'entreprise.
-    var business = await businessService.FindBusinessByIdAsync(businessId);
-
+    var business = await businessService.FindBusinessByQrTokenAsync(qrCodeToken);
 
     if (business == null)
     {
-      logger.LogError("Entreprise non trouvée : `{@0}`.", businessId);
+      logger.LogError("Entreprise non trouvée pour le QR token : `{@0}`.", qrCodeToken);
       throw new KeyNotFoundException("Entreprise non trouvée.");
     }
 
     if (!business.IsQueueActive)
     {
-      logger.LogError("La file d'attente est fermée pour l'entreprise `{@0}`.", businessId);
+      logger.LogError("La file d'attente est fermée pour l'entreprise `{@0}`.", qrCodeToken);
       throw new InvalidOperationException("La file d'attente est fermée.");
     }
 
     // Récupérer le premier client en attente (position la plus basse)
     var nextClient = await context.Queues
-      .Where(q => q.BusinessQrCodeToken == businessId && q.Status == "waiting")
+      .Where(q => q.BusinessQrCodeToken == qrCodeToken && q.Status == "waiting")
       .OrderBy(q => q.Position)
       .FirstOrDefaultAsync();
 
     if (nextClient == null)
     {
-      logger.LogInformation("Aucun client en attente pour l'entreprise `{@0}`.", businessId);
+      logger.LogInformation("Aucun client en attente pour l'entreprise `{@0}`.", qrCodeToken);
       throw new InvalidOperationException("Aucun client en attente dans la file.");
     }
 
@@ -157,10 +154,10 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     await context.SaveChangesAsync();
 
     // Recalcul des positions des clients restants en attente (remplace l'ancien trigger PostgreSQL)
-    await QueuePositionHelper.RecalculatePositionsAsync(context, businessId);
+    await QueuePositionHelper.RecalculatePositionsAsync(context, qrCodeToken);
     await context.SaveChangesAsync();
 
-    logger.LogInformation("Client `{@0}` appelé pour l'entreprise `{@1}`.", nextClient.Phone, businessId);
+    logger.LogInformation("Client `{@0}` appelé pour l'entreprise `{@1}`.", nextClient.Phone, qrCodeToken);
 
     return new CallNextClientResponse
     {

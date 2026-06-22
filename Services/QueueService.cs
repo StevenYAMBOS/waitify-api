@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
+using WaitifyApi.Constants;
 using WaitifyApi.Data;
 using WaitifyApi.Entities;
 using WaitifyApi.Helpers;
@@ -18,13 +19,36 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     return queue;
   }
 
+  public async Task<QueueEntriesCountForBusinessResponse> QueueEntriesCountForBusinessAsync(FindQueueEntriesCountRequest request)
+  {
+
+    var business = await businessService.FindBusinessByQrTokenAsync(request.BusinessQrCodeToken);
+
+    var queueCount = await context.Queues
+    .Where(
+      q =>
+      q.BusinessQrCodeToken == request.BusinessQrCodeToken &&
+      q.Status == AppConstants.Queues.Status.Waiting
+      )
+    .CountAsync();
+
+    logger.LogInformation("Nombre de clients dans la file : {@0}", JsonResponseHelper.JsonConversion(queueCount));
+
+    var response = new QueueEntriesCountForBusinessResponse
+    {
+      Count = queueCount
+    };
+
+    return response;
+  }
+
   public async Task<JoinQueueResponse> JoinQueueAsync(JoinQueueRequest request)
   {
-    var business = await businessService.FindBusinessByQrTokenAsync(request.QrCodeToken);
+    var business = await businessService.FindBusinessByQrTokenAsync(request.BusinessQrCodeToken);
 
     if (business == null)
     {
-      logger.LogError("Entreprise non trouvée pour le QR token : `{@0}`.", request.QrCodeToken);
+      logger.LogError("Entreprise non trouvée pour le QR token : `{@0}`.", request.BusinessQrCodeToken);
       throw new KeyNotFoundException("Entreprise non trouvée.");
     }
 
@@ -37,8 +61,8 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     // Vérification client pas déjà inscrit (même numéro + business + waiting)
     bool alreadyInQueue = await context.Queues.AnyAsync(q =>
       q.Phone == request.Phone &&
-      q.BusinessId == business.Id &&
-      q.Status == "waiting");
+      q.BusinessQrCodeToken == business.Id &&
+      q.Status == AppConstants.Queues.Status.Waiting);
 
     if (alreadyInQueue)
     {
@@ -48,7 +72,7 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
 
     // Vérification file pas pleine + compte les clients en attente pour le calcul du temps
     int waitingCount = await context.Queues.CountAsync(q =>
-      q.BusinessId == business.Id &&
+      q.BusinessQrCodeToken == business.Id &&
       q.Status == "waiting");
 
     if (waitingCount >= business.MaxQueueSize)
@@ -66,7 +90,7 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
 
     var queueEntry = new QueueEntries
     {
-      BusinessId = business.Id,
+      BusinessQrCodeToken = business.Id,
       Phone = request.Phone,
       ClientName = request.ClientName,
       Status = "waiting",
@@ -84,7 +108,7 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     return new JoinQueueResponse
     {
       Id = queueEntry.Id,
-      BusinessId = business.Id,
+      BusinessQrCodeToken = business.Id,
       BusinessName = business.Name,
       Position = queueEntry.Position,
       EstimatedWaitTime = estimatedWaitTime,
@@ -97,8 +121,8 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
 
   public async Task<CallNextClientResponse> CallNextClientAsync(Guid businessId)
   {
-    // var business = await context.Businesses.FindAsync(businessId); // BusinessId == QrCodeToken !
-    // Pour le moment on utilise l'id (`BusinessId`) de l'entreprise au lieu du `QRCodeToken` pour identifier l'entreprise.
+    // var business = await context.Businesses.FindAsync(businessId); // BusinessQrCodeToken == BusinessQrCodeToken !
+    // Pour le moment on utilise l'id (`BusinessQrCodeToken`) de l'entreprise au lieu du `QRCodeToken` pour identifier l'entreprise.
     var business = await businessService.FindBusinessByIdAsync(businessId);
 
 
@@ -116,7 +140,7 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
 
     // Récupérer le premier client en attente (position la plus basse)
     var nextClient = await context.Queues
-      .Where(q => q.BusinessId == businessId && q.Status == "waiting")
+      .Where(q => q.BusinessQrCodeToken == businessId && q.Status == "waiting")
       .OrderBy(q => q.Position)
       .FirstOrDefaultAsync();
 
@@ -141,7 +165,7 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     return new CallNextClientResponse
     {
       Id = nextClient.Id,
-      BusinessId = nextClient.BusinessId,
+      BusinessQrCodeToken = nextClient.BusinessQrCodeToken,
       Phone = nextClient.Phone,
       ClientName = nextClient.ClientName,
       Position = nextClient.Position,
@@ -172,7 +196,7 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     await context.SaveChangesAsync();
 
     // Recalcul des positions des clients restants en attente (remplace l'ancien trigger PostgreSQL)
-    await QueuePositionHelper.RecalculatePositionsAsync(context, entry.BusinessId);
+    await QueuePositionHelper.RecalculatePositionsAsync(context, entry.BusinessQrCodeToken);
     await context.SaveChangesAsync();
 
     logger.LogInformation("Entrée `{@0}` annulée pour le client `{@1}`.", id, entry.Phone);
@@ -180,7 +204,7 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     return new CancelQueueEntryResponse
     {
       Id = entry.Id,
-      BusinessId = entry.BusinessId,
+      BusinessQrCodeToken = entry.BusinessQrCodeToken,
       Phone = entry.Phone,
       ClientName = entry.ClientName,
       Status = entry.Status,
@@ -218,7 +242,7 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     return new MarkClientAsServedResponse
     {
       Id = entry.Id,
-      BusinessId = entry.BusinessId,
+      BusinessQrCodeToken = entry.BusinessQrCodeToken,
       Phone = entry.Phone,
       ClientName = entry.ClientName,
       Status = entry.Status,

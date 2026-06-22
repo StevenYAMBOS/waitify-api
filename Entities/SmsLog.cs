@@ -9,7 +9,7 @@ public class SmsLog
     public Guid Id { get; set; }
 
     [Required]
-    public Guid BusinessId { get; set; }
+    public Guid BusinessQrCodeToken { get; set; }
     public virtual Business? Business { get; set; }
 
     public Guid? QueueEntryId { get; set; }

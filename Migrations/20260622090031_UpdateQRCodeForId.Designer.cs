@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WaitifyApi.Data;
@@ -11,9 +12,11 @@ using WaitifyApi.Data;
 namespace WaitifyApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260622090031_UpdateQRCodeForId")]
+    partial class UpdateQRCodeForId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -404,9 +407,6 @@ namespace WaitifyApi.Migrations
                     b.Property<int>("ActualServiceTime")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("BusinessQrCodeToken")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime?>("CalledAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -429,6 +429,9 @@ namespace WaitifyApi.Migrations
                     b.Property<int>("Position")
                         .HasColumnType("integer");
 
+                    b.Property<Guid>("QrCodeToken")
+                        .HasColumnType("uuid");
+
                     b.Property<DateTime?>("ServedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -445,11 +448,11 @@ namespace WaitifyApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BusinessQrCodeToken");
+                    b.HasIndex("QrCodeToken");
 
                     b.HasIndex("Status");
 
-                    b.HasIndex("BusinessQrCodeToken", "Status");
+                    b.HasIndex("QrCodeToken", "Status");
 
                     b.ToTable("QueueEntries", t =>
                         {
@@ -461,9 +464,6 @@ namespace WaitifyApi.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("BusinessQrCodeToken")
                         .HasColumnType("uuid");
 
                     b.Property<int>("CostCents")
@@ -488,6 +488,9 @@ namespace WaitifyApi.Migrations
                     b.Property<string>("ProviderResponse")
                         .HasColumnType("jsonb");
 
+                    b.Property<Guid>("QrCodeToken")
+                        .HasColumnType("uuid");
+
                     b.Property<Guid?>("QueueEntryId")
                         .HasColumnType("uuid");
 
@@ -502,7 +505,7 @@ namespace WaitifyApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BusinessQrCodeToken");
+                    b.HasIndex("QrCodeToken");
 
                     b.HasIndex("QueueEntryId");
 
@@ -623,7 +626,7 @@ namespace WaitifyApi.Migrations
                 {
                     b.HasOne("WaitifyApi.Entities.Business", "Business")
                         .WithMany()
-                        .HasForeignKey("BusinessQrCodeToken")
+                        .HasForeignKey("QrCodeToken")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -634,7 +637,7 @@ namespace WaitifyApi.Migrations
                 {
                     b.HasOne("WaitifyApi.Entities.Business", "Business")
                         .WithMany()
-                        .HasForeignKey("BusinessQrCodeToken")
+                        .HasForeignKey("QrCodeToken")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

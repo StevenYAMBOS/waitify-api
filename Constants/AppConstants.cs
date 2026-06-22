@@ -26,4 +26,14 @@ public static class AppConstants
     {
         public const string Denied = "Accès non autorisé";
     }
+
+    public record Queues
+    {
+        public record Status
+        {
+            public const string Waiting = "waiting";
+
+        }
+
+    }
 }

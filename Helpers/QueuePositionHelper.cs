@@ -11,7 +11,7 @@ namespace WaitifyApi.Helpers;
 /// Logique équivalente au trigger supprimé :
 /// <code>
 /// ROW_NUMBER() OVER (ORDER BY "CreatedAt" ASC)
-/// WHERE "BusinessId" = @businessId AND "Status" = 'waiting'
+/// WHERE "BusinessId" = @businessQrCodeToken AND "Status" = 'waiting'
 /// </code>
 /// </remarks>
 public static class QueuePositionHelper
@@ -33,11 +33,11 @@ public static class QueuePositionHelper
     /// </para>
     /// </remarks>
     /// <param name="context">Contexte de base de données EF Core.</param>
-    /// <param name="businessId">Identifiant de l'établissement concerné.</param>
-    public static async Task RecalculatePositionsAsync(AppDbContext context, Guid businessId)
+    /// <param name="businessQrCodeToken">Identifiant de l'établissement concerné.</param>
+    public static async Task RecalculatePositionsAsync(AppDbContext context, Guid businessQrCodeToken)
     {
         var waitingEntries = await context.Queues
-            .Where(q => q.BusinessId == businessId && q.Status == "waiting")
+            .Where(q => q.BusinessQrCodeToken == businessQrCodeToken && q.Status == "waiting")
             .OrderBy(q => q.CreatedAt)
             .ToListAsync();
 

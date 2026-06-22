@@ -47,12 +47,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             entity.HasOne(q => q.Business)
                 .WithMany()
-                .HasForeignKey(q => q.BusinessId)
+                .HasForeignKey(q => q.BusinessQrCodeToken)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            entity.HasIndex(q => q.BusinessId);
+            entity.HasIndex(q => q.BusinessQrCodeToken);
             entity.HasIndex(q => q.Status);
-            entity.HasIndex(q => new { q.BusinessId, q.Status });
+            entity.HasIndex(q => new { q.BusinessQrCodeToken, q.Status });
 
             entity.Property(q => q.Status).HasDefaultValue("waiting");
 
@@ -76,7 +76,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             entity.HasOne(s => s.Business)
                 .WithMany()
-                .HasForeignKey(s => s.BusinessId)
+                .HasForeignKey(s => s.BusinessQrCodeToken)
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(s => s.QueueEntry)
@@ -84,7 +84,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .HasForeignKey(s => s.QueueEntryId)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            entity.HasIndex(s => s.BusinessId);
+            entity.HasIndex(s => s.BusinessQrCodeToken);
             entity.HasIndex(s => s.QueueEntryId);
             entity.HasIndex(s => s.Status);
             entity.HasIndex(s => s.SentAt);

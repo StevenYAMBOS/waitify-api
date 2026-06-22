@@ -14,12 +14,12 @@ namespace WaitifyApi.Services;
 
 public class BusinessService(AppDbContext context, IApplicationUserRepository userService, QRCodeGeneratorService qRCodeHelper, FileStorageService fileStorageService, ILogger<BusinessService> logger) : IBusinessRepository
 {
-    public async Task<string> GenerateNewQRCodeAsync(Guid businessId, string userId, Guid qrCodeToken)
+    public async Task<string> GenerateNewQRCodeAsync(Guid businessQRCodeToken, string userId, Guid qrCodeToken)
     {
-        var business = await FindBusinessByIdAsync(businessId);
+        var business = await FindBusinessByQrTokenAsync(businessQRCodeToken);
         if (business == null)
         {
-            logger.LogError("Entreprise non trouvée.\n ID en base de données : `{@0}`.\n ID de la requête : `{@1}`.", business?.Id, businessId);
+            logger.LogError("Entreprise non trouvée.\n ID en base de données : `{@0}`.\n ID de la requête : `{@1}`.", business?.QrCodeToken, businessQRCodeToken);
             throw new KeyNotFoundException("Entreprise non trouvée.");
         }
 

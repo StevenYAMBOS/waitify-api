@@ -5,7 +5,7 @@
 namespace WaitifyApi.Migrations
 {
     /// <inheritdoc />
-    public partial class UpdateQRCodeForId : Migration
+    public partial class QRCodeTokenAsUUID : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -21,40 +21,40 @@ namespace WaitifyApi.Migrations
             migrationBuilder.RenameColumn(
                 name: "BusinessId",
                 table: "SmsLogs",
-                newName: "QrCodeToken");
+                newName: "BusinessQrCodeToken");
 
             migrationBuilder.RenameIndex(
                 name: "IX_SmsLogs_BusinessId",
                 table: "SmsLogs",
-                newName: "IX_SmsLogs_QrCodeToken");
+                newName: "IX_SmsLogs_BusinessQrCodeToken");
 
             migrationBuilder.RenameColumn(
                 name: "BusinessId",
                 table: "QueueEntries",
-                newName: "QrCodeToken");
+                newName: "BusinessQrCodeToken");
 
             migrationBuilder.RenameIndex(
                 name: "IX_QueueEntries_BusinessId_Status",
                 table: "QueueEntries",
-                newName: "IX_QueueEntries_QrCodeToken_Status");
+                newName: "IX_QueueEntries_BusinessQrCodeToken_Status");
 
             migrationBuilder.RenameIndex(
                 name: "IX_QueueEntries_BusinessId",
                 table: "QueueEntries",
-                newName: "IX_QueueEntries_QrCodeToken");
+                newName: "IX_QueueEntries_BusinessQrCodeToken");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_QueueEntries_Businesses_QrCodeToken",
+                name: "FK_QueueEntries_Businesses_BusinessQrCodeToken",
                 table: "QueueEntries",
-                column: "QrCodeToken",
+                column: "BusinessQrCodeToken",
                 principalTable: "Businesses",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
 
             migrationBuilder.AddForeignKey(
-                name: "FK_SmsLogs_Businesses_QrCodeToken",
+                name: "FK_SmsLogs_Businesses_BusinessQrCodeToken",
                 table: "SmsLogs",
-                column: "QrCodeToken",
+                column: "BusinessQrCodeToken",
                 principalTable: "Businesses",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
@@ -64,35 +64,35 @@ namespace WaitifyApi.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_QueueEntries_Businesses_QrCodeToken",
+                name: "FK_QueueEntries_Businesses_BusinessQrCodeToken",
                 table: "QueueEntries");
 
             migrationBuilder.DropForeignKey(
-                name: "FK_SmsLogs_Businesses_QrCodeToken",
+                name: "FK_SmsLogs_Businesses_BusinessQrCodeToken",
                 table: "SmsLogs");
 
             migrationBuilder.RenameColumn(
-                name: "QrCodeToken",
+                name: "BusinessQrCodeToken",
                 table: "SmsLogs",
                 newName: "BusinessId");
 
             migrationBuilder.RenameIndex(
-                name: "IX_SmsLogs_QrCodeToken",
+                name: "IX_SmsLogs_BusinessQrCodeToken",
                 table: "SmsLogs",
                 newName: "IX_SmsLogs_BusinessId");
 
             migrationBuilder.RenameColumn(
-                name: "QrCodeToken",
+                name: "BusinessQrCodeToken",
                 table: "QueueEntries",
                 newName: "BusinessId");
 
             migrationBuilder.RenameIndex(
-                name: "IX_QueueEntries_QrCodeToken_Status",
+                name: "IX_QueueEntries_BusinessQrCodeToken_Status",
                 table: "QueueEntries",
                 newName: "IX_QueueEntries_BusinessId_Status");
 
             migrationBuilder.RenameIndex(
-                name: "IX_QueueEntries_QrCodeToken",
+                name: "IX_QueueEntries_BusinessQrCodeToken",
                 table: "QueueEntries",
                 newName: "IX_QueueEntries_BusinessId");
 

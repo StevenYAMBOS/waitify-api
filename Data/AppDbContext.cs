@@ -8,6 +8,7 @@ namespace WaitifyApi.Data;
 public class AppDbContext(DbContextOptions<AppDbContext> options)
     : IdentityDbContext<ApplicationUser>(options)
 {
+
     public DbSet<Business> Businesses { get; set; }
     public DbSet<QueueEntries> Queues { get; set; }
     public DbSet<SubscriptionPlan> SubscriptionPlans { get; set; }
@@ -39,7 +40,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .HasForeignKey(b => b.OwnerId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(b => b.OwnerId);
-            entity.HasIndex(b => b.QrCodeToken).IsUnique();
+            entity.HasIndex(b => b.QrCodeToken);
             entity.HasIndex(b => b.IsActive);
         });
 

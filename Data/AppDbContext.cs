@@ -40,7 +40,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .HasForeignKey(b => b.OwnerId)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(b => b.OwnerId);
-            entity.HasIndex(b => b.QrCodeToken);
+            entity.HasIndex(b => b.QrCodeToken).IsUnique();
             entity.HasIndex(b => b.IsActive);
         });
 

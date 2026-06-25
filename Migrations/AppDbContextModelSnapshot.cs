@@ -331,9 +331,9 @@ namespace WaitifyApi.Migrations
                     b.Property<string>("PhoneNumber")
                         .HasColumnType("varchar(20)");
 
-                    b.Property<Guid>("QrCodeToken")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
+                    b.Property<string>("QrCodeToken")
+                        .IsRequired()
+                        .HasColumnType("varchar(255)");
 
                     b.Property<bool>("SmsNotificationsEnabled")
                         .HasColumnType("boolean");
@@ -353,7 +353,7 @@ namespace WaitifyApi.Migrations
                     b.HasIndex("QrCodeToken")
                         .IsUnique();
 
-                    b.ToTable("Businesses");
+                    b.ToTable("Businesses", (string)null);
                 });
 
             modelBuilder.Entity("WaitifyApi.Entities.Contact", b =>
@@ -392,7 +392,7 @@ namespace WaitifyApi.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Contacts");
+                    b.ToTable("Contacts", (string)null);
                 });
 
             modelBuilder.Entity("WaitifyApi.Entities.QueueEntries", b =>
@@ -451,7 +451,7 @@ namespace WaitifyApi.Migrations
 
                     b.HasIndex("BusinessQrCodeToken", "Status");
 
-                    b.ToTable("QueueEntries", t =>
+                    b.ToTable("QueueEntries", null, t =>
                         {
                             t.HasCheckConstraint("CK_QueueEntries_Status", "\"Status\" IN ('waiting', 'called', 'served', 'missed', 'cancelled')");
                         });
@@ -510,7 +510,7 @@ namespace WaitifyApi.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("SmsLogs", t =>
+                    b.ToTable("SmsLogs", null, t =>
                         {
                             t.HasCheckConstraint("CK_SmsLogs_Status", "\"Status\" IN ('pending', 'sent', 'failed')");
                         });
@@ -552,7 +552,7 @@ namespace WaitifyApi.Migrations
                     b.HasIndex("Name")
                         .IsUnique();
 
-                    b.ToTable("SubscriptionPlans", t =>
+                    b.ToTable("SubscriptionPlans", null, t =>
                         {
                             t.HasCheckConstraint("CK_SubscriptionPlans_MaxBusinesses", "\"MaxBusinesses\" = -1 OR \"MaxBusinesses\" > 0");
                         });

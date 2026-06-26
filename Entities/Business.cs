@@ -27,9 +27,8 @@ public class Business
     public string? ZipCode { get; set; }
     [Column(TypeName = "varchar(50)")]
     public string Country { get; set; } = "France";
-    [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
-    // [Required]
-    public Guid QrCodeToken { get; set; } = Guid.NewGuid();
+    [Required]
+    public Guid QrCodeToken { get; set; }
     public int AverageServiceTime { get; set; } = 300;
     public bool IsQueueActive { get; set; } = false;
     public bool IsQueuePaused { get; set; } = false;

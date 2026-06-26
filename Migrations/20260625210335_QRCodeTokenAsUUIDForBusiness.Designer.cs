@@ -12,7 +12,7 @@ using WaitifyApi.Data;
 namespace WaitifyApi.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20260622233402_QRCodeTokenAsUUIDForBusiness")]
+    [Migration("20260625210335_QRCodeTokenAsUUIDForBusiness")]
     partial class QRCodeTokenAsUUIDForBusiness
     {
         /// <inheritdoc />

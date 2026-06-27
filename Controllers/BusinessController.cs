@@ -22,8 +22,8 @@ public class BusinessController(
     ILogger<BusinessController> logger
 ) : ControllerBase
 {
-    [HttpPost("generate:{id}/qrcode")]
-    public async Task<IActionResult> GenerateNewQRCode(Guid id, Guid qrCodeToken)
+    [HttpPost("generate:{businessQRCodeToken}/qrcode")]
+    public async Task<IActionResult> GenerateNewQRCode(Guid businessQRCodeToken)
     {
         var userIdFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
         if (userIdFromFromJwt == null)
@@ -32,7 +32,7 @@ public class BusinessController(
             return StatusCode(StatusCodes.Status404NotFound, "Utilisateur introuvable ou accès refusé.");
         }
 
-        var business = await businessService.GenerateNewQRCodeAsync(id, userIdFromFromJwt, qrCodeToken);
+        var business = await businessService.GenerateNewQRCodeAsync(businessQRCodeToken, userIdFromFromJwt);
         if (business == null)
         {
             logger.LogInformation("QRCode non généré : {@0}", business);

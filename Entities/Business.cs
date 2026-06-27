@@ -27,6 +27,7 @@ public class Business
     public string? ZipCode { get; set; }
     [Column(TypeName = "varchar(50)")]
     public string Country { get; set; } = "France";
+    [Column(TypeName = "varchar(255)")]
     [Required]
     public Guid QrCodeToken { get; set; }
     public int AverageServiceTime { get; set; } = 300;

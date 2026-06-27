@@ -14,7 +14,7 @@ namespace WaitifyApi.Services;
 
 public class BusinessService(AppDbContext context, IApplicationUserRepository userService, QRCodeGeneratorService qRCodeHelper, FileStorageService fileStorageService, ILogger<BusinessService> logger) : IBusinessRepository
 {
-    public async Task<string> GenerateNewQRCodeAsync(Guid businessQRCodeToken, string userId, Guid qrCodeToken)
+    public async Task<string> GenerateNewQRCodeAsync(Guid businessQRCodeToken, string userId)
     {
         var business = await FindBusinessByQrTokenAsync(businessQRCodeToken);
         if (business == null)
@@ -36,7 +36,7 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             throw new KeyNotFoundException("Utilisateur non trouvé.");
         }
 
-        var url = AppConstants.Config.WaitifyUrl + "/q/" + qrCodeToken;
+        var url = AppConstants.Config.WaitifyUrl + "/q/" + businessQRCodeToken;
         var qrCodeGenerated = await qRCodeHelper.GenerateQRCode(url);
 
         logger.LogInformation("Nouveau QRCode généré : {@0}", JsonConvert.SerializeObject(qrCodeGenerated, Formatting.Indented));

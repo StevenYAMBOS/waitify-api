@@ -10,7 +10,7 @@ Par : [Steven YAMBOS](www.linkedin.com/in/steven-yambos)
 
 ### Créer une entreprise
 
->Chemin : `POST /api/business`
+> Chemin : `POST /api/business`
 
 #### Description
 
@@ -26,10 +26,10 @@ Cet endpoint permet à un utilisateur authentifié de créer une nouvelle entrep
 
 ##### Headers obligatoires
 
-| Header          | Valeur                        |
-|-----------------|-------------------------------|
-| `Authorization` | `Bearer <token>`              |
-| `Content-Type`  | `multipart/form-data`         |
+| Header          | Valeur                |
+| --------------- | --------------------- |
+| `Authorization` | `Bearer <token>`      |
+| `Content-Type`  | `multipart/form-data` |
 
 > ⚠️ Le body est envoyé en `multipart/form-data` (et non `application/json`) car il peut contenir un fichier image (`Logo`). Tout client HTTP doit utiliser ce content-type.
 
@@ -41,16 +41,16 @@ _Aucun header optionnel identifié dans le code._
 
 #### Body (`multipart/form-data`)
 
-| Champ          | Type         | Obligatoire | Contraintes                                                                  | Description                          |
-|----------------|--------------|-------------|------------------------------------------------------------------------------|--------------------------------------|
-| `Name`         | `string`     | ✅ Oui      | —                                                                            | Nom de l'entreprise.                 |
-| `BusinessType` | `string`     | ✅ Oui      | —                                                                            | Type / catégorie de l'entreprise.    |
-| `PhoneNumber`  | `string`     | ✅ Oui      | —                                                                            | Numéro de téléphone de l'entreprise. |
-| `Address`      | `string`     | ✅ Oui      | —                                                                            | Adresse postale.                     |
-| `City`         | `string`     | ✅ Oui      | —                                                                            | Ville.                               |
-| `ZipCode`      | `string`     | ✅ Oui      | —                                                                            | Code postal.                         |
-| `Country`      | `string`     | ✅ Oui      | Valeur par défaut : `"France"`                                               | Pays.                                |
-| `Logo`         | `IFormFile`  | ❌ Non      | Taille max : **1 Mo**. Extensions autorisées : `.jpeg`, `.jpg`, `.png`, `.webp`, `.svg` | Logo de l'entreprise.   |
+| Champ          | Type        | Obligatoire | Contraintes                                                                             | Description                          |
+| -------------- | ----------- | ----------- | --------------------------------------------------------------------------------------- | ------------------------------------ |
+| `Name`         | `string`    | ✅ Oui      | —                                                                                       | Nom de l'entreprise.                 |
+| `BusinessType` | `string`    | ✅ Oui      | —                                                                                       | Type / catégorie de l'entreprise.    |
+| `PhoneNumber`  | `string`    | ✅ Oui      | —                                                                                       | Numéro de téléphone de l'entreprise. |
+| `Address`      | `string`    | ✅ Oui      | —                                                                                       | Adresse postale.                     |
+| `City`         | `string`    | ✅ Oui      | —                                                                                       | Ville.                               |
+| `ZipCode`      | `string`    | ✅ Oui      | —                                                                                       | Code postal.                         |
+| `Country`      | `string`    | ✅ Oui      | Valeur par défaut : `"France"`                                                          | Pays.                                |
+| `Logo`         | `IFormFile` | ❌ Non      | Taille max : **1 Mo**. Extensions autorisées : `.jpeg`, `.jpg`, `.png`, `.webp`, `.svg` | Logo de l'entreprise.                |
 
 > **Note :** Le champ `QrCodeToken` est présent dans le modèle `BusinessRequest` mais **n'est pas fourni par le client** : il est généré côté serveur (`Guid.NewGuid()`) lors de la création.
 
@@ -118,15 +118,15 @@ Erreur lors de la création de l'entreprise.
 
 Retourné automatiquement par ASP.NET si un champ obligatoire est absent ou invalide. Les messages d'erreur sont définis dans `BusinessRequest` :
 
-| Champ          | Message d'erreur                                        |
-|----------------|---------------------------------------------------------|
-| `Name`         | `"Le nom est incorrecte."`                              |
-| `BusinessType` | `"Le type est obligatoire."`                            |
-| `PhoneNumber`  | `"Le format du numéro de téléphone est incorrecte."`    |
-| `Address`      | `"L'adresse est incorrecte."`                           |
-| `City`         | `"La ville est obligatoire."`                           |
-| `ZipCode`      | `"Le code postale est obligatoire."`                    |
-| `Country`      | `"Le pays est obligatoire."`                            |
+| Champ          | Message d'erreur                                     |
+| -------------- | ---------------------------------------------------- |
+| `Name`         | `"Le nom est incorrecte."`                           |
+| `BusinessType` | `"Le type est obligatoire."`                         |
+| `PhoneNumber`  | `"Le format du numéro de téléphone est incorrecte."` |
+| `Address`      | `"L'adresse est incorrecte."`                        |
+| `City`         | `"La ville est obligatoire."`                        |
+| `ZipCode`      | `"Le code postale est obligatoire."`                 |
+| `Country`      | `"Le pays est obligatoire."`                         |
 
 ---
 
@@ -186,23 +186,23 @@ Content-Type: image/png
 
 ### Dépendances internes
 
-| Composant                  | Rôle                                                            |
-|----------------------------|-----------------------------------------------------------------|
-| `TokenService`             | Extraction du claim `nameidentifier` depuis le JWT.            |
-| `ApplicationUserService`   | Vérification de l'existence de l'utilisateur (`FindUserByIdAsync`). |
-| `FileStorageService`       | Upload du logo vers Azure Blob Storage (`UploadBlobAsync`).    |
-| `QRCodeHelper`             | Génération du QR code (`GenerateQRCode`).                      |
-| `AppDbContext`             | Persistance de l'entité `Business`.                            |
-| `AppConstants.WaitifyUrl`  | URL de base utilisée pour construire le lien du QR code.       |
+| Composant                 | Rôle                                                                |
+| ------------------------- | ------------------------------------------------------------------- |
+| `TokenService`            | Extraction du claim `nameidentifier` depuis le JWT.                 |
+| `ApplicationUserService`  | Vérification de l'existence de l'utilisateur (`FindUserByIdAsync`). |
+| `FileStorageService`      | Upload du logo vers Azure Blob Storage (`UploadBlobAsync`).         |
+| `QRCodeHelper`            | Génération du QR code (`GenerateQRCode`).                           |
+| `AppDbContext`            | Persistance de l'entité `Business`.                                 |
+| `AppConstants.WaitifyUrl` | URL de base utilisée pour construire le lien du QR code.            |
 
 ---
 
 ### Variables d'environnement requises
 
-| Variable                        | Usage                                              |
-|---------------------------------|----------------------------------------------------|
-| `AzureBlobBusinessesContainer`  | Nom du conteneur Azure Blob pour les logos.        |
-| [À compléter]                   | `AppConstants.WaitifyUrl` – URL de base Waitify.   |
+| Variable                       | Usage                                            |
+| ------------------------------ | ------------------------------------------------ |
+| `AzureBlobBusinessesContainer` | Nom du conteneur Azure Blob pour les logos.      |
+| [À compléter]                  | `AppConstants.WaitifyUrl` – URL de base Waitify. |
 
 ---
 
@@ -246,8 +246,8 @@ _Aucun header optionnel identifié dans le code._
 
 ##### Paramètres de requête (Query string)
 
-| Paramètre   | Type     | Obligatoire | Description                                                                                     |
-|-------------|----------|-------------|--------------------------------------------------------------------------------------------------|
+| Paramètre   | Type     | Obligatoire | Description                                                                                                                  |
+| ----------- | -------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------- |
 | `returnUrl` | `string` | Oui         | URL vers laquelle le client sera redirigé après authentification réussie. Doit être encodée en URL (`Uri.EscapeDataString`). |
 
 ##### Body
@@ -289,19 +289,19 @@ Host: [À compléter]
 
 #### Dépendances internes
 
-| Composant                            | Rôle                                                                              |
-|--------------------------------------|-----------------------------------------------------------------------------------|
-| `SignInManager<ApplicationUser>`     | Construction des propriétés d'authentification externe (`ConfigureExternalAuthenticationProperties`). |
-| `LinkGenerator`                      | Résolution de l'URL de callback à partir du nom d'endpoint `GoogleLoginCallback`. |
+| Composant                        | Rôle                                                                                                  |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `SignInManager<ApplicationUser>` | Construction des propriétés d'authentification externe (`ConfigureExternalAuthenticationProperties`). |
+| `LinkGenerator`                  | Résolution de l'URL de callback à partir du nom d'endpoint `GoogleLoginCallback`.                     |
 
 ---
 
 #### Variables d'environnement requises
 
-| Variable                        | Usage                                      |
-|---------------------------------|--------------------------------------------|
-| `AuhtenticationGoogleClientId`  | Client ID OAuth Google.                    |
-| `AuhtenticationGoogleSecret`    | Client Secret OAuth Google.                |
+| Variable                       | Usage                       |
+| ------------------------------ | --------------------------- |
+| `AuhtenticationGoogleClientId` | Client ID OAuth Google.     |
+| `AuhtenticationGoogleSecret`   | Client Secret OAuth Google. |
 
 ---
 
@@ -337,8 +337,8 @@ _Aucun header obligatoire côté client. Les cookies de session OAuth sont gér�
 
 ##### Paramètres de requête (Query string)
 
-| Paramètre   | Type     | Obligatoire | Description                                                                     |
-|-------------|----------|-------------|---------------------------------------------------------------------------------|
+| Paramètre   | Type     | Obligatoire | Description                                                                            |
+| ----------- | -------- | ----------- | -------------------------------------------------------------------------------------- |
 | `returnUrl` | `string` | Oui         | URL de redirection finale après succès. Transmise depuis `GET /api/auth/login/google`. |
 
 > Google ajoute également ses propres paramètres (`code`, `state`, `scope`) à cette URL lors du callback. Ils sont consommés automatiquement par le middleware et ne doivent pas être fournis manuellement.
@@ -359,25 +359,26 @@ Aucun body attendu.
    c. Recherche de l'utilisateur en base par email (`FindByEmailAsync`).
    d. Si l'utilisateur **n'existe pas** : création d'un nouvel `ApplicationUser` avec les données suivantes :
 
-      | Champ            | Source                                                                                     | Valeur par défaut     |
-      |------------------|--------------------------------------------------------------------------------------------|-----------------------|
-      | `UserName`       | `ClaimTypes.Email`                                                                         | —                     |
-      | `Email`          | `ClaimTypes.Email`                                                                         | —                     |
-      | `FirstName`      | `ClaimTypes.GivenName`                                                                     | `""` (vide)           |
-      | `LastName`       | `ClaimTypes.Surname`                                                                       | `""` (vide)           |
-      | `EmailConfirmed` | Fixé à `true`                                                                              | —                     |
-      | `AuthProvider`   | Fixé à `"Google"`                                                                          | —                     |
-      | `GoogleId`       | `ClaimTypes.NameIdentifier`                                                                | `""` (vide)           |
-      | `Role`           | Fixé à `Role.Owner`                                                                        | —                     |
-      | `PhoneNumber`    | `ClaimTypes.HomePhone` ou `ClaimTypes.MobilePhone`                                         | `null`                |
-      | `ProfilePicture` | URL construite : `https://people.googleapis.com/v1/people/{NameIdentifier}?personFields=photos&key=image&key={GoogleApiKey}` | — |
-      | `TrialEndsAt`    | `DateTime.UtcNow + 360h (15 jours)`                                                        | —                     |
-      | `CreatedAt`      | `DateTime.UtcNow`                                                                          | —                     |
-      | `LastLogin`      | `DateTime.UtcNow`                                                                          | —                     |
+   | Champ            | Source                                                                                                                       | Valeur par défaut |
+   | ---------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+   | `UserName`       | `ClaimTypes.Email`                                                                                                           | —                 |
+   | `Email`          | `ClaimTypes.Email`                                                                                                           | —                 |
+   | `FirstName`      | `ClaimTypes.GivenName`                                                                                                       | `""` (vide)       |
+   | `LastName`       | `ClaimTypes.Surname`                                                                                                         | `""` (vide)       |
+   | `EmailConfirmed` | Fixé à `true`                                                                                                                | —                 |
+   | `AuthProvider`   | Fixé à `"Google"`                                                                                                            | —                 |
+   | `GoogleId`       | `ClaimTypes.NameIdentifier`                                                                                                  | `""` (vide)       |
+   | `Role`           | Fixé à `Role.Owner`                                                                                                          | —                 |
+   | `PhoneNumber`    | `ClaimTypes.HomePhone` ou `ClaimTypes.MobilePhone`                                                                           | `null`            |
+   | `ProfilePicture` | URL construite : `https://people.googleapis.com/v1/people/{NameIdentifier}?personFields=photos&key=image&key={GoogleApiKey}` | —                 |
+   | `TrialEndsAt`    | `DateTime.UtcNow + 360h (15 jours)`                                                                                          | —                 |
+   | `CreatedAt`      | `DateTime.UtcNow`                                                                                                            | —                 |
+   | `LastLogin`      | `DateTime.UtcNow`                                                                                                            | —                 |
 
    e. Si la création échoue → lève `ExternalLoginProviderException`.
    f. Ajout du login externe Google (`UserLoginInfo` avec `LoginProvider="Google"`, `ProviderKey=ClaimTypes.NameIdentifier`) si non déjà présent.
    g. Si l'ajout du login échoue → lève `ExternalLoginProviderException`.
+
 4. Redirection vers `returnUrl`.
 
 > **Note :** La génération de token JWT et de refresh token est actuellement **commentée** dans le code (`LoginWithGoogleAsync`). Aucun token n'est donc émis à l'issue de ce flux. Le mécanisme de session post-authentification Google est [À compléter].
@@ -412,12 +413,12 @@ HTTP/1.1 401 Unauthorized
 
 Les cas suivants lèvent une `ExternalLoginProviderException` non interceptée dans le contrôleur :
 
-| Condition                                          | Message d'erreur interne                                    |
-|----------------------------------------------------|--------------------------------------------------------------|
-| `ClaimsPrincipal` est `null`                       | `"ClaimsPrincipal est null"`                                |
-| Claim `Email` absent du principal                  | `"Email est null"`                                          |
-| Échec de `userManager.CreateAsync`                 | `"Unable to create user: <détails Identity>"`               |
-| Échec de `userManager.AddLoginAsync`               | `"Unable to login user: <détails Identity>"`                |
+| Condition                            | Message d'erreur interne                      |
+| ------------------------------------ | --------------------------------------------- |
+| `ClaimsPrincipal` est `null`         | `"ClaimsPrincipal est null"`                  |
+| Claim `Email` absent du principal    | `"Email est null"`                            |
+| Échec de `userManager.CreateAsync`   | `"Unable to create user: <détails Identity>"` |
+| Échec de `userManager.AddLoginAsync` | `"Unable to login user: <détails Identity>"`  |
 
 > Le comportement HTTP résultant de ces exceptions dépend de la gestion globale des erreurs de l'application — [À compléter].
 
@@ -437,21 +438,21 @@ Les cas suivants lèvent une `ExternalLoginProviderException` non interceptée d
 
 #### Dépendances internes
 
-| Composant                        | Rôle                                                                                   |
-|----------------------------------|----------------------------------------------------------------------------------------|
-| `SignInManager<ApplicationUser>` | Authentification via le schéma Cookie (`AuthenticateAsync`).                          |
-| `AuthService.LoginWithGoogleAsync` | Création/récupération de l'utilisateur et enregistrement du login externe Google.   |
-| `UserManager<ApplicationUser>`   | Recherche, création et gestion des logins externes de l'utilisateur.                  |
+| Composant                          | Rôle                                                                              |
+| ---------------------------------- | --------------------------------------------------------------------------------- |
+| `SignInManager<ApplicationUser>`   | Authentification via le schéma Cookie (`AuthenticateAsync`).                      |
+| `AuthService.LoginWithGoogleAsync` | Création/récupération de l'utilisateur et enregistrement du login externe Google. |
+| `UserManager<ApplicationUser>`     | Recherche, création et gestion des logins externes de l'utilisateur.              |
 
 ---
 
 #### Variables d'environnement requises
 
-| Variable               | Usage                                                                  |
-|------------------------|------------------------------------------------------------------------|
-| `GoogleApiKey`         | Clé API Google utilisée pour construire l'URL de photo de profil.     |
-| `AuhtenticationGoogleClientId` | Client ID OAuth Google (configuré au démarrage).             |
-| `AuhtenticationGoogleSecret`   | Client Secret OAuth Google (configuré au démarrage).         |
+| Variable                       | Usage                                                             |
+| ------------------------------ | ----------------------------------------------------------------- |
+| `GoogleApiKey`                 | Clé API Google utilisée pour construire l'URL de photo de profil. |
+| `AuhtenticationGoogleClientId` | Client ID OAuth Google (configuré au démarrage).                  |
+| `AuhtenticationGoogleSecret`   | Client Secret OAuth Google (configuré au démarrage).              |
 
 ---
 
@@ -485,7 +486,7 @@ Permet à un client d'intégrer la file d'attente d'une entreprise en scannant s
 ##### Headers obligatoires
 
 | Header         | Valeur             |
-|----------------|--------------------|
+| -------------- | ------------------ |
 | `Content-Type` | `application/json` |
 
 ##### Headers optionnels
@@ -494,11 +495,11 @@ _Aucun header optionnel identifié dans le code._
 
 ##### Body (`application/json`)
 
-| Champ         | Type     | Obligatoire | Contraintes                      | Description                                                          |
-|---------------|----------|-------------|----------------------------------|----------------------------------------------------------------------|
-| `qrCodeToken` | `Guid`   | ✅ Oui      | UUID valide                      | Identifiant QR code de l'entreprise, lu depuis le QR scanné.        |
-| `phone`       | `string` | ✅ Oui      | Format téléphone (`[Phone]`)     | Numéro de téléphone du client. Doit être unique dans la file active. |
-| `clientName`  | `string` | ❌ Non      | —                                | Nom affiché du client.                                               |
+| Champ         | Type     | Obligatoire | Contraintes                  | Description                                                          |
+| ------------- | -------- | ----------- | ---------------------------- | -------------------------------------------------------------------- |
+| `qrCodeToken` | `Guid`   | ✅ Oui      | UUID valide                  | Identifiant QR code de l'entreprise, lu depuis le QR scanné.         |
+| `phone`       | `string` | ✅ Oui      | Format téléphone (`[Phone]`) | Numéro de téléphone du client. Doit être unique dans la file active. |
+| `clientName`  | `string` | ❌ Non      | —                            | Nom affiché du client.                                               |
 
 ```json
 {
@@ -545,17 +546,17 @@ _Aucun header optionnel identifié dans le code._
 }
 ```
 
-| Champ                  | Type       | Description                                              |
-|------------------------|------------|----------------------------------------------------------|
-| `id`                   | `Guid`     | Identifiant unique de l'entrée en file d'attente.        |
-| `businessQrCodeToken`  | `Guid`     | QR token de l'entreprise (remplace `businessId`).        |
-| `businessName`         | `string`   | Nom de l'entreprise.                                     |
-| `position`             | `int`      | Position du client dans la file (commence à 1).          |
-| `estimatedWaitTime`    | `int`      | Temps d'attente estimé en minutes.                       |
-| `phone`                | `string`   | Numéro de téléphone du client.                           |
-| `clientName`           | `string`   | Nom du client (peut être `null` si non fourni).          |
-| `status`               | `string`   | Toujours `"waiting"` à la création.                      |
-| `createdAt`            | `DateTime` | Horodatage UTC de l'inscription.                         |
+| Champ                 | Type       | Description                                       |
+| --------------------- | ---------- | ------------------------------------------------- |
+| `id`                  | `Guid`     | Identifiant unique de l'entrée en file d'attente. |
+| `businessQrCodeToken` | `Guid`     | QR token de l'entreprise (remplace `businessId`). |
+| `businessName`        | `string`   | Nom de l'entreprise.                              |
+| `position`            | `int`      | Position du client dans la file (commence à 1).   |
+| `estimatedWaitTime`   | `int`      | Temps d'attente estimé en minutes.                |
+| `phone`               | `string`   | Numéro de téléphone du client.                    |
+| `clientName`          | `string`   | Nom du client (peut être `null` si non fourni).   |
+| `status`              | `string`   | Toujours `"waiting"` à la création.               |
+| `createdAt`           | `DateTime` | Horodatage UTC de l'inscription.                  |
 
 ---
 
@@ -645,11 +646,11 @@ Content-Type: application/json
 
 #### Dépendances internes
 
-| Composant                    | Rôle                                                                                      |
-|------------------------------|-------------------------------------------------------------------------------------------|
-| `BusinessService`            | Résolution de l'entreprise depuis le `qrCodeToken` (`FindBusinessByQrTokenAsync`).        |
-| `AppDbContext` (`Queues`)    | Vérification de doublon, comptage des clients en attente, persistance de l'entrée.        |
-| `QueuePositionHelper`        | Calcul de la position d'insertion (`CalculateNewPosition`).                               |
+| Composant                 | Rôle                                                                               |
+| ------------------------- | ---------------------------------------------------------------------------------- |
+| `BusinessService`         | Résolution de l'entreprise depuis le `qrCodeToken` (`FindBusinessByQrTokenAsync`). |
+| `AppDbContext` (`Queues`) | Vérification de doublon, comptage des clients en attente, persistance de l'entrée. |
+| `QueuePositionHelper`     | Calcul de la position d'insertion (`CalculateNewPosition`).                        |
 
 ---
 
@@ -662,27 +663,27 @@ Content-Type: application/json
 
 ---
 
-### `POST /api/business/generate:{id}/qrcode` – Générer un nouveau QR code pour une entreprise
+### `POST /api/business/generate:{businessQRCodeToken}/qrcode` – Générer un nouveau QR code pour une entreprise
 
 #### Description
 
-Permet au propriétaire d'une entreprise existante de générer un QR code pointant vers sa file d'attente. L'endpoint est réservé au gérant authentifié de l'entreprise identifiée par `{id}`. Le QR code encode l'URL `{WaitifyUrl}/q/{qrCodeToken}` et est retourné sous forme de balise HTML `<img>` embarquant une image PNG en base64.
+Permet au propriétaire d'une entreprise existante de générer un QR code pointant vers sa file d'attente. L'endpoint est réservé au gérant authentifié de l'entreprise identifiée par `{businessQRCodeToken}`. Le QR code encode l'URL `{WaitifyUrl}/q/{businessQRCodeToken}` et est retourné sous forme de balise HTML `<img>` embarquant une image PNG en base64.
 
 ---
 
 #### Requête HTTP
 
 - **Méthode :** `POST`
-- **Chemin :** `/api/business/generate:{id}/qrcode`
+- **Chemin :** `/api/business/generate:{businessQRCodeToken}/qrcode`
 - **Authentification requise :** Oui (type : Bearer JWT — extraction manuelle du claim `nameidentifier`)
 
 > ⚠️ Aucun attribut `[Authorize]` n'est présent sur cet endpoint. L'authentification est vérifiée manuellement via `TokenService` : l'absence de token valide entraîne un `404` et non un `401`.
 
 ##### Headers obligatoires
 
-| Header          | Valeur                   |
-|-----------------|--------------------------|
-| `Authorization` | `Bearer <token>`         |
+| Header          | Valeur           |
+| --------------- | ---------------- |
+| `Authorization` | `Bearer <token>` |
 
 ##### Headers optionnels
 
@@ -690,17 +691,17 @@ _Aucun header optionnel identifié dans le code._
 
 ##### Paramètres de chemin (Path parameters)
 
-| Paramètre | Type   | Obligatoire | Description                        |
-|-----------|--------|-------------|------------------------------------|
-| `id`      | `Guid` | ✅ Oui      | Identifiant de l'entreprise cible. |
+| Paramètre             | Type   | Obligatoire | Description                        |
+| --------------------- | ------ | ----------- | ---------------------------------- |
+| `businessQRCodeToken` | `Guid` | ✅ Oui      | Identifiant de l'entreprise cible. |
 
-> **Note :** La syntaxe du chemin est `generate:{id}/qrcode` (deux-points avant le paramètre). Exemple : `/api/business/generate:3fa85f64-5717-4562-b3fc-2c963f66afa6/qrcode`.
+> **Note :** La syntaxe du chemin est `generate:{businessQRCodeToken}/qrcode` (deux-points avant le paramètre). Exemple : `/api/business/generate:3fa85f64-5717-4562-b3fc-2c963f66afa6/qrcode`.
 
 ##### Paramètres de requête (Query string)
 
-| Paramètre      | Type   | Obligatoire | Description                                                                                   |
-|----------------|--------|-------------|-----------------------------------------------------------------------------------------------|
-| `qrCodeToken`  | `Guid` | ✅ Oui      | Token unique à encoder dans l'URL du QR code. Construit l'URL : `{WaitifyUrl}/q/{qrCodeToken}`. |
+| Paramètre             | Type   | Obligatoire | Description                                                                                             |
+| --------------------- | ------ | ----------- | ------------------------------------------------------------------------------------------------------- |
+| `businessQRCodeToken` | `Guid` | ✅ Oui      | Token unique à encoder dans l'URL du QR code. Construit l'URL : `{WaitifyUrl}/q/{businessQRCodeToken}`. |
 
 ##### Body
 
@@ -715,7 +716,7 @@ Aucun body attendu.
 3. Recherche de l'entreprise en base via `FindBusinessByIdAsync(id)`.
 4. Si l'entreprise est introuvable → lève `KeyNotFoundException` (non interceptée dans le contrôleur).
 5. Vérification que `userId == business.OwnerId` → si l'utilisateur n'est pas le propriétaire, lève `KeyNotFoundException`.
-6. Construction de l'URL du QR code : `{AppConstants.Config.WaitifyUrl}/q/{qrCodeToken}`.
+6. Construction de l'URL du QR code : `{AppConstants.Config.WaitifyUrl}/q/{businessQRCodeToken}`.
 7. Génération du QR code via `QRCodeGeneratorService.GenerateQRCode(url)` :
    - Niveau de correction d'erreur : `ECCLevel.Q`.
    - Format de sortie : image PNG encodée en base64, encapsulée dans une balise `<img>`.
@@ -730,12 +731,12 @@ Aucun body attendu.
 Retourne une chaîne HTML contenant le QR code sous forme d'image PNG en base64.
 
 ```html
-<img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...' />
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..." />
 ```
 
-| Champ  | Type     | Description                                                              |
-|--------|----------|--------------------------------------------------------------------------|
-| (body) | `string` | Balise `<img>` avec l'image PNG du QR code encodée en base64 inline.    |
+| Champ  | Type     | Description                                                          |
+| ------ | -------- | -------------------------------------------------------------------- |
+| (body) | `string` | Balise `<img>` avec l'image PNG du QR code encodée en base64 inline. |
 
 ---
 
@@ -763,11 +764,11 @@ QRCode non généré.
 
 Les cas suivants lèvent une `KeyNotFoundException` non interceptée dans le contrôleur :
 
-| Condition                                              | Message interne                                  |
-|--------------------------------------------------------|--------------------------------------------------|
-| Entreprise introuvable (`FindBusinessByIdAsync` = null) | `"Entreprise non trouvée."`                    |
-| Utilisateur introuvable ou condition de vérification  | `"Utilisateur non trouvé ou accès non autorisé."` |
-| `userId != business.OwnerId`                          | `"Utilisateur non trouvé."`                      |
+| Condition                                               | Message interne                                   |
+| ------------------------------------------------------- | ------------------------------------------------- |
+| Entreprise introuvable (`FindBusinessByIdAsync` = null) | `"Entreprise non trouvée."`                       |
+| Utilisateur introuvable ou condition de vérification    | `"Utilisateur non trouvé ou accès non autorisé."` |
+| `userId != business.OwnerId`                            | `"Utilisateur non trouvé."`                       |
 
 > Le code HTTP résultant dépend du gestionnaire global d'erreurs de l'application — [À compléter].
 
@@ -786,28 +787,30 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 #### Exemple de réponse (`200 OK`)
 
 ```html
-<img src='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AAAA...' />
+<img
+  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AAAA..."
+/>
 ```
 
 ---
 
 #### Dépendances internes
 
-| Composant                   | Rôle                                                                                  |
-|-----------------------------|---------------------------------------------------------------------------------------|
-| `TokenService`              | Extraction du claim `nameidentifier` depuis le JWT.                                   |
-| `BusinessService`           | Recherche de l'entreprise (`FindBusinessByIdAsync`), vérification du propriétaire.    |
-| `ApplicationUserService`    | Vérification de l'existence de l'utilisateur (`FindUserByIdAsync`).                   |
-| `QRCodeGeneratorService`    | Génération du QR code PNG en base64 (`GenerateQRCode`).                               |
-| `AppConstants.Config.WaitifyUrl` | URL de base utilisée pour construire le lien encodé dans le QR code.            |
+| Composant                        | Rôle                                                                               |
+| -------------------------------- | ---------------------------------------------------------------------------------- |
+| `TokenService`                   | Extraction du claim `nameidentifier` depuis le JWT.                                |
+| `BusinessService`                | Recherche de l'entreprise (`FindBusinessByIdAsync`), vérification du propriétaire. |
+| `ApplicationUserService`         | Vérification de l'existence de l'utilisateur (`FindUserByIdAsync`).                |
+| `QRCodeGeneratorService`         | Génération du QR code PNG en base64 (`GenerateQRCode`).                            |
+| `AppConstants.Config.WaitifyUrl` | URL de base utilisée pour construire le lien encodé dans le QR code.               |
 
 ---
 
 #### Variables d'environnement requises
 
-| Variable          | Usage                                                        |
-|-------------------|--------------------------------------------------------------|
-| [À compléter]     | `AppConstants.Config.WaitifyUrl` – URL de base Waitify.      |
+| Variable      | Usage                                                   |
+| ------------- | ------------------------------------------------------- |
+| [À compléter] | `AppConstants.Config.WaitifyUrl` – URL de base Waitify. |
 
 ---
 
@@ -836,8 +839,8 @@ Récupère les détails d'une entrée de file d'attente par son identifiant uniq
 
 ##### Paramètres de chemin (Path parameters)
 
-| Paramètre | Type   | Obligatoire | Description                                      |
-|-----------|--------|-------------|--------------------------------------------------|
+| Paramètre | Type   | Obligatoire | Description                                       |
+| --------- | ------ | ----------- | ------------------------------------------------- |
 | `id`      | `Guid` | ✅ Oui      | Identifiant unique de l'entrée en file d'attente. |
 
 ---
@@ -882,9 +885,9 @@ Appelle le prochain client en attente dans la file de l'entreprise identifiée p
 
 ##### Paramètres de chemin (Path parameters)
 
-| Paramètre      | Type   | Obligatoire | Description                                   |
-|----------------|--------|-------------|-----------------------------------------------|
-| `qrCodeToken`  | `Guid` | ✅ Oui      | QR token unique de l'entreprise concernée.    |
+| Paramètre     | Type   | Obligatoire | Description                                |
+| ------------- | ------ | ----------- | ------------------------------------------ |
+| `qrCodeToken` | `Guid` | ✅ Oui      | QR token unique de l'entreprise concernée. |
 
 ##### Body
 
@@ -921,15 +924,15 @@ Aucun body attendu.
 }
 ```
 
-| Champ                 | Type       | Description                                        |
-|-----------------------|------------|----------------------------------------------------|
-| `id`                  | `Guid`     | Identifiant de l'entrée en file d'attente.         |
-| `businessQrCodeToken` | `Guid`     | QR token de l'entreprise.                          |
-| `phone`               | `string`   | Numéro de téléphone du client.                     |
-| `clientName`          | `string`   | Nom du client (peut être `null`).                  |
-| `position`            | `int`      | Position au moment de l'appel.                     |
-| `status`              | `string`   | Toujours `"called"` après succès.                  |
-| `calledAt`            | `DateTime` | Horodatage UTC de l'appel.                         |
+| Champ                 | Type       | Description                                |
+| --------------------- | ---------- | ------------------------------------------ |
+| `id`                  | `Guid`     | Identifiant de l'entrée en file d'attente. |
+| `businessQrCodeToken` | `Guid`     | QR token de l'entreprise.                  |
+| `phone`               | `string`   | Numéro de téléphone du client.             |
+| `clientName`          | `string`   | Nom du client (peut être `null`).          |
+| `position`            | `int`      | Position au moment de l'appel.             |
+| `status`              | `string`   | Toujours `"called"` après succès.          |
+| `calledAt`            | `DateTime` | Horodatage UTC de l'appel.                 |
 
 ##### ❌ `400 Bad Request` – File fermée
 
@@ -959,11 +962,11 @@ Une erreur est survenue.
 
 #### Dépendances internes
 
-| Composant             | Rôle                                                                                 |
-|-----------------------|--------------------------------------------------------------------------------------|
-| `BusinessService`     | Résolution de l'entreprise via `FindBusinessByQrTokenAsync`.                         |
-| `AppDbContext`        | Requête sur la file, mise à jour du statut, persistance.                             |
-| `QueuePositionHelper` | Recalcul des positions après appel (`RecalculatePositionsAsync`).                    |
+| Composant             | Rôle                                                              |
+| --------------------- | ----------------------------------------------------------------- |
+| `BusinessService`     | Résolution de l'entreprise via `FindBusinessByQrTokenAsync`.      |
+| `AppDbContext`        | Requête sur la file, mise à jour du statut, persistance.          |
+| `QueuePositionHelper` | Recalcul des positions après appel (`RecalculatePositionsAsync`). |
 
 ---
 
@@ -983,8 +986,8 @@ Annule l'entrée d'un client dans la file d'attente. Seules les entrées avec le
 
 ##### Paramètres de chemin (Path parameters)
 
-| Paramètre | Type   | Obligatoire | Description                                      |
-|-----------|--------|-------------|--------------------------------------------------|
+| Paramètre | Type   | Obligatoire | Description                                       |
+| --------- | ------ | ----------- | ------------------------------------------------- |
 | `id`      | `Guid` | ✅ Oui      | Identifiant unique de l'entrée en file d'attente. |
 
 ##### Body
@@ -1019,14 +1022,14 @@ Aucun body attendu.
 }
 ```
 
-| Champ                 | Type       | Description                                  |
-|-----------------------|------------|----------------------------------------------|
-| `id`                  | `Guid`     | Identifiant de l'entrée.                     |
-| `businessQrCodeToken` | `Guid`     | QR token de l'entreprise.                    |
-| `phone`               | `string`   | Numéro de téléphone du client.               |
-| `clientName`          | `string`   | Nom du client (peut être `null`).            |
-| `status`              | `string`   | Toujours `"cancelled"` après succès.         |
-| `updatedAt`           | `DateTime` | Horodatage UTC de l'annulation.              |
+| Champ                 | Type       | Description                          |
+| --------------------- | ---------- | ------------------------------------ |
+| `id`                  | `Guid`     | Identifiant de l'entrée.             |
+| `businessQrCodeToken` | `Guid`     | QR token de l'entreprise.            |
+| `phone`               | `string`   | Numéro de téléphone du client.       |
+| `clientName`          | `string`   | Nom du client (peut être `null`).    |
+| `status`              | `string`   | Toujours `"cancelled"` après succès. |
+| `updatedAt`           | `DateTime` | Horodatage UTC de l'annulation.      |
 
 ##### ❌ `400 Bad Request` – Statut incompatible
 
@@ -1073,20 +1076,20 @@ Marque un client comme servi. Seules les entrées avec le statut `"called"` peuv
 ##### Headers obligatoires
 
 | Header         | Valeur             |
-|----------------|--------------------|
+| -------------- | ------------------ |
 | `Content-Type` | `application/json` |
 
 ##### Paramètres de chemin (Path parameters)
 
-| Paramètre | Type   | Obligatoire | Description                                      |
-|-----------|--------|-------------|--------------------------------------------------|
+| Paramètre | Type   | Obligatoire | Description                                       |
+| --------- | ------ | ----------- | ------------------------------------------------- |
 | `id`      | `Guid` | ✅ Oui      | Identifiant unique de l'entrée en file d'attente. |
 
 ##### Body (`application/json`)
 
-| Champ               | Type  | Obligatoire | Description                                              |
-|---------------------|-------|-------------|----------------------------------------------------------|
-| `actualServiceTime` | `int` | ❌ Non      | Durée réelle du service en secondes. Ignoré si `null`.   |
+| Champ               | Type  | Obligatoire | Description                                            |
+| ------------------- | ----- | ----------- | ------------------------------------------------------ |
+| `actualServiceTime` | `int` | ❌ Non      | Durée réelle du service en secondes. Ignoré si `null`. |
 
 ```json
 {
@@ -1124,16 +1127,16 @@ Marque un client comme servi. Seules les entrées avec le statut `"called"` peuv
 }
 ```
 
-| Champ                 | Type       | Description                                                        |
-|-----------------------|------------|--------------------------------------------------------------------|
-| `id`                  | `Guid`     | Identifiant de l'entrée.                                           |
-| `businessQrCodeToken` | `Guid`     | QR token de l'entreprise.                                          |
-| `phone`               | `string`   | Numéro de téléphone du client.                                     |
-| `clientName`          | `string`   | Nom du client (peut être `null`).                                  |
-| `status`              | `string`   | Toujours `"served"` après succès.                                  |
-| `calledAt`            | `DateTime` | Horodatage UTC de l'appel du client.                               |
-| `servedAt`            | `DateTime` | Horodatage UTC de la fin du service.                               |
-| `actualServiceTime`   | `int?`     | Temps de service réel en secondes (`null` si non renseigné).       |
+| Champ                 | Type       | Description                                                  |
+| --------------------- | ---------- | ------------------------------------------------------------ |
+| `id`                  | `Guid`     | Identifiant de l'entrée.                                     |
+| `businessQrCodeToken` | `Guid`     | QR token de l'entreprise.                                    |
+| `phone`               | `string`   | Numéro de téléphone du client.                               |
+| `clientName`          | `string`   | Nom du client (peut être `null`).                            |
+| `status`              | `string`   | Toujours `"served"` après succès.                            |
+| `calledAt`            | `DateTime` | Horodatage UTC de l'appel du client.                         |
+| `servedAt`            | `DateTime` | Horodatage UTC de la fin du service.                         |
+| `actualServiceTime`   | `int?`     | Temps de service réel en secondes (`null` si non renseigné). |
 
 ##### ❌ `400 Bad Request` – Statut incompatible
 

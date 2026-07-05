@@ -24,7 +24,7 @@ public static class AppConstants
 
     public record Authorization
     {
-        public const string Denied = "Accès non autorisé";
+        public const string Denied = "Accès non autorisé !";
     }
 
     public record Queues

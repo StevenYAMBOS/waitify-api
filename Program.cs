@@ -138,7 +138,7 @@ builder.Services.AddAuthentication(options =>
             {
                 Console.WriteLine("Access token");
                 Console.WriteLine("URL: " + path);
-                Console.WriteLine("Token: No access token provided\r\n");
+                Console.WriteLine("Token: Aucun token fourni\r\n");
             }
             return Task.CompletedTask;
         },

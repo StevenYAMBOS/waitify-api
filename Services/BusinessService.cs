@@ -19,22 +19,22 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         var business = await FindBusinessByQrTokenAsync(businessQRCodeToken);
         if (business == null)
         {
-            logger.LogError("Entreprise non trouvée.\n QRCodeToken trouvé en base de données : `{@0}`.\n QRCodeToken fourni dans la requête : `{@1}`.", business?.QrCodeToken, businessQRCodeToken);
+            logger.LogError("Entreprise non trouvée.\n QRCodeToken enttreprise trouvé en base de données : `{@0}`.\n QRCodeToken fourni dans la requête : `{@1}`.", business?.QrCodeToken, businessQRCodeToken);
             throw new KeyNotFoundException("Entreprise non trouvée.");
         }
 
         var existingUser = userService.FindUserByIdAsync(userId);
         if (existingUser?.Id.ToString() == userId)
         {
-            logger.LogError("Accès interdit. L'id utilisateur est incorrecte.\n ID en base de données : `{@0}`.\n ID de la requête : `{@1}`.", existingUser?.Id, userId);
+            logger.LogError("Accès interdit. L'id utilisateur est incorrecte.\n ID utilisateur en base de données : `{@0}`.\n ID fourni de la requête : `{@1}`.", existingUser?.Id, userId);
             throw new KeyNotFoundException("Utilisateur non trouvé ou accès non autorisé.");
         }
 
-        if (userId != business.OwnerId)
-        {
-            logger.LogError("Accès refusé !\n ID récupéré du JWT : `{@0}`.\n ID du gérant en BDD : `{@1}`.", userId, business.OwnerId);
-            throw new KeyNotFoundException("Utilisateur non trouvé.");
-        }
+        // if (business.OwnerId != existingUser?.Id.ToString())
+        // {
+        //     logger.LogError("Accès refusé !\n ID récupéré du JWT : `{@0}`.\n ID du gérant en BDD : `{@1}`.", userId, business.OwnerId);
+        //     throw new KeyNotFoundException("Utilisateur non trouvé.");
+        // }
 
         var url = AppConstants.Config.WaitifyUrl + "/q/" + businessQRCodeToken;
         var qrCodeGenerated = await qRCodeHelper.GenerateQRCode(url);

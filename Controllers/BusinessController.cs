@@ -48,10 +48,10 @@ public class BusinessController(
         var business = await businessService.FindBusinessByQrTokenAsync(qrCodeToken);
         if (business == null)
         {
-            logger.LogInformation("Entreprise avec le qrCodeToken : `{qrCodeToken}` introuvable", qrCodeToken);
+            logger.LogInformation("Entreprise avec le qrCodeToken : `{@qrCodeToken}` introuvable", qrCodeToken);
             return StatusCode(StatusCodes.Status404NotFound, "Entreprise introuvable");
         }
-        logger.LogInformation("Entreprise : {@0}", JsonConvert.SerializeObject(business, Formatting.Indented));
+        logger.LogInformation("Entreprise : {@0}", JsonResponseHelper.JsonConversion(business));
         return Ok(business);
     }
 

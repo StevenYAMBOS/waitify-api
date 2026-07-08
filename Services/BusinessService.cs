@@ -19,7 +19,7 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         var business = await FindBusinessByQrTokenAsync(businessQRCodeToken);
         if (business == null)
         {
-            logger.LogError("Entreprise non trouvée.\n ID en base de données : `{@0}`.\n ID de la requête : `{@1}`.", business?.QrCodeToken, businessQRCodeToken);
+            logger.LogError("Entreprise non trouvée.\n QRCodeToken trouvé en base de données : `{@0}`.\n QRCodeToken fourni dans la requête : `{@1}`.", business?.QrCodeToken, businessQRCodeToken);
             throw new KeyNotFoundException("Entreprise non trouvée.");
         }
 
@@ -39,7 +39,7 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         var url = AppConstants.Config.WaitifyUrl + "/q/" + businessQRCodeToken;
         var qrCodeGenerated = await qRCodeHelper.GenerateQRCode(url);
 
-        logger.LogInformation("Nouveau QRCode généré : {@0}", JsonConvert.SerializeObject(qrCodeGenerated, Formatting.Indented));
+        logger.LogInformation("Nouveau QRCode généré : {@0}", JsonResponseHelper.JsonConversion(qrCodeGenerated));
         return qrCodeGenerated;
     }
 

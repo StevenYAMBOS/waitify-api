@@ -232,7 +232,14 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
 
     public async Task DeleteBusinessAsync(Guid id)
     {
-        var business = await FindBusinessByIdAsync(id) ?? throw new KeyNotFoundException("Entreprise non trouvée.");
+        var business = await FindBusinessByIdAsync(id);
+
+
+        if (business is null)
+        {
+            logger.LogError("Entreprise non trouvée.");
+            throw new KeyNotFoundException("Entreprise non trouvée.");
+        }
 
         if (business.Logo != null)
         {
@@ -244,6 +251,7 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
 
         context.Businesses.Remove(business);
         await context.SaveChangesAsync();
+        logger.LogInformation("Entreprise '{@0}' supprimée avec succès", business.Name);
     }
 
     public async Task<IEnumerable<Business>> GetAllOwnerBusinessesAsync(string id)

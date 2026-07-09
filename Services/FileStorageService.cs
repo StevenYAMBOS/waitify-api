@@ -24,7 +24,7 @@ public class FileStorageService
         {
             string strFileName = string.Empty;
             string[] strName = fileName.Split('.');
-            strFileName = ClientName + DateTime.Now.ToUniversalTime().ToString("yyyy-MM-dd") + "/" + DateTime.Now.ToUniversalTime().ToString("yyyyMMdd\\THHmmssfff") + "." + strName[strName.Length - 1];
+            strFileName = ClientName.Replace(" ", string.Empty) + DateTime.Now.ToUniversalTime().ToString("yyyy-MM-dd") + "/" + DateTime.Now.ToUniversalTime().ToString("yyyyMMdd\\THHmmssfff") + "." + strName[strName.Length - 1];
             return strFileName;
         }
         catch (Exception ex)

@@ -495,15 +495,15 @@ _Aucun header optionnel identifié dans le code._
 
 ##### Body (`application/json`)
 
-| Champ         | Type     | Obligatoire | Contraintes                  | Description                                                          |
-| ------------- | -------- | ----------- | ---------------------------- | -------------------------------------------------------------------- |
-| `qrCodeToken` | `Guid`   | ✅ Oui      | UUID valide                  | Identifiant QR code de l'entreprise, lu depuis le QR scanné.         |
-| `phone`       | `string` | ✅ Oui      | Format téléphone (`[Phone]`) | Numéro de téléphone du client. Doit être unique dans la file active. |
-| `clientName`  | `string` | ❌ Non      | —                            | Nom affiché du client.                                               |
+| Champ                  | Type     | Obligatoire | Contraintes                  | Description                                                          |
+| ---------------------- | -------- | ----------- | ---------------------------- | -------------------------------------------------------------------- |
+| `businessQrCodeToken`  | `Guid`   | ✅ Oui      | UUID valide                  | Identifiant QR code de l'entreprise, lu depuis le QR scanné.         |
+| `phone`                | `string` | ✅ Oui      | Format téléphone (`[Phone]`) | Numéro de téléphone du client. Doit être unique dans la file active. |
+| `clientName`           | `string` | ❌ Non      | —                            | Nom affiché du client.                                               |
 
 ```json
 {
-  "qrCodeToken": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "businessQrCodeToken": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "phone": "+33612345678",
   "clientName": "Jean Dupont"
 }
@@ -618,7 +618,7 @@ Host: [À compléter]
 Content-Type: application/json
 
 {
-  "qrCodeToken": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "businessQrCodeToken": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
   "phone": "+33612345678",
   "clientName": "Jean Dupont"
 }

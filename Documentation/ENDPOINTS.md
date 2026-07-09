@@ -667,7 +667,7 @@ Content-Type: application/json
 
 #### Description
 
-Permet au propriétaire d'une entreprise existante de générer un QR code pointant vers sa file d'attente. L'endpoint est réservé au gérant authentifié de l'entreprise identifiée par `{businessQRCodeToken}`. Le QR code encode l'URL `{WaitifyUrl}/q/{businessQRCodeToken}` et est retourné sous forme de balise HTML `<img>` embarquant une image PNG en base64.
+Permet à un utilisateur authentifié de générer un QR code pour une entreprise existante identifiée par son `QrCodeToken`. Le QR code encode l'URL `{WaitifyUrl}/q/{businessQRCodeToken}` et est retourné sous forme de balise HTML `<img>` embarquant une image PNG en base64.
 
 ---
 
@@ -675,9 +675,7 @@ Permet au propriétaire d'une entreprise existante de générer un QR code point
 
 - **Méthode :** `POST`
 - **Chemin :** `/api/business/generate:{businessQRCodeToken}/qrcode`
-- **Authentification requise :** Oui (type : Bearer JWT — extraction manuelle du claim `nameidentifier`)
-
-> ⚠️ Aucun attribut `[Authorize]` n'est présent sur cet endpoint. L'authentification est vérifiée manuellement via `TokenService` : l'absence de token valide entraîne un `404` et non un `401`.
+- **Authentification requise :** Oui (type : Bearer JWT — attribut `[Authorize(AuthenticationSchemes = "Bearer")]` + extraction du claim `nameidentifier` via `TokenService`)
 
 ##### Headers obligatoires
 
@@ -691,17 +689,15 @@ _Aucun header optionnel identifié dans le code._
 
 ##### Paramètres de chemin (Path parameters)
 
-| Paramètre             | Type   | Obligatoire | Description                        |
-| --------------------- | ------ | ----------- | ---------------------------------- |
-| `businessQRCodeToken` | `Guid` | ✅ Oui      | Identifiant de l'entreprise cible. |
+| Paramètre             | Type   | Obligatoire | Description                                                                                  |
+| --------------------- | ------ | ----------- | -------------------------------------------------------------------------------------------- |
+| `businessQRCodeToken` | `Guid` | ✅ Oui      | `QrCodeToken` de l'entreprise cible. Sert à retrouver l'entreprise et à construire l'URL du QR code. |
 
-> **Note :** La syntaxe du chemin est `generate:{businessQRCodeToken}/qrcode` (deux-points avant le paramètre). Exemple : `/api/business/generate:3fa85f64-5717-4562-b3fc-2c963f66afa6/qrcode`.
+> **Note :** La syntaxe du chemin utilise un deux-points avant le paramètre. Exemple : `/api/business/generate:3fa85f64-5717-4562-b3fc-2c963f66afa6/qrcode`.
 
 ##### Paramètres de requête (Query string)
 
-| Paramètre             | Type   | Obligatoire | Description                                                                                             |
-| --------------------- | ------ | ----------- | ------------------------------------------------------------------------------------------------------- |
-| `businessQRCodeToken` | `Guid` | ✅ Oui      | Token unique à encoder dans l'URL du QR code. Construit l'URL : `{WaitifyUrl}/q/{businessQRCodeToken}`. |
+Aucun paramètre de requête attendu.
 
 ##### Body
 
@@ -713,14 +709,18 @@ Aucun body attendu.
 
 1. Extraction de l'ID utilisateur depuis le claim JWT `nameidentifier` via `TokenService`.
 2. Si le claim est absent ou invalide → `404 Not Found`.
-3. Recherche de l'entreprise en base via `FindBusinessByIdAsync(id)`.
-4. Si l'entreprise est introuvable → lève `KeyNotFoundException` (non interceptée dans le contrôleur).
-5. Vérification que `userId == business.OwnerId` → si l'utilisateur n'est pas le propriétaire, lève `KeyNotFoundException`.
-6. Construction de l'URL du QR code : `{AppConstants.Config.WaitifyUrl}/q/{businessQRCodeToken}`.
-7. Génération du QR code via `QRCodeGeneratorService.GenerateQRCode(url)` :
-   - Niveau de correction d'erreur : `ECCLevel.Q`.
+3. Recherche de l'entreprise en base via `FindBusinessByQrTokenAsync(businessQRCodeToken)`.
+4. Si l'entreprise est introuvable → lève `KeyNotFoundException("Entreprise non trouvée.")` (non interceptée dans le contrôleur → `500`).
+5. Appel de `FindUserByIdAsync(userId)` pour vérifier l'existence de l'utilisateur.
+
+   > ⚠️ **Anomalie connue :** `FindUserByIdAsync` est appelé sans `await`. La variable `existingUser` est en réalité une `Task<ApplicationUser>` et non un `ApplicationUser`. La condition de vérification `existingUser?.Id.ToString() == userId` sera toujours `false` — la vérification est donc inactive. La levée de `KeyNotFoundException` sur l'utilisateur ne se produit jamais.
+
+6. La vérification de propriété (`business.OwnerId != existingUser.Id`) est **commentée** dans le code — aucune restriction sur la propriété de l'entreprise n'est appliquée.
+7. Construction de l'URL du QR code : `{AppConstants.Config.WaitifyUrl}/q/{businessQRCodeToken}`.
+8. Génération du QR code via `QRCodeGeneratorService.GenerateQRCode(url)` :
+   - Niveau de correction d'erreur : `ECCLevel.Q` (≈ 25 % de capacité de correction).
    - Format de sortie : image PNG encodée en base64, encapsulée dans une balise `<img>`.
-8. Retour du QR code généré (`200 OK`).
+9. Retour du QR code généré (`200 OK`).
 
 ---
 
@@ -734,8 +734,8 @@ Retourne une chaîne HTML contenant le QR code sous forme d'image PNG en base64.
 <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..." />
 ```
 
-| Champ  | Type     | Description                                                          |
-| ------ | -------- | -------------------------------------------------------------------- |
+| Champ  | Type     | Description                                                           |
+| ------ | -------- | --------------------------------------------------------------------- |
 | (body) | `string` | Balise `<img>` avec l'image PNG du QR code encodée en base64 inline. |
 
 ---
@@ -760,15 +760,13 @@ QRCode non généré.
 
 ---
 
-##### ❌ `500 Internal Server Error` – Entreprise ou utilisateur introuvable / accès refusé
+##### ❌ `500 Internal Server Error` – Entreprise introuvable
 
-Les cas suivants lèvent une `KeyNotFoundException` non interceptée dans le contrôleur :
+Levée d'une `KeyNotFoundException` non interceptée dans le contrôleur si l'entreprise n'est pas trouvée via `FindBusinessByQrTokenAsync`.
 
-| Condition                                               | Message interne                                   |
-| ------------------------------------------------------- | ------------------------------------------------- |
-| Entreprise introuvable (`FindBusinessByIdAsync` = null) | `"Entreprise non trouvée."`                       |
-| Utilisateur introuvable ou condition de vérification    | `"Utilisateur non trouvé ou accès non autorisé."` |
-| `userId != business.OwnerId`                            | `"Utilisateur non trouvé."`                       |
+| Condition                                                      | Message interne               |
+| -------------------------------------------------------------- | ----------------------------- |
+| Entreprise introuvable (`FindBusinessByQrTokenAsync` = `null`) | `"Entreprise non trouvée."`   |
 
 > Le code HTTP résultant dépend du gestionnaire global d'erreurs de l'application — [À compléter].
 
@@ -777,7 +775,7 @@ Les cas suivants lèvent une `KeyNotFoundException` non interceptée dans le con
 #### Exemple de requête
 
 ```http
-POST /api/business/generate:3fa85f64-5717-4562-b3fc-2c963f66afa6/qrcode?qrCodeToken=a1b2c3d4-e5f6-7890-abcd-ef1234567890 HTTP/1.1
+POST /api/business/generate:3fa85f64-5717-4562-b3fc-2c963f66afa6/qrcode HTTP/1.1
 Host: [À compléter]
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
@@ -796,13 +794,13 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 #### Dépendances internes
 
-| Composant                        | Rôle                                                                               |
-| -------------------------------- | ---------------------------------------------------------------------------------- |
-| `TokenService`                   | Extraction du claim `nameidentifier` depuis le JWT.                                |
-| `BusinessService`                | Recherche de l'entreprise (`FindBusinessByIdAsync`), vérification du propriétaire. |
-| `ApplicationUserService`         | Vérification de l'existence de l'utilisateur (`FindUserByIdAsync`).                |
-| `QRCodeGeneratorService`         | Génération du QR code PNG en base64 (`GenerateQRCode`).                            |
-| `AppConstants.Config.WaitifyUrl` | URL de base utilisée pour construire le lien encodé dans le QR code.               |
+| Composant                        | Rôle                                                                                      |
+| -------------------------------- | ----------------------------------------------------------------------------------------- |
+| `TokenService`                   | Extraction du claim `nameidentifier` depuis le JWT.                                       |
+| `BusinessService`                | Recherche de l'entreprise via `FindBusinessByQrTokenAsync`.                               |
+| `IApplicationUserRepository`     | Vérification de l'existence de l'utilisateur via `FindUserByIdAsync` (inactive, voir anomalie). |
+| `QRCodeGeneratorService`         | Génération du QR code PNG en base64 (`GenerateQRCode`).                                   |
+| `AppConstants.Config.WaitifyUrl` | URL de base utilisée pour construire le lien encodé dans le QR code.                      |
 
 ---
 
@@ -816,10 +814,9 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 #### Notes
 
-- Le paramètre `qrCodeToken` est fourni par le client dans la query string. Il n'est pas généré côté serveur dans cet endpoint (contrairement à `POST /api/business` où il est généré automatiquement). Le client est responsable de passer un token cohérent avec le `QrCodeToken` stocké en base pour l'entreprise.
+- Le `businessQRCodeToken` fourni dans le chemin est utilisé à la fois pour retrouver l'entreprise en base (`FindBusinessByQrTokenAsync`) et pour construire l'URL encodée dans le QR code (`{WaitifyUrl}/q/{businessQRCodeToken}`). Aucun token supplémentaire n'est attendu.
 - L'endpoint est soumis au rate limiter `"fixed"` configuré au niveau du contrôleur `BusinessController`.
-- La vérification de l'utilisateur dans `GenerateNewQRCodeAsync` présente une anomalie : `FindUserByIdAsync` est appelé sans `await`, ce qui signifie que la variable `existingUser` est en réalité une `Task<ApplicationUser>` et non un `ApplicationUser`. La condition `existingUser?.Id.ToString() == userId` compare l'ID de la tâche (entier) à un GUID, et sera toujours `false`. La vérification effective du propriétaire repose donc uniquement sur la comparaison `userId != business.OwnerId`.
-- Le QR code généré encode l'URL `{WaitifyUrl}/q/{qrCodeToken}` avec un niveau de correction d'erreur `ECCLevel.Q` (≈ 25 % de capacité de correction).
+- Aucune vérification de propriété n'est active : tout utilisateur authentifié peut générer un QR code pour n'importe quelle entreprise existante (voir anomalies au point 5 et 6 du comportement serveur).
 
 ---
 

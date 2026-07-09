@@ -23,6 +23,7 @@ public class BusinessController(
 ) : ControllerBase
 {
     [HttpPost("generate:{businessQRCodeToken}/qrcode")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<IActionResult> GenerateNewQRCode(Guid businessQRCodeToken)
     {
         var userIdFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");

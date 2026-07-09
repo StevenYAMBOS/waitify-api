@@ -1,6 +1,6 @@
 # Documentation des routes API
 
-Modifié le : 01/06/2026
+Modifié le : 09/07/2026
 
 Par : [Steven YAMBOS](www.linkedin.com/in/steven-yambos)
 
@@ -817,6 +817,129 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 - Le `businessQRCodeToken` fourni dans le chemin est utilisé à la fois pour retrouver l'entreprise en base (`FindBusinessByQrTokenAsync`) et pour construire l'URL encodée dans le QR code (`{WaitifyUrl}/q/{businessQRCodeToken}`). Aucun token supplémentaire n'est attendu.
 - L'endpoint est soumis au rate limiter `"fixed"` configuré au niveau du contrôleur `BusinessController`.
 - Aucune vérification de propriété n'est active : tout utilisateur authentifié peut générer un QR code pour n'importe quelle entreprise existante (voir anomalies au point 5 et 6 du comportement serveur).
+
+---
+
+### `DELETE /api/business/{id}` – Supprimer une entreprise
+
+#### Description
+
+Supprime définitivement une entreprise identifiée par son `Id` interne (UUID). La suppression déclenche en cascade la suppression des `QueueEntries` et `SmsLogs` associés. Si un logo est présent dans Azure Blob Storage, il est supprimé avant la suppression de l'entité en base. L'endpoint est accessible à tout utilisateur authentifié, sans restriction de rôle.
+
+---
+
+#### Requête HTTP
+
+- **Méthode :** `DELETE`
+- **Chemin :** `/api/business/{id}`
+- **Authentification requise :** Oui (type : Bearer JWT — `[Authorize(AuthenticationSchemes = "Bearer")]`)
+
+##### Headers obligatoires
+
+| Header          | Valeur           |
+| --------------- | ---------------- |
+| `Authorization` | `Bearer <token>` |
+
+##### Headers optionnels
+
+_Aucun header optionnel identifié dans le code._
+
+##### Paramètres de chemin (Path parameters)
+
+| Paramètre | Type   | Obligatoire | Description                                      |
+| --------- | ------ | ----------- | ------------------------------------------------ |
+| `id`      | `Guid` | ✅ Oui      | Identifiant interne de l'entreprise (`Business.Id`). |
+
+##### Paramètres de requête (Query string)
+
+Aucun paramètre de requête attendu.
+
+##### Body
+
+Aucun body attendu.
+
+---
+
+#### Comportement serveur
+
+1. Recherche de l'entreprise en base via `FindBusinessByIdAsync(id)`.
+2. Si l'entreprise est introuvable → lève `KeyNotFoundException` → `404 Not Found`.
+3. Si l'entreprise possède un logo (`business.Logo != null`) :
+   - Extraction du nom du fichier blob : `business.Logo.Replace(AzureGenericBlobsUrl + AzureBlobBusinessesContainer, "")`.
+   - Suppression du blob Azure via `FileStorageService.DeleteBlobSnapshotsAsync(blobFileName, azureContainerName)`.
+4. Suppression de l'entité `Business` en base via `context.Businesses.Remove(business)`.
+5. Sauvegarde (`SaveChangesAsync`) — déclenche la suppression en cascade des entités liées :
+   - `QueueEntries` liées via `BusinessQrCodeToken` (`OnDelete(DeleteBehavior.Cascade)`).
+   - `SmsLogs` liés via `BusinessQrCodeToken` (`OnDelete(DeleteBehavior.Cascade)`).
+6. Retour `204 No Content`.
+
+> ⚠️ **Anomalie connue :** Dans le bloc `catch (KeyNotFoundException)`, l'appel `StatusCode(StatusCodes.Status500InternalServerError)` est présent mais son résultat n'est pas retourné. Seul `return NotFound()` (`404`) est effectivement renvoyé au client.
+
+---
+
+#### Réponses
+
+##### ✅ `204 No Content` – Succès
+
+L'entreprise et toutes ses données associées ont été supprimées. Aucun corps de réponse.
+
+---
+
+##### ❌ `404 Not Found` – Entreprise introuvable
+
+Retourné si aucune entreprise ne correspond à l'`id` fourni.
+
+```
+(corps vide)
+```
+
+---
+
+#### Exemple de requête
+
+```http
+DELETE /api/business/3fa85f64-5717-4562-b3fc-2c963f66afa6 HTTP/1.1
+Host: [À compléter]
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+---
+
+#### Exemple de réponse (`204 No Content`)
+
+```http
+HTTP/1.1 204 No Content
+```
+
+---
+
+#### Dépendances internes
+
+| Composant              | Rôle                                                                              |
+| ---------------------- | --------------------------------------------------------------------------------- |
+| `BusinessService`      | Recherche de l'entreprise (`FindBusinessByIdAsync`) et suppression en base.       |
+| `FileStorageService`   | Suppression du logo depuis Azure Blob Storage (`DeleteBlobSnapshotsAsync`).       |
+| `AppDbContext`         | Persistance — cascade delete sur `QueueEntries` et `SmsLogs` via EF Core.        |
+
+---
+
+#### Variables d'environnement requises
+
+| Variable                      | Usage                                                          |
+| ----------------------------- | -------------------------------------------------------------- |
+| `AzureGenericBlobsUrl`        | URL de base Azure Blob Storage, utilisée pour extraire le nom du fichier logo. |
+| `AzureBlobBusinessesContainer`| Nom du container Azure contenant les logos des entreprises.    |
+
+> Ces variables ne sont lues que si `business.Logo != null`. Si l'entreprise n'a pas de logo, aucun accès au stockage Azure n'est effectué.
+
+---
+
+#### Notes
+
+- L'`id` attendu est le champ `Business.Id` (UUID interne), et non le `QrCodeToken`.
+- Aucun rôle spécifique n'est requis : tout utilisateur porteur d'un JWT valide peut supprimer une entreprise, y compris les administrateurs.
+- L'endpoint est soumis au rate limiter `"fixed"` configuré au niveau du contrôleur `BusinessController`.
+- La suppression est **irréversible** : aucune corbeille ou mécanisme de soft delete n'est implémenté (`IsActive` n'est pas utilisé ici).
 
 ---
 

@@ -46,29 +46,31 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
   {
     var business = await businessService.FindBusinessByQrTokenAsync(request.BusinessQrCodeToken);
 
+    logger.LogInformation("Entreprise trouvée pour le QR token : `{@0}`.", request.BusinessQrCodeToken);
+
     if (business == null)
     {
       logger.LogError("Entreprise non trouvée pour le QR token : `{@0}`.", request.BusinessQrCodeToken);
       throw new KeyNotFoundException("Entreprise non trouvée.");
     }
 
-    if (!business.IsQueueActive)
-    {
-      logger.LogError("La file d'attente est fermée pour l'entreprise `{@0}`.", business.Id);
-      throw new InvalidOperationException("La file d'attente est fermée.");
-    }
+    // if (!business.IsQueueActive)
+    // {
+    //   logger.LogError("La file d'attente est fermée pour l'entreprise `{@0}`.", business.Id);
+    //   throw new InvalidOperationException("La file d'attente est fermée.");
+    // }
 
-    // Vérification client pas déjà inscrit (même numéro + business + waiting)
-    bool alreadyInQueue = await context.Queues.AnyAsync(q =>
-      q.Phone == request.Phone &&
-      q.BusinessQrCodeToken == business.QrCodeToken &&
-      q.Status == AppConstants.Queues.Status.Waiting);
+    // // Vérification client pas déjà inscrit (même numéro + business + waiting)
+    // bool alreadyInQueue = await context.Queues.AnyAsync(q =>
+    //   q.Phone == request.Phone &&
+    //   q.BusinessQrCodeToken == business.QrCodeToken &&
+    //   q.Status == AppConstants.Queues.Status.Waiting);
 
-    if (alreadyInQueue)
-    {
-      logger.LogError("Numéro `{@0}` déjà dans la file d'attente du business `{@1}`.", request.Phone, business.QrCodeToken);
-      throw new InvalidOperationException("Ce numéro est déjà dans la file d'attente.");
-    }
+    // if (alreadyInQueue)
+    // {
+    //   logger.LogError("Numéro `{@0}` déjà dans la file d'attente du business `{@1}`.", request.Phone, business.QrCodeToken);
+    //   throw new InvalidOperationException("Ce numéro est déjà dans la file d'attente.");
+    // }
 
     // Vérification file pas pleine + compte les clients en attente pour le calcul du temps
     int waitingCount = await context.Queues.CountAsync(q =>

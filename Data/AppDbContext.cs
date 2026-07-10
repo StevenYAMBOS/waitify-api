@@ -53,7 +53,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
 
             entity.HasIndex(q => q.BusinessQrCodeToken);
             entity.HasIndex(q => q.Status);
-            entity.HasIndex(q => new { q.BusinessQrCodeToken, q.Status });
+            // entity.HasIndex(q => new { q.BusinessQrCodeToken, q.Status });
 
             entity.Property(q => q.Status).HasDefaultValue("waiting");
 

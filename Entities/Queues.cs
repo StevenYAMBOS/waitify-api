@@ -7,9 +7,6 @@ namespace WaitifyApi.Entities;
 public class QueueEntries
 {
     public Guid Id { get; set; }
-
-    // [Column(TypeName = "varchar(255)")]
-    [Required]
     public Guid BusinessQrCodeToken { get; set; }
     public virtual Business? Business { get; set; }
 

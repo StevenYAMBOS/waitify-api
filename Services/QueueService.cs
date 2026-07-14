@@ -15,7 +15,7 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
   public async Task<QueueEntries?> FindQueueByIdAsync(Guid id)
   {
     var queue = await context.Queues.FindAsync(id);
-    logger.LogInformation("File d'attente : {@0}", JsonConvert.SerializeObject(queue, Formatting.Indented));
+    logger.LogInformation("File d'attente : {@0}", JsonResponseHelper.JsonConversion(queue));
     return queue;
   }
 

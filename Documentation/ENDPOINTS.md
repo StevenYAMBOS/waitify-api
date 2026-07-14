@@ -1,12 +1,10 @@
 # Documentation des routes API
 
-Modifié le : 09/07/2026
+Modifié le : 14/07/2026
 
 Par : [Steven YAMBOS](www.linkedin.com/in/steven-yambos)
 
-## Routes
-
-### Routes entreprises
+## Routes entreprises
 
 ### Créer une entreprise
 
@@ -130,7 +128,7 @@ Retourné automatiquement par ASP.NET si un champ obligatoire est absent ou inva
 
 ---
 
-### Exemple de requête
+#### Exemple de requête
 
 ```http
 POST /api/business HTTP/1.1
@@ -176,7 +174,7 @@ Content-Type: image/png
 
 ---
 
-### Exemple de réponse (`200 OK`)
+#### Exemple de réponse (`200 OK`)
 
 ```
 [À compléter – dépend du format retourné par QRCodeHelper.GenerateQRCode]
@@ -184,7 +182,7 @@ Content-Type: image/png
 
 ---
 
-### Dépendances internes
+#### Dépendances internes
 
 | Composant                 | Rôle                                                                |
 | ------------------------- | ------------------------------------------------------------------- |
@@ -197,7 +195,7 @@ Content-Type: image/png
 
 ---
 
-### Variables d'environnement requises
+#### Variables d'environnement requises
 
 | Variable                       | Usage                                            |
 | ------------------------------ | ------------------------------------------------ |
@@ -206,7 +204,7 @@ Content-Type: image/png
 
 ---
 
-### Notes
+#### Notes
 
 - L'endpoint utilise `[FromForm]` : le body doit impérativement être envoyé en `multipart/form-data`, même si aucun fichier n'est joint.
 - Le `QrCodeToken` est généré côté serveur et ne doit pas être fourni par le client, bien qu'il soit présent dans le modèle `BusinessRequest` avec une annotation `[Required]` — incohérence à corriger côté code.
@@ -214,7 +212,287 @@ Content-Type: image/png
 
 ---
 
-### Routes authentification Google (OAuth 2.0)
+### `POST /api/business/generate:{businessQRCodeToken}/qrcode` – Générer un nouveau QR code pour une entreprise
+
+#### Description
+
+Permet à un utilisateur authentifié de générer un QR code pour une entreprise existante identifiée par son `QrCodeToken`. Le QR code encode l'URL `{WaitifyUrl}/q/{businessQRCodeToken}` et est retourné sous forme de balise HTML `<img>` embarquant une image PNG en base64.
+
+---
+
+#### Requête HTTP
+
+- **Méthode :** `POST`
+- **Chemin :** `/api/business/generate:{businessQRCodeToken}/qrcode`
+- **Authentification requise :** Oui (type : Bearer JWT — attribut `[Authorize(AuthenticationSchemes = "Bearer")]` + extraction du claim `nameidentifier` via `TokenService`)
+
+##### Headers obligatoires
+
+| Header          | Valeur           |
+| --------------- | ---------------- |
+| `Authorization` | `Bearer <token>` |
+
+##### Headers optionnels
+
+_Aucun header optionnel identifié dans le code._
+
+##### Paramètres de chemin (Path parameters)
+
+| Paramètre             | Type   | Obligatoire | Description                                                                                          |
+| --------------------- | ------ | ----------- | ---------------------------------------------------------------------------------------------------- |
+| `businessQRCodeToken` | `Guid` | ✅ Oui      | `QrCodeToken` de l'entreprise cible. Sert à retrouver l'entreprise et à construire l'URL du QR code. |
+
+> **Note :** La syntaxe du chemin utilise un deux-points avant le paramètre. Exemple : `/api/business/generate:3fa85f64-5717-4562-b3fc-2c963f66afa6/qrcode`.
+
+##### Paramètres de requête (Query string)
+
+Aucun paramètre de requête attendu.
+
+##### Body
+
+Aucun body attendu.
+
+---
+
+#### Comportement serveur
+
+1. Extraction de l'ID utilisateur depuis le claim JWT `nameidentifier` via `TokenService`.
+2. Si le claim est absent ou invalide → `404 Not Found`.
+3. Recherche de l'entreprise en base via `FindBusinessByQrTokenAsync(businessQRCodeToken)`.
+4. Si l'entreprise est introuvable → lève `KeyNotFoundException("Entreprise non trouvée.")` (non interceptée dans le contrôleur → `500`).
+5. Appel de `FindUserByIdAsync(userId)` pour vérifier l'existence de l'utilisateur.
+
+   > ⚠️ **Anomalie connue :** `FindUserByIdAsync` est appelé sans `await`. La variable `existingUser` est en réalité une `Task<ApplicationUser>` et non un `ApplicationUser`. La condition de vérification `existingUser?.Id.ToString() == userId` sera toujours `false` — la vérification est donc inactive. La levée de `KeyNotFoundException` sur l'utilisateur ne se produit jamais.
+
+6. La vérification de propriété (`business.OwnerId != existingUser.Id`) est **commentée** dans le code — aucune restriction sur la propriété de l'entreprise n'est appliquée.
+7. Construction de l'URL du QR code : `{AppConstants.Config.WaitifyUrl}/q/{businessQRCodeToken}`.
+8. Génération du QR code via `QRCodeGeneratorService.GenerateQRCode(url)` :
+   - Niveau de correction d'erreur : `ECCLevel.Q` (≈ 25 % de capacité de correction).
+   - Format de sortie : image PNG encodée en base64, encapsulée dans une balise `<img>`.
+9. Retour du QR code généré (`200 OK`).
+
+---
+
+#### Réponses
+
+##### ✅ `200 OK` – Succès
+
+Retourne une chaîne HTML contenant le QR code sous forme d'image PNG en base64.
+
+```html
+<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..." />
+```
+
+| Champ  | Type     | Description                                                          |
+| ------ | -------- | -------------------------------------------------------------------- |
+| (body) | `string` | Balise `<img>` avec l'image PNG du QR code encodée en base64 inline. |
+
+---
+
+##### ❌ `404 Not Found` – Claim JWT absent ou invalide
+
+Retourné si `TokenService` ne peut pas extraire l'ID utilisateur depuis le token JWT.
+
+```
+Utilisateur introuvable ou accès refusé.
+```
+
+---
+
+##### ❌ `404 Not Found` – QR code non généré
+
+Retourné si `GenerateNewQRCodeAsync` retourne `null`.
+
+```
+QRCode non généré.
+```
+
+---
+
+##### ❌ `500 Internal Server Error` – Entreprise introuvable
+
+Levée d'une `KeyNotFoundException` non interceptée dans le contrôleur si l'entreprise n'est pas trouvée via `FindBusinessByQrTokenAsync`.
+
+| Condition                                                      | Message interne             |
+| -------------------------------------------------------------- | --------------------------- |
+| Entreprise introuvable (`FindBusinessByQrTokenAsync` = `null`) | `"Entreprise non trouvée."` |
+
+> Le code HTTP résultant dépend du gestionnaire global d'erreurs de l'application — [À compléter].
+
+---
+
+#### Exemple de requête
+
+```http
+POST /api/business/generate:3fa85f64-5717-4562-b3fc-2c963f66afa6/qrcode HTTP/1.1
+Host: [À compléter]
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+---
+
+#### Exemple de réponse (`200 OK`)
+
+```html
+<img
+  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AAAA..."
+/>
+```
+
+---
+
+#### Dépendances internes
+
+| Composant                        | Rôle                                                                                            |
+| -------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `TokenService`                   | Extraction du claim `nameidentifier` depuis le JWT.                                             |
+| `BusinessService`                | Recherche de l'entreprise via `FindBusinessByQrTokenAsync`.                                     |
+| `IApplicationUserRepository`     | Vérification de l'existence de l'utilisateur via `FindUserByIdAsync` (inactive, voir anomalie). |
+| `QRCodeGeneratorService`         | Génération du QR code PNG en base64 (`GenerateQRCode`).                                         |
+| `AppConstants.Config.WaitifyUrl` | URL de base utilisée pour construire le lien encodé dans le QR code.                            |
+
+---
+
+#### Variables d'environnement requises
+
+| Variable      | Usage                                                   |
+| ------------- | ------------------------------------------------------- |
+| [À compléter] | `AppConstants.Config.WaitifyUrl` – URL de base Waitify. |
+
+---
+
+#### Notes
+
+- Le `businessQRCodeToken` fourni dans le chemin est utilisé à la fois pour retrouver l'entreprise en base (`FindBusinessByQrTokenAsync`) et pour construire l'URL encodée dans le QR code (`{WaitifyUrl}/q/{businessQRCodeToken}`). Aucun token supplémentaire n'est attendu.
+- L'endpoint est soumis au rate limiter `"fixed"` configuré au niveau du contrôleur `BusinessController`.
+- Aucune vérification de propriété n'est active : tout utilisateur authentifié peut générer un QR code pour n'importe quelle entreprise existante (voir anomalies au point 5 et 6 du comportement serveur).
+
+---
+
+### `DELETE /api/business/{id}` – Supprimer une entreprise
+
+#### Description
+
+Supprime définitivement une entreprise identifiée par son `Id` interne (UUID). La suppression déclenche en cascade la suppression des `QueueEntries` et `SmsLogs` associés. Si un logo est présent dans Azure Blob Storage, il est supprimé avant la suppression de l'entité en base. L'endpoint est accessible à tout utilisateur authentifié, sans restriction de rôle.
+
+---
+
+#### Requête HTTP
+
+- **Méthode :** `DELETE`
+- **Chemin :** `/api/business/{id}`
+- **Authentification requise :** Oui (type : Bearer JWT — `[Authorize(AuthenticationSchemes = "Bearer")]`)
+
+##### Headers obligatoires
+
+| Header          | Valeur           |
+| --------------- | ---------------- |
+| `Authorization` | `Bearer <token>` |
+
+##### Headers optionnels
+
+_Aucun header optionnel identifié dans le code._
+
+##### Paramètres de chemin (Path parameters)
+
+| Paramètre | Type   | Obligatoire | Description                                          |
+| --------- | ------ | ----------- | ---------------------------------------------------- |
+| `id`      | `Guid` | ✅ Oui      | Identifiant interne de l'entreprise (`Business.Id`). |
+
+##### Paramètres de requête (Query string)
+
+Aucun paramètre de requête attendu.
+
+##### Body
+
+Aucun body attendu.
+
+---
+
+#### Comportement serveur
+
+1. Recherche de l'entreprise en base via `FindBusinessByIdAsync(id)`.
+2. Si l'entreprise est introuvable → lève `KeyNotFoundException` → `404 Not Found`.
+3. Si l'entreprise possède un logo (`business.Logo != null`) :
+   - Extraction du nom du fichier blob : `business.Logo.Replace(AzureGenericBlobsUrl + AzureBlobBusinessesContainer, "")`.
+   - Suppression du blob Azure via `FileStorageService.DeleteBlobSnapshotsAsync(blobFileName, azureContainerName)`.
+4. Suppression de l'entité `Business` en base via `context.Businesses.Remove(business)`.
+5. Sauvegarde (`SaveChangesAsync`) — déclenche la suppression en cascade des entités liées :
+   - `QueueEntries` liées via `BusinessQrCodeToken` (`OnDelete(DeleteBehavior.Cascade)`).
+   - `SmsLogs` liés via `BusinessQrCodeToken` (`OnDelete(DeleteBehavior.Cascade)`).
+6. Retour `204 No Content`.
+
+> ⚠️ **Anomalie connue :** Dans le bloc `catch (KeyNotFoundException)`, l'appel `StatusCode(StatusCodes.Status500InternalServerError)` est présent mais son résultat n'est pas retourné. Seul `return NotFound()` (`404`) est effectivement renvoyé au client.
+
+---
+
+#### Réponses
+
+##### ✅ `204 No Content` – Succès
+
+L'entreprise et toutes ses données associées ont été supprimées. Aucun corps de réponse.
+
+---
+
+##### ❌ `404 Not Found` – Entreprise introuvable
+
+Retourné si aucune entreprise ne correspond à l'`id` fourni.
+
+```
+(corps vide)
+```
+
+---
+
+#### Exemple de requête
+
+```http
+DELETE /api/business/3fa85f64-5717-4562-b3fc-2c963f66afa6 HTTP/1.1
+Host: [À compléter]
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+---
+
+#### Exemple de réponse (`204 No Content`)
+
+```http
+HTTP/1.1 204 No Content
+```
+
+---
+
+#### Dépendances internes
+
+| Composant            | Rôle                                                                        |
+| -------------------- | --------------------------------------------------------------------------- |
+| `BusinessService`    | Recherche de l'entreprise (`FindBusinessByIdAsync`) et suppression en base. |
+| `FileStorageService` | Suppression du logo depuis Azure Blob Storage (`DeleteBlobSnapshotsAsync`). |
+| `AppDbContext`       | Persistance — cascade delete sur `QueueEntries` et `SmsLogs` via EF Core.   |
+
+---
+
+#### Variables d'environnement requises
+
+| Variable                       | Usage                                                                          |
+| ------------------------------ | ------------------------------------------------------------------------------ |
+| `AzureGenericBlobsUrl`         | URL de base Azure Blob Storage, utilisée pour extraire le nom du fichier logo. |
+| `AzureBlobBusinessesContainer` | Nom du container Azure contenant les logos des entreprises.                    |
+
+> Ces variables ne sont lues que si `business.Logo != null`. Si l'entreprise n'a pas de logo, aucun accès au stockage Azure n'est effectué.
+
+---
+
+#### Notes
+
+- L'`id` attendu est le champ `Business.Id` (UUID interne), et non le `QrCodeToken`.
+- Aucun rôle spécifique n'est requis : tout utilisateur porteur d'un JWT valide peut supprimer une entreprise, y compris les administrateurs.
+- L'endpoint est soumis au rate limiter `"fixed"` configuré au niveau du contrôleur `BusinessController`.
+- La suppression est **irréversible** : aucune corbeille ou mécanisme de soft delete n'est implémenté (`IsActive` n'est pas utilisé ici).
+
+---
+
+## Routes authentification Google (OAuth 2.0)
 
 ---
 
@@ -465,7 +743,7 @@ Les cas suivants lèvent une `ExternalLoginProviderException` non interceptée d
 
 ---
 
-### Routes file d'attente
+## Routes file d'attente
 
 ---
 
@@ -495,11 +773,11 @@ _Aucun header optionnel identifié dans le code._
 
 ##### Body (`application/json`)
 
-| Champ                  | Type     | Obligatoire | Contraintes                  | Description                                                          |
-| ---------------------- | -------- | ----------- | ---------------------------- | -------------------------------------------------------------------- |
-| `businessQrCodeToken`  | `Guid`   | ✅ Oui      | UUID valide                  | Identifiant QR code de l'entreprise, lu depuis le QR scanné.         |
-| `phone`                | `string` | ✅ Oui      | Format téléphone (`[Phone]`) | Numéro de téléphone du client. Doit être unique dans la file active. |
-| `clientName`           | `string` | ❌ Non      | —                            | Nom affiché du client.                                               |
+| Champ                 | Type     | Obligatoire | Contraintes                  | Description                                                          |
+| --------------------- | -------- | ----------- | ---------------------------- | -------------------------------------------------------------------- |
+| `businessQrCodeToken` | `Guid`   | ✅ Oui      | UUID valide                  | Identifiant QR code de l'entreprise, lu depuis le QR scanné.         |
+| `phone`               | `string` | ✅ Oui      | Format téléphone (`[Phone]`) | Numéro de téléphone du client. Doit être unique dans la file active. |
+| `clientName`          | `string` | ❌ Non      | —                            | Nom affiché du client.                                               |
 
 ```json
 {
@@ -660,286 +938,6 @@ Content-Type: application/json
 - L'endpoint est soumis au rate limiter `"fixed"` (`[EnableRateLimiting("fixed")]`) configuré au niveau du contrôleur `QueueController`.
 - La vérification du doublon porte uniquement sur les entrées avec `status == "waiting"` : un client ayant déjà été `"called"`, `"served"` ou `"cancelled"` peut se réinscrire avec le même numéro.
 - Le temps d'attente estimé (`estimatedWaitTime`) est une valeur entière calculée par division entière ; pour une file vide (`waitingCount == 0`), la valeur retournée est `0`.
-
----
-
-### `POST /api/business/generate:{businessQRCodeToken}/qrcode` – Générer un nouveau QR code pour une entreprise
-
-#### Description
-
-Permet à un utilisateur authentifié de générer un QR code pour une entreprise existante identifiée par son `QrCodeToken`. Le QR code encode l'URL `{WaitifyUrl}/q/{businessQRCodeToken}` et est retourné sous forme de balise HTML `<img>` embarquant une image PNG en base64.
-
----
-
-#### Requête HTTP
-
-- **Méthode :** `POST`
-- **Chemin :** `/api/business/generate:{businessQRCodeToken}/qrcode`
-- **Authentification requise :** Oui (type : Bearer JWT — attribut `[Authorize(AuthenticationSchemes = "Bearer")]` + extraction du claim `nameidentifier` via `TokenService`)
-
-##### Headers obligatoires
-
-| Header          | Valeur           |
-| --------------- | ---------------- |
-| `Authorization` | `Bearer <token>` |
-
-##### Headers optionnels
-
-_Aucun header optionnel identifié dans le code._
-
-##### Paramètres de chemin (Path parameters)
-
-| Paramètre             | Type   | Obligatoire | Description                                                                                  |
-| --------------------- | ------ | ----------- | -------------------------------------------------------------------------------------------- |
-| `businessQRCodeToken` | `Guid` | ✅ Oui      | `QrCodeToken` de l'entreprise cible. Sert à retrouver l'entreprise et à construire l'URL du QR code. |
-
-> **Note :** La syntaxe du chemin utilise un deux-points avant le paramètre. Exemple : `/api/business/generate:3fa85f64-5717-4562-b3fc-2c963f66afa6/qrcode`.
-
-##### Paramètres de requête (Query string)
-
-Aucun paramètre de requête attendu.
-
-##### Body
-
-Aucun body attendu.
-
----
-
-#### Comportement serveur
-
-1. Extraction de l'ID utilisateur depuis le claim JWT `nameidentifier` via `TokenService`.
-2. Si le claim est absent ou invalide → `404 Not Found`.
-3. Recherche de l'entreprise en base via `FindBusinessByQrTokenAsync(businessQRCodeToken)`.
-4. Si l'entreprise est introuvable → lève `KeyNotFoundException("Entreprise non trouvée.")` (non interceptée dans le contrôleur → `500`).
-5. Appel de `FindUserByIdAsync(userId)` pour vérifier l'existence de l'utilisateur.
-
-   > ⚠️ **Anomalie connue :** `FindUserByIdAsync` est appelé sans `await`. La variable `existingUser` est en réalité une `Task<ApplicationUser>` et non un `ApplicationUser`. La condition de vérification `existingUser?.Id.ToString() == userId` sera toujours `false` — la vérification est donc inactive. La levée de `KeyNotFoundException` sur l'utilisateur ne se produit jamais.
-
-6. La vérification de propriété (`business.OwnerId != existingUser.Id`) est **commentée** dans le code — aucune restriction sur la propriété de l'entreprise n'est appliquée.
-7. Construction de l'URL du QR code : `{AppConstants.Config.WaitifyUrl}/q/{businessQRCodeToken}`.
-8. Génération du QR code via `QRCodeGeneratorService.GenerateQRCode(url)` :
-   - Niveau de correction d'erreur : `ECCLevel.Q` (≈ 25 % de capacité de correction).
-   - Format de sortie : image PNG encodée en base64, encapsulée dans une balise `<img>`.
-9. Retour du QR code généré (`200 OK`).
-
----
-
-#### Réponses
-
-##### ✅ `200 OK` – Succès
-
-Retourne une chaîne HTML contenant le QR code sous forme d'image PNG en base64.
-
-```html
-<img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA..." />
-```
-
-| Champ  | Type     | Description                                                           |
-| ------ | -------- | --------------------------------------------------------------------- |
-| (body) | `string` | Balise `<img>` avec l'image PNG du QR code encodée en base64 inline. |
-
----
-
-##### ❌ `404 Not Found` – Claim JWT absent ou invalide
-
-Retourné si `TokenService` ne peut pas extraire l'ID utilisateur depuis le token JWT.
-
-```
-Utilisateur introuvable ou accès refusé.
-```
-
----
-
-##### ❌ `404 Not Found` – QR code non généré
-
-Retourné si `GenerateNewQRCodeAsync` retourne `null`.
-
-```
-QRCode non généré.
-```
-
----
-
-##### ❌ `500 Internal Server Error` – Entreprise introuvable
-
-Levée d'une `KeyNotFoundException` non interceptée dans le contrôleur si l'entreprise n'est pas trouvée via `FindBusinessByQrTokenAsync`.
-
-| Condition                                                      | Message interne               |
-| -------------------------------------------------------------- | ----------------------------- |
-| Entreprise introuvable (`FindBusinessByQrTokenAsync` = `null`) | `"Entreprise non trouvée."`   |
-
-> Le code HTTP résultant dépend du gestionnaire global d'erreurs de l'application — [À compléter].
-
----
-
-#### Exemple de requête
-
-```http
-POST /api/business/generate:3fa85f64-5717-4562-b3fc-2c963f66afa6/qrcode HTTP/1.1
-Host: [À compléter]
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
----
-
-#### Exemple de réponse (`200 OK`)
-
-```html
-<img
-  src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAASwAAAEsCAYAAAB5fY51AAAA..."
-/>
-```
-
----
-
-#### Dépendances internes
-
-| Composant                        | Rôle                                                                                      |
-| -------------------------------- | ----------------------------------------------------------------------------------------- |
-| `TokenService`                   | Extraction du claim `nameidentifier` depuis le JWT.                                       |
-| `BusinessService`                | Recherche de l'entreprise via `FindBusinessByQrTokenAsync`.                               |
-| `IApplicationUserRepository`     | Vérification de l'existence de l'utilisateur via `FindUserByIdAsync` (inactive, voir anomalie). |
-| `QRCodeGeneratorService`         | Génération du QR code PNG en base64 (`GenerateQRCode`).                                   |
-| `AppConstants.Config.WaitifyUrl` | URL de base utilisée pour construire le lien encodé dans le QR code.                      |
-
----
-
-#### Variables d'environnement requises
-
-| Variable      | Usage                                                   |
-| ------------- | ------------------------------------------------------- |
-| [À compléter] | `AppConstants.Config.WaitifyUrl` – URL de base Waitify. |
-
----
-
-#### Notes
-
-- Le `businessQRCodeToken` fourni dans le chemin est utilisé à la fois pour retrouver l'entreprise en base (`FindBusinessByQrTokenAsync`) et pour construire l'URL encodée dans le QR code (`{WaitifyUrl}/q/{businessQRCodeToken}`). Aucun token supplémentaire n'est attendu.
-- L'endpoint est soumis au rate limiter `"fixed"` configuré au niveau du contrôleur `BusinessController`.
-- Aucune vérification de propriété n'est active : tout utilisateur authentifié peut générer un QR code pour n'importe quelle entreprise existante (voir anomalies au point 5 et 6 du comportement serveur).
-
----
-
-### `DELETE /api/business/{id}` – Supprimer une entreprise
-
-#### Description
-
-Supprime définitivement une entreprise identifiée par son `Id` interne (UUID). La suppression déclenche en cascade la suppression des `QueueEntries` et `SmsLogs` associés. Si un logo est présent dans Azure Blob Storage, il est supprimé avant la suppression de l'entité en base. L'endpoint est accessible à tout utilisateur authentifié, sans restriction de rôle.
-
----
-
-#### Requête HTTP
-
-- **Méthode :** `DELETE`
-- **Chemin :** `/api/business/{id}`
-- **Authentification requise :** Oui (type : Bearer JWT — `[Authorize(AuthenticationSchemes = "Bearer")]`)
-
-##### Headers obligatoires
-
-| Header          | Valeur           |
-| --------------- | ---------------- |
-| `Authorization` | `Bearer <token>` |
-
-##### Headers optionnels
-
-_Aucun header optionnel identifié dans le code._
-
-##### Paramètres de chemin (Path parameters)
-
-| Paramètre | Type   | Obligatoire | Description                                      |
-| --------- | ------ | ----------- | ------------------------------------------------ |
-| `id`      | `Guid` | ✅ Oui      | Identifiant interne de l'entreprise (`Business.Id`). |
-
-##### Paramètres de requête (Query string)
-
-Aucun paramètre de requête attendu.
-
-##### Body
-
-Aucun body attendu.
-
----
-
-#### Comportement serveur
-
-1. Recherche de l'entreprise en base via `FindBusinessByIdAsync(id)`.
-2. Si l'entreprise est introuvable → lève `KeyNotFoundException` → `404 Not Found`.
-3. Si l'entreprise possède un logo (`business.Logo != null`) :
-   - Extraction du nom du fichier blob : `business.Logo.Replace(AzureGenericBlobsUrl + AzureBlobBusinessesContainer, "")`.
-   - Suppression du blob Azure via `FileStorageService.DeleteBlobSnapshotsAsync(blobFileName, azureContainerName)`.
-4. Suppression de l'entité `Business` en base via `context.Businesses.Remove(business)`.
-5. Sauvegarde (`SaveChangesAsync`) — déclenche la suppression en cascade des entités liées :
-   - `QueueEntries` liées via `BusinessQrCodeToken` (`OnDelete(DeleteBehavior.Cascade)`).
-   - `SmsLogs` liés via `BusinessQrCodeToken` (`OnDelete(DeleteBehavior.Cascade)`).
-6. Retour `204 No Content`.
-
-> ⚠️ **Anomalie connue :** Dans le bloc `catch (KeyNotFoundException)`, l'appel `StatusCode(StatusCodes.Status500InternalServerError)` est présent mais son résultat n'est pas retourné. Seul `return NotFound()` (`404`) est effectivement renvoyé au client.
-
----
-
-#### Réponses
-
-##### ✅ `204 No Content` – Succès
-
-L'entreprise et toutes ses données associées ont été supprimées. Aucun corps de réponse.
-
----
-
-##### ❌ `404 Not Found` – Entreprise introuvable
-
-Retourné si aucune entreprise ne correspond à l'`id` fourni.
-
-```
-(corps vide)
-```
-
----
-
-#### Exemple de requête
-
-```http
-DELETE /api/business/3fa85f64-5717-4562-b3fc-2c963f66afa6 HTTP/1.1
-Host: [À compléter]
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-```
-
----
-
-#### Exemple de réponse (`204 No Content`)
-
-```http
-HTTP/1.1 204 No Content
-```
-
----
-
-#### Dépendances internes
-
-| Composant              | Rôle                                                                              |
-| ---------------------- | --------------------------------------------------------------------------------- |
-| `BusinessService`      | Recherche de l'entreprise (`FindBusinessByIdAsync`) et suppression en base.       |
-| `FileStorageService`   | Suppression du logo depuis Azure Blob Storage (`DeleteBlobSnapshotsAsync`).       |
-| `AppDbContext`         | Persistance — cascade delete sur `QueueEntries` et `SmsLogs` via EF Core.        |
-
----
-
-#### Variables d'environnement requises
-
-| Variable                      | Usage                                                          |
-| ----------------------------- | -------------------------------------------------------------- |
-| `AzureGenericBlobsUrl`        | URL de base Azure Blob Storage, utilisée pour extraire le nom du fichier logo. |
-| `AzureBlobBusinessesContainer`| Nom du container Azure contenant les logos des entreprises.    |
-
-> Ces variables ne sont lues que si `business.Logo != null`. Si l'entreprise n'a pas de logo, aucun accès au stockage Azure n'est effectué.
-
----
-
-#### Notes
-
-- L'`id` attendu est le champ `Business.Id` (UUID interne), et non le `QrCodeToken`.
-- Aucun rôle spécifique n'est requis : tout utilisateur porteur d'un JWT valide peut supprimer une entreprise, y compris les administrateurs.
-- L'endpoint est soumis au rate limiter `"fixed"` configuré au niveau du contrôleur `BusinessController`.
-- La suppression est **irréversible** : aucune corbeille ou mécanisme de soft delete n'est implémenté (`IsActive` n'est pas utilisé ici).
 
 ---
 

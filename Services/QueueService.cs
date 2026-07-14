@@ -58,7 +58,7 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
       throw new InvalidOperationException("La file d'attente est fermée.");
     }
 
-    // Vérification client pas déjà inscrit (même numéro + business + waiting)
+    // Vérification client pas déjà inscrit (même numéro + business)
     bool alreadyInQueue = await context.Queues.AnyAsync(q =>
       q.Phone == request.Phone &&
       q.BusinessQrCodeToken == business.QrCodeToken);

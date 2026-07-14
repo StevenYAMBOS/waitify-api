@@ -492,6 +492,239 @@ HTTP/1.1 204 No Content
 
 ---
 
+### Modifier les informations d'une entreprise
+
+> Chemin : `PATCH /api/business/{id}`
+
+#### Description
+
+Cet endpoint permet à un utilisateur authentifié de modifier partiellement les informations d'une entreprise identifiée par son `Id`. Il utilise le standard **RFC 6902 JSON Patch**, ce qui autorise la mise à jour ciblée d'un ou plusieurs champs sans renvoyer l'objet complet. Le champ `UpdatedAt` est automatiquement mis à jour côté serveur.
+
+---
+
+#### Requête HTTP
+
+- **Méthode :** `PATCH`
+- **Chemin :** `/api/business/{id}`
+- **Authentification requise :** Oui (type : Bearer JWT)
+
+##### Paramètre de chemin
+
+| Paramètre | Type   | Obligatoire | Description                         |
+| --------- | ------ | ----------- | ----------------------------------- |
+| `id`      | `Guid` | ✅ Oui      | Identifiant unique de l'entreprise. |
+
+##### Headers obligatoires
+
+| Header          | Valeur                        |
+| --------------- | ----------------------------- |
+| `Authorization` | `Bearer <token>`              |
+| `Content-Type`  | `application/json-patch+json` |
+
+##### Headers optionnels
+
+_Aucun header optionnel identifié dans le code._
+
+---
+
+#### Body (`application/json-patch+json`)
+
+Le body est un tableau d'opérations JSON Patch (RFC 6902). Chaque opération cible un champ de l'entité `Business`.
+
+```json
+[
+  {
+    "op": "replace",
+    "path": "/fieldName",
+    "value": "nouvelle valeur"
+  }
+]
+```
+
+##### Champs modifiables
+
+| Champ (`path`)             | Type     | Contraintes DB          | Description                                          |
+| -------------------------- | -------- | ----------------------- | ---------------------------------------------------- |
+| `/name`                    | `string` | `varchar(255)` - requis | Nom de l'entreprise.                                 |
+| `/businessType`            | `string` | `varchar(100)` - requis | Type / secteur d'activité.                           |
+| `/phoneNumber`             | `string` | `varchar(20)`           | Numéro de téléphone.                                 |
+| `/address`                 | `string` | `text`                  | Adresse postale.                                     |
+| `/city`                    | `string` | `varchar(100)`          | Ville.                                               |
+| `/zipCode`                 | `string` | `varchar(10)`           | Code postal.                                         |
+| `/country`                 | `string` | `varchar(50)`           | Pays (défaut : `"France"`).                          |
+| `/averageServiceTime`      | `int`    | —                       | Temps de service moyen en secondes (défaut : `300`). |
+| `/maxQueueSize`            | `int`    | —                       | Taille maximale de la file (défaut : `50`).          |
+| `/isQueueActive`           | `bool`   | —                       | Indique si la file est active.                       |
+| `/isQueuePaused`           | `bool`   | —                       | Indique si la file est en pause.                     |
+| `/openingHours`            | `string` | `jsonb`                 | Horaires d'ouverture (format JSON sérialisé).        |
+| `/customMessage`           | `string` | `text`                  | Message personnalisé affiché aux clients.            |
+| `/smsNotificationsEnabled` | `bool`   | —                       | Notifications SMS activées (défaut : `true`).        |
+| `/autoAdvanceEnabled`      | `bool`   | —                       | Avance automatique de la file (défaut : `true`).     |
+| `/clientTimeoutMinutes`    | `int`    | —                       | Délai d'expiration client en minutes (défaut : `5`). |
+| `/isActive`                | `bool`   | —                       | Statut actif/inactif de l'entreprise.                |
+
+> ⚠️ Le patch est appliqué directement sur l'entité `Business`. Les champs `Id`, `OwnerId`, `QrCodeToken`, `CreatedAt` et `UpdatedAt` ne doivent pas être ciblés : `UpdatedAt` est écrasé automatiquement ; les autres identifiants ne doivent pas être modifiés manuellement.
+
+##### Exemple de body
+
+```json
+[
+  { "op": "replace", "path": "/name", "value": "Mon Salon Rénové" },
+  { "op": "replace", "path": "/averageServiceTime", "value": 420 },
+  { "op": "replace", "path": "/customMessage", "value": "Bienvenue, nous vous accueillons avec plaisir !" }
+]
+```
+
+---
+
+#### Réponses
+
+##### ✅ `200 OK` – Mise à jour réussie
+
+Retourne l'objet `Business` complet après application du patch.
+
+```json
+{
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "ownerId": "user-id-string",
+  "name": "Mon Salon Rénové",
+  "businessType": "Coiffure",
+  "phoneNumber": "+33612345678",
+  "logo": "https://storage.example.com/businesses/logo.jpg",
+  "address": "12 Rue de la Paix",
+  "city": "Paris",
+  "zipCode": "75001",
+  "country": "France",
+  "qrCodeToken": "a1b2c3d4-...",
+  "averageServiceTime": 420,
+  "isQueueActive": false,
+  "isQueuePaused": false,
+  "maxQueueSize": 50,
+  "openingHours": null,
+  "customMessage": "Bienvenue, nous vous accueillons avec plaisir !",
+  "smsNotificationsEnabled": true,
+  "autoAdvanceEnabled": true,
+  "clientTimeoutMinutes": 5,
+  "isActive": true,
+  "createdAt": "2026-06-01T10:00:00Z",
+  "updatedAt": "2026-07-14T09:30:00Z"
+}
+```
+
+##### ❌ `400 Bad Request` – Body absent ou malformé
+
+Retourné si le body JSON Patch est `null` ou absent.
+
+##### ❌ `401 Unauthorized` – Utilisateur non authentifié
+
+```
+Utilisateur non authentifié.
+```
+
+##### ❌ `404 Not Found` – Entreprise introuvable
+
+```json
+{ "error": "Erreur lors de la mise à jour de l'entreprise." }
+```
+
+---
+
+#### Notes
+
+- Aucune vérification de propriété n'est effectuée : tout utilisateur authentifié avec un token valide peut modifier n'importe quelle entreprise par `Id`.
+- Le champ `updatedAt` est systématiquement mis à jour à `DateTime.UtcNow` côté serveur, quelle que soit la valeur envoyée dans le patch.
+
+---
+
+### Modifier le logo d'une entreprise
+
+> Chemin : `PATCH /api/business/{id}/logo`
+
+#### Description
+
+Cet endpoint permet de remplacer le logo d'une entreprise identifiée par son `Id`. Le fichier est uploadé sur Azure Blob Storage. Si un logo existait déjà, il est supprimé du stockage après le remplacement. L'envoi du body sans fichier (`NewLogoFile` absent) laisse le logo inchangé.
+
+---
+
+#### Requête HTTP
+
+- **Méthode :** `PATCH`
+- **Chemin :** `/api/business/{id}/logo`
+- **Authentification requise :** Oui (type : Bearer JWT)
+
+##### Paramètre de chemin
+
+| Paramètre | Type   | Obligatoire | Description                         |
+| --------- | ------ | ----------- | ----------------------------------- |
+| `id`      | `Guid` | ✅ Oui      | Identifiant unique de l'entreprise. |
+
+##### Headers obligatoires
+
+| Header          | Valeur                |
+| --------------- | --------------------- |
+| `Authorization` | `Bearer <token>`      |
+| `Content-Type`  | `multipart/form-data` |
+
+##### Headers optionnels
+
+_Aucun header optionnel identifié dans le code._
+
+---
+
+#### Body (`multipart/form-data`)
+
+| Champ         | Type        | Obligatoire | Contraintes                                                       | Description                       |
+| ------------- | ----------- | ----------- | ----------------------------------------------------------------- | --------------------------------- |
+| `NewLogoFile` | `IFormFile` | ❌ Non      | Extensions autorisées : `.jpeg`, `.jpg`, `.png`, `.webp`, `.svg` | Nouveau fichier logo à uploader.  |
+
+> Si `NewLogoFile` est absent ou `null`, aucune modification n'est apportée au logo. L'entreprise est quand même sauvegardée avec `UpdatedAt` mis à jour.
+
+---
+
+#### Réponses
+
+##### ✅ `200 OK` – Mise à jour réussie
+
+Retourne l'objet `Business` complet après mise à jour.
+
+```json
+{
+  "id": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "ownerId": "user-id-string",
+  "name": "Mon Salon",
+  "logo": "https://storage.example.com/businesses/mon-salon-nouveau-logo.jpg",
+  "updatedAt": "2026-07-14T09:45:00Z"
+}
+```
+
+##### ❌ `403 Forbidden` – Accès refusé
+
+```
+Vous n'êtes pas autorisé à modifier cette entreprise.
+```
+
+##### ❌ `404 Not Found` – Entreprise introuvable
+
+```
+Entreprise non trouvée ou accès refusé.
+```
+
+##### ❌ `500 Internal Server Error` – Erreur inattendue
+
+```
+Une erreur est survenue.
+```
+
+---
+
+#### Notes
+
+- L'ancien logo est supprimé du Blob Storage Azure **uniquement** si `NewLogoFile` est fourni **et** qu'un logo existait déjà (`Logo != null`).
+- La suppression de l'ancien blob se fait après la sauvegarde en base : en cas d'erreur lors de la suppression du blob, les données en base restent cohérentes.
+- Le nom du blob est dérivé du nom de l'entreprise (`Business.Name`).
+
+---
+
 ## Routes authentification Google (OAuth 2.0)
 
 ---

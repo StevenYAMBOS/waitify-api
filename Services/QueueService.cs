@@ -46,8 +46,6 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
   {
     var business = await businessService.FindBusinessByQrTokenAsync(request.BusinessQrCodeToken);
 
-    logger.LogInformation("Entreprise trouvée pour l'entreprise avec le QR Code Token : `{@0}`.", request.BusinessQrCodeToken);
-
     if (business == null)
     {
       logger.LogError("Entreprise non trouvée pour le QR token : `{@0}`.", request.BusinessQrCodeToken);

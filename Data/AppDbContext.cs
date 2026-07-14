@@ -15,6 +15,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<SmsLog> SmsLogs { get; set; }
     public DbSet<Contact> Contacts { get; set; }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
+    optionsBuilder.LogTo(Console.WriteLine);
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

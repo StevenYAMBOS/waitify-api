@@ -61,8 +61,7 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     // Vérification client pas déjà inscrit (même numéro + business + waiting)
     bool alreadyInQueue = await context.Queues.AnyAsync(q =>
       q.Phone == request.Phone &&
-      q.BusinessQrCodeToken == business.QrCodeToken &&
-      q.Status == AppConstants.Queues.Status.Waiting);
+      q.BusinessQrCodeToken == business.QrCodeToken);
 
     if (alreadyInQueue)
     {

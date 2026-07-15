@@ -71,6 +71,71 @@ public class FileStorageService
         }
     }
 
+    public async Task<string> UpdateExistingBlobAsync(string previousFileName, IFormFile file, string clientName, string containerName, string[] allowedExtensions)
+    {
+        string azureConnectionString = Environment.GetEnvironmentVariable("AzureBlobStorage")!;
+        var container = new BlobContainerClient(azureConnectionString, containerName);
+
+        // On supprime d'abord l'ancien fichier dans le dossier Azure (dossier Azure = nom entreprise + timestamp)
+        BlobClient blobClient = container.GetBlobClient(previousFileName);
+        logger.LogError("URL ancien dossier Azure `{@0}`.", previousFileName);
+        await blobClient.DeleteAsync(snapshotsOption: DeleteSnapshotsOption.IncludeSnapshots);
+
+        ArgumentNullException.ThrowIfNull(file);
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        if (!allowedExtensions.Contains(ext))
+        {
+            throw new ArgumentException($"Extensions autorisées : {string.Join(", ", allowedExtensions)}");
+        }
+
+        // On télécharge le nouveau fichier
+        try
+        {
+            if (previousFileName is null) // si l'entreprise n'a pas de logo
+            {
+
+                var filename = GenerateFileName(file.FileName, clientName);
+                var fileUrl = "";
+
+                string[] extensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
+
+
+                blobClient = container.GetBlobClient(filename);
+                var blobHttpHeader = new BlobHttpHeaders { ContentType = "image/webp" };
+                using (Stream stream = file.OpenReadStream())
+                {
+                    blobClient.Upload(stream, new BlobUploadOptions { HttpHeaders = blobHttpHeader });
+                }
+                fileUrl = blobClient.Uri.AbsoluteUri;
+                var result = fileUrl;
+                logger.LogInformation("Fichier téléchargé avec succès : {@0}", fileUrl);
+                return result;
+            }
+            else // si l'entreprise avait un logo
+            {
+                var fileUrl = "";
+
+                string[] extensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
+
+                blobClient = container.GetBlobClient(previousFileName);
+                var blobHttpHeader = new BlobHttpHeaders { ContentType = "image/webp" };
+                using (Stream stream = file.OpenReadStream())
+                {
+                    blobClient.Upload(stream, new BlobUploadOptions { HttpHeaders = blobHttpHeader });
+                }
+                fileUrl = blobClient.Uri.AbsoluteUri;
+                var result = fileUrl;
+                logger.LogInformation("Fichier téléchargé avec succès : {@0}", fileUrl);
+                return result;
+            }
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException("Une erreur est survenue lors de l'upload du fichier : ", ex);
+        }
+    }
+
     public async Task DeleteBlobSnapshotsAsync(string fileName, string containerName)
     {
         string azureConnectionString = Environment.GetEnvironmentVariable("AzureBlobStorage")!;

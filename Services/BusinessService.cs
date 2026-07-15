@@ -166,27 +166,47 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             string oldImage = existingBusiness?.Logo;
             string? logoUrl = null;
             string businessName = $"{existingBusiness.Name}";
+            string blobUrl = Environment.GetEnvironmentVariable("AzureGenericBlobsUrl")!;
             string azureContainerName = Environment.GetEnvironmentVariable("AzureBlobBusinessesContainer")!;
-            Guid qrCodeToken = Guid.NewGuid();
+            string blobFileName = existingBusiness.Logo.Replace(blobUrl + azureContainerName, "");
+            string[] allowedExtensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
 
-            if (request.NewLogoFile is not null)
+            if (request.NewLogoFile != null)
             {
-                string[] allowedExtensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
-                logoUrl = await fileStorageService.UploadBlobAsync(request.NewLogoFile, businessName, azureContainerName, allowedExtensions);
+                // logger.LogInformation("IF logo existant `{@0}`.", existingBusiness.Logo);
+                logoUrl = await fileStorageService.UpdateExistingBlobAsync(blobFileName, request.NewLogoFile, businessName, azureContainerName, allowedExtensions);
             }
 
+            /*             // Si un logo existe déjà
+                        if (oldImage != null)
+                        {
+                            logger.LogInformation("IF logo existant `{@0}`.", existingBusiness.Logo);
+                            logoUrl = await fileStorageService.UpdateExistingBlobAsync(blobFileName, request.NewLogoFile, businessName, azureContainerName, allowedExtensions);
+                        }
+                        // S'il n'y a pas de logo
+                        else
+                        {
+                            logger.LogInformation("IF pas de logo");
+                            logoUrl = await fileStorageService.UploadBlobAsync(request.NewLogoFile, businessName, azureContainerName, allowedExtensions);
+
+                        } */
+
+            logger.LogInformation("URL ancien logo BDD `{@0}`.", existingBusiness.Logo);
+            logger.LogInformation("URL nouveau logo BDD `{@0}`.", logoUrl);
+            logger.LogInformation("Nom dossier Azure `{@0}`.", blobFileName);
             existingBusiness.Logo = request.NewLogoFile != null ? logoUrl : existingBusiness.Logo;
             existingBusiness.UpdatedAt = DateTime.UtcNow;
 
             context.Businesses.Update(existingBusiness);
             await context.SaveChangesAsync();
 
-            if (request.NewLogoFile != null && oldImage != null)
-            {
-                string blobUrl = Environment.GetEnvironmentVariable("AzureGenericBlobsUrl")!;
-                string blobFileName = existingBusiness?.Logo.Replace(blobUrl + azureContainerName, "");
-                await fileStorageService.DeleteBlobSnapshotsAsync(blobFileName, azureContainerName);
-            }
+
+
+            // if (request.NewLogoFile != null && oldImage != null)
+            // {
+            //     string blobFileName = existingBusiness?.Logo.Replace(blobUrl + azureContainerName, "");
+            //     await fileStorageService.DeleteBlobSnapshotsAsync(blobFileName, azureContainerName);
+            // }
 
             logger.LogInformation("Logo mis à jour avec succès !");
 

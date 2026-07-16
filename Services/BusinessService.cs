@@ -76,6 +76,7 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         string? logoUrl = null;
         string businessName = $"{request.Name}";
         string azureContainerName = Environment.GetEnvironmentVariable("AzureBlobBusinessesContainer")!;
+        string DEFAULT_LOGO_URL = AppConstants.Azure.WaitifyLogoUrl;
         Guid qrCodeToken = Guid.NewGuid();
 
         if (request.Logo is not null)
@@ -90,7 +91,7 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             Name = request.Name,
             BusinessType = request.BusinessType,
             PhoneNumber = request.PhoneNumber,
-            Logo = logoUrl,
+            Logo = request.Logo != null ? logoUrl : DEFAULT_LOGO_URL,
             Address = request.Address,
             City = request.City,
             ZipCode = request.ZipCode,
@@ -135,18 +136,12 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             throw new InvalidOperationException("Une erreur est survenue lors de la mise à jour de l'entreprise.", ex);
         }
     }
+
     public async Task<Business?> UpdateBusinessLogoAsync(
-        // string userId, 
         Guid businessId,
         UpdateBusinessLogoRequest request
         )
     {
-        // var existingUser = userService.FindUserByIdAsync(userId);
-        // if (existingUser?.Id.ToString() == userId)
-        // {
-        //     logger.LogError("Accès interdit. L'id utilisateur est incorrecte.\n ID en base de données : `{@0}`.\n ID de la requête : `{@1}`.", existingUser?.Id, userId);
-        //     return null;
-        // }
 
         try
         {
@@ -157,53 +152,25 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
                 return null;
             }
 
-            // if (existingUser?.Id.ToString() != existingBusiness.OwnerId)
-            // {
-            //     logger.LogError("Accès refusé !\n ID récupéré du JWT : `{@0}`.\n ID du gérant en BDD : `{@1}`.", existingUser?.Id, existingBusiness.OwnerId);
-            //     return null;
-            // }
-
-            string oldImage = existingBusiness?.Logo;
-            string? logoUrl = null;
+            string oldLogoUrl = existingBusiness.Logo;
+            string? newLogoUrl = null;
             string businessName = $"{existingBusiness.Name}";
-            string blobUrl = Environment.GetEnvironmentVariable("AzureGenericBlobsUrl")!;
             string azureContainerName = Environment.GetEnvironmentVariable("AzureBlobBusinessesContainer")!;
-            string blobFileName = existingBusiness.Logo.Replace(blobUrl + azureContainerName, "");
+            string blobUrl = Environment.GetEnvironmentVariable("AzureGenericBlobsUrl")!;
+            string oldBlobFileName = oldLogoUrl.Replace(blobUrl + azureContainerName, "");
+
             string[] allowedExtensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
+            newLogoUrl = await fileStorageService.UpdateExistingBlobAsync(oldBlobFileName, request.NewLogoFile, businessName, azureContainerName, allowedExtensions);
 
-            if (request.NewLogoFile != null)
-            {
-                // logger.LogInformation("IF logo existant `{@0}`.", existingBusiness.Logo);
-                logoUrl = await fileStorageService.UpdateExistingBlobAsync(blobFileName, request.NewLogoFile, businessName, azureContainerName, allowedExtensions);
-            }
-
-            /*             // Si un logo existe déjà
-                        if (oldImage != null)
-                        {
-                            logger.LogInformation("IF logo existant `{@0}`.", existingBusiness.Logo);
-                            logoUrl = await fileStorageService.UpdateExistingBlobAsync(blobFileName, request.NewLogoFile, businessName, azureContainerName, allowedExtensions);
-                        }
-                        // S'il n'y a pas de logo
-                        else
-                        {
-                            logger.LogInformation("IF pas de logo");
-                            logoUrl = await fileStorageService.UploadBlobAsync(request.NewLogoFile, businessName, azureContainerName, allowedExtensions);
-
-                        } */
-
-            logger.LogInformation("URL ancien logo BDD `{@0}`.", existingBusiness.Logo);
-            logger.LogInformation("URL nouveau logo BDD `{@0}`.", logoUrl);
-            logger.LogInformation("Nom dossier Azure `{@0}`.", blobFileName);
-            existingBusiness.Logo = request.NewLogoFile != null ? logoUrl : existingBusiness.Logo;
+            existingBusiness.Logo = request.NewLogoFile != null ? newLogoUrl : oldLogoUrl;
             existingBusiness.UpdatedAt = DateTime.UtcNow;
 
             context.Businesses.Update(existingBusiness);
             await context.SaveChangesAsync();
 
-
-
             // if (request.NewLogoFile != null && oldImage != null)
             // {
+            //     string blobUrl = Environment.GetEnvironmentVariable("AzureGenericBlobsUrl")!;
             //     string blobFileName = existingBusiness?.Logo.Replace(blobUrl + azureContainerName, "");
             //     await fileStorageService.DeleteBlobSnapshotsAsync(blobFileName, azureContainerName);
             // }
@@ -221,7 +188,6 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             throw new InvalidOperationException("Une erreur est survenue lors de la mise à jour du logo de l'entreprise.", ex);
         }
     }
-
     public async Task<string> OpenOrCloseBusinessQueueAsync(Guid qrCodeToken, OpenOrCloseBusinessQueueRequest request)
     {
         try

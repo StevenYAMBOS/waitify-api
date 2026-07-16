@@ -71,14 +71,14 @@ public class FileStorageService
         }
     }
 
-    public async Task<string> UpdateExistingBlobAsync(string previousFileName, IFormFile file, string clientName, string containerName, string[] allowedExtensions)
+    public async Task<string> UpdateExistingBlobAsync(string? previousFileName, IFormFile file, string clientName, string containerName, string[] allowedExtensions)
     {
         string azureConnectionString = Environment.GetEnvironmentVariable("AzureBlobStorage")!;
         var container = new BlobContainerClient(azureConnectionString, containerName);
 
         // On supprime d'abord l'ancien fichier dans le dossier Azure (dossier Azure = nom entreprise + timestamp)
         BlobClient blobClient = container.GetBlobClient(previousFileName);
-        logger.LogError("URL ancien dossier Azure `{@0}`.", previousFileName);
+        logger.LogInformation("URL ancien dossier Azure `{@0}`.", previousFileName);
         await blobClient.DeleteAsync(snapshotsOption: DeleteSnapshotsOption.IncludeSnapshots);
 
         ArgumentNullException.ThrowIfNull(file);
@@ -94,7 +94,6 @@ public class FileStorageService
         {
             if (previousFileName is null) // si l'entreprise n'a pas de logo
             {
-
                 var filename = GenerateFileName(file.FileName, clientName);
                 var fileUrl = "";
 

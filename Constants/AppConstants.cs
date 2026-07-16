@@ -15,6 +15,7 @@ public static class AppConstants
         public static string UsersContainer = Environment.GetEnvironmentVariable("AzureBlobUsersContainer")!;
         public static string BusinessesContainer = Environment.GetEnvironmentVariable("AzureBlobBusinessesContainer")!;
         public static string ContactsContainer = Environment.GetEnvironmentVariable("AzureBlobContactContainer")!;
+        public static string WaitifyLogoUrl = Environment.GetEnvironmentVariable("WaitifyLogoUrl")!;
     }
 
     public record Roles

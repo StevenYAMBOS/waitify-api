@@ -142,7 +142,6 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         UpdateBusinessLogoRequest request
         )
     {
-
         try
         {
             var existingBusiness = context.Businesses.FirstOrDefault(business => business.Id == businessId);
@@ -152,28 +151,25 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
                 return null;
             }
 
-            string oldLogoUrl = existingBusiness.Logo;
+            string oldLogoUrl = existingBusiness.Logo!;
             string? newLogoUrl = null;
             string businessName = $"{existingBusiness.Name}";
             string azureContainerName = Environment.GetEnvironmentVariable("AzureBlobBusinessesContainer")!;
             string blobUrl = Environment.GetEnvironmentVariable("AzureGenericBlobsUrl")!;
             string oldBlobFileName = oldLogoUrl.Replace(blobUrl + azureContainerName, "");
-
             string[] allowedExtensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
-            newLogoUrl = await fileStorageService.UpdateExistingBlobAsync(oldBlobFileName, request.NewLogoFile, businessName, azureContainerName, allowedExtensions);
+
+            if (request.NewLogoFile != null)
+            {
+                newLogoUrl = await fileStorageService.UpdateExistingBlobAsync(oldBlobFileName, request.NewLogoFile, businessName, azureContainerName, allowedExtensions);
+                // newLogoUrl = await fileStorageService.UploadBlobAsync(request.NewLogoFile, businessName, azureContainerName, allowedExtensions);
+            }
 
             existingBusiness.Logo = request.NewLogoFile != null ? newLogoUrl : oldLogoUrl;
             existingBusiness.UpdatedAt = DateTime.UtcNow;
 
             context.Businesses.Update(existingBusiness);
             await context.SaveChangesAsync();
-
-            // if (request.NewLogoFile != null && oldImage != null)
-            // {
-            //     string blobUrl = Environment.GetEnvironmentVariable("AzureGenericBlobsUrl")!;
-            //     string blobFileName = existingBusiness?.Logo.Replace(blobUrl + azureContainerName, "");
-            //     await fileStorageService.DeleteBlobSnapshotsAsync(blobFileName, azureContainerName);
-            // }
 
             logger.LogInformation("Logo mis à jour avec succès !");
 

@@ -1,5 +1,6 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using WaitifyApi.Constants;
 
 namespace WaitifyApi.Services;
 
@@ -29,7 +30,7 @@ public class FileStorageService
         }
         catch (Exception ex)
         {
-            logger.LogInformation("Une erreur est survenue lors de la génération du nom du fichier.", ex);
+            logger.LogError("Une erreur est survenue lors de la génération du nom du fichier : {@0}", ex);
             return fileName;
         }
     }
@@ -71,15 +72,24 @@ public class FileStorageService
         }
     }
 
-    public async Task<string> UpdateExistingBlobAsync(string? previousFileName, IFormFile file, string clientName, string containerName, string[] allowedExtensions)
+    public async Task<string> UpdateExistingBlobAsync(string previousFileName, IFormFile file, string clientName, string containerName, string[] allowedExtensions)
     {
         string azureConnectionString = Environment.GetEnvironmentVariable("AzureBlobStorage")!;
         var container = new BlobContainerClient(azureConnectionString, containerName);
 
         // On supprime d'abord l'ancien fichier dans le dossier Azure (dossier Azure = nom entreprise + timestamp)
         BlobClient blobClient = container.GetBlobClient(previousFileName);
-        logger.LogInformation("URL ancien dossier Azure `{@0}`.", previousFileName);
-        await blobClient.DeleteAsync(snapshotsOption: DeleteSnapshotsOption.IncludeSnapshots);
+        logger.LogError("URL ancien dossier Azure `{@0}`.", previousFileName);
+        string DEFAULT_LOGO_URL = AppConstants.Azure.WaitifyLogoUrl;
+        string DEFAULT_LOGO_URL2 = previousFileName.Replace("Waitify/waitify_logo.png", "");
+        if (DEFAULT_LOGO_URL2 == DEFAULT_LOGO_URL)
+        {
+            logger.LogInformation("Logo de base");
+        }
+        else
+        {
+            await blobClient.DeleteAsync(snapshotsOption: DeleteSnapshotsOption.IncludeSnapshots);
+        }
 
         ArgumentNullException.ThrowIfNull(file);
 
@@ -92,42 +102,61 @@ public class FileStorageService
         // On télécharge le nouveau fichier
         try
         {
-            if (previousFileName is null) // si l'entreprise n'a pas de logo
+            var fileUrl = "";
+
+            string[] extensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
+            var filename = GenerateFileName(file.FileName, clientName);
+            blobClient = container.GetBlobClient(filename);
+            var blobHttpHeader = new BlobHttpHeaders { ContentType = "image/webp" };
+            using (Stream stream = file.OpenReadStream())
             {
-                var filename = GenerateFileName(file.FileName, clientName);
-                var fileUrl = "";
-
-                string[] extensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
-
-
-                blobClient = container.GetBlobClient(filename);
-                var blobHttpHeader = new BlobHttpHeaders { ContentType = "image/webp" };
-                using (Stream stream = file.OpenReadStream())
-                {
-                    blobClient.Upload(stream, new BlobUploadOptions { HttpHeaders = blobHttpHeader });
-                }
-                fileUrl = blobClient.Uri.AbsoluteUri;
-                var result = fileUrl;
-                logger.LogInformation("Fichier téléchargé avec succès : {@0}", fileUrl);
-                return result;
+                blobClient.Upload(stream, new BlobUploadOptions { HttpHeaders = blobHttpHeader });
             }
-            else // si l'entreprise avait un logo
-            {
-                var fileUrl = "";
+            fileUrl = blobClient.Uri.AbsoluteUri;
+            var result = fileUrl;
+            logger.LogInformation("Url logo en env : {@0}", DEFAULT_LOGO_URL);
+            logger.LogInformation("Split nom logo en BDD : {@0}", DEFAULT_LOGO_URL2);
+            logger.LogInformation("fileName : {@0}", filename);
+            logger.LogInformation("file.fileName : {@0}", file.FileName);
+            logger.LogInformation("Fichier téléchargé avec succès : {@0}", fileUrl);
+            return result;
+            /*             if (previousFileName is null) // si l'entreprise n'a pas de logo
+                        {
 
-                string[] extensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
+                            var filename = GenerateFileName(file.FileName, clientName);
+                            var fileUrl = "";
 
-                blobClient = container.GetBlobClient(previousFileName);
-                var blobHttpHeader = new BlobHttpHeaders { ContentType = "image/webp" };
-                using (Stream stream = file.OpenReadStream())
-                {
-                    blobClient.Upload(stream, new BlobUploadOptions { HttpHeaders = blobHttpHeader });
-                }
-                fileUrl = blobClient.Uri.AbsoluteUri;
-                var result = fileUrl;
-                logger.LogInformation("Fichier téléchargé avec succès : {@0}", fileUrl);
-                return result;
-            }
+                            string[] extensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
+
+
+                            blobClient = container.GetBlobClient(filename);
+                            var blobHttpHeader = new BlobHttpHeaders { ContentType = "image/webp" };
+                            using (Stream stream = file.OpenReadStream())
+                            {
+                                blobClient.Upload(stream, new BlobUploadOptions { HttpHeaders = blobHttpHeader });
+                            }
+                            fileUrl = blobClient.Uri.AbsoluteUri;
+                            var result = fileUrl;
+                            logger.LogInformation("Fichier téléchargé avec succès : {@0}", fileUrl);
+                            return result;
+                        }
+                        else // si l'entreprise avait un logo
+                        {
+                            var fileUrl = "";
+
+                            string[] extensions = [".jpeg", ".jpg", ".png", ".webp", ".svg"];
+
+                            blobClient = container.GetBlobClient(previousFileName);
+                            var blobHttpHeader = new BlobHttpHeaders { ContentType = "image/webp" };
+                            using (Stream stream = file.OpenReadStream())
+                            {
+                                blobClient.Upload(stream, new BlobUploadOptions { HttpHeaders = blobHttpHeader });
+                            }
+                            fileUrl = blobClient.Uri.AbsoluteUri;
+                            var result = fileUrl;
+                            logger.LogInformation("Fichier téléchargé avec succès : {@0}", fileUrl);
+                            return result;
+                        } */
         }
         catch (Exception ex)
         {

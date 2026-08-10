@@ -1,0 +1,247 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>WaitifyApi</name>
+    </assembly>
+    <members>
+        <member name="P:WaitifyApi.Entities.SmsLog.Status">
+            <summary>pending | sent | failed</summary>
+        </member>
+        <member name="P:WaitifyApi.Entities.SubscriptionPlan.MaxBusinesses">
+            <summary>-1 for unlimited</summary>
+        </member>
+        <member name="T:WaitifyApi.Helpers.QueuePositionHelper">
+            <summary>
+            Helper statique pour le calcul et le recalcul des positions dans les files d'attente.
+            Remplace l'ancien trigger PostgreSQL <c>recalculate_positions_after_change</c>.
+            </summary>
+            <remarks>
+            Logique équivalente au trigger supprimé :
+            <code>
+            ROW_NUMBER() OVER (ORDER BY "CreatedAt" ASC)
+            WHERE "BusinessId" = @businessQrCodeToken AND "Status" = 'waiting'
+            </code>
+            </remarks>
+        </member>
+        <member name="M:WaitifyApi.Helpers.QueuePositionHelper.RecalculatePositionsAsync(WaitifyApi.Data.AppDbContext,System.Guid)">
+            <summary>
+            Recalcule les positions de toutes les entrées en statut <c>waiting</c>
+            pour l'établissement spécifié, dans l'ordre chronologique d'inscription (<c>CreatedAt ASC</c>).
+            </summary>
+            <remarks>
+            Cette méthode modifie uniquement les entités trackées par EF Core en mémoire.
+            Le <c>SaveChangesAsync</c> doit être appelé par la méthode appelante pour persister les changements.
+            <para>
+            À appeler après chaque transition de statut qui retire un client de la file <c>waiting</c> :
+            <list type="bullet">
+              <item><c>waiting</c> → <c>called</c></item>
+              <item><c>waiting</c> → <c>cancelled</c></item>
+              <item><c>waiting</c> → <c>missed</c></item>
+            </list>
+            </para>
+            </remarks>
+            <param name="context">Contexte de base de données EF Core.</param>
+            <param name="businessQrCodeToken">Identifiant de l'établissement concerné.</param>
+        </member>
+        <member name="M:WaitifyApi.Helpers.QueuePositionHelper.CalculateNewPosition(System.Int32)">
+            <summary>
+            Calcule la position à assigner à un nouveau client rejoignant la file.
+            </summary>
+            <param name="waitingCount">Nombre de clients actuellement en statut <c>waiting</c>.</param>
+            <returns>La position du nouveau client (<c>waitingCount + 1</c>).</returns>
+        </member>
+        <member name="T:WaitifyApi.Migrations.CreatingBusinessesTable">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.CreatingBusinessesTable.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.CreatingBusinessesTable.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.CreatingBusinessesTable.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:WaitifyApi.Migrations.FKOwner">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.FKOwner.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.FKOwner.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.FKOwner.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:WaitifyApi.Migrations.QRCodeGuid">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.QRCodeGuid.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.QRCodeGuid.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.QRCodeGuid.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:WaitifyApi.Migrations.QueueEntriesTable">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.QueueEntriesTable.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.QueueEntriesTable.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.QueueEntriesTable.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:WaitifyApi.Migrations.PascalCase">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.PascalCase.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.PascalCase.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.PascalCase.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:WaitifyApi.Migrations.CompleteDatabase">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.CompleteDatabase.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.CompleteDatabase.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.CompleteDatabase.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:WaitifyApi.Migrations.UpdateQueueEntriesTableColumnQrCodeToken">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.UpdateQueueEntriesTableColumnQrCodeToken.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.UpdateQueueEntriesTableColumnQrCodeToken.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.UpdateQueueEntriesTableColumnQrCodeToken.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:WaitifyApi.Migrations.UpdateUserTable">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.UpdateUserTable.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.UpdateUserTable.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.UpdateUserTable.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:WaitifyApi.Migrations.MajUserTable">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.MajUserTable.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.MajUserTable.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.MajUserTable.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:WaitifyApi.Migrations.ContactTable">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.ContactTable.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.ContactTable.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.ContactTable.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:WaitifyApi.Migrations.QRCodeTokenAsUUID">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.QRCodeTokenAsUUID.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.QRCodeTokenAsUUID.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.QRCodeTokenAsUUID.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:WaitifyApi.Migrations.QRCodeTokenAsUUIDForBusiness">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.QRCodeTokenAsUUIDForBusiness.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.QRCodeTokenAsUUIDForBusiness.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:WaitifyApi.Migrations.QRCodeTokenAsUUIDForBusiness.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:Program">
+            <summary>
+            Auto-generated public partial Program class for top-level statement apps.
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Type)">
+            <summary>
+            Generates a documentation comment ID for a type.
+            Example: T:Namespace.Outer+Inner`1 becomes T:Namespace.Outer.Inner`1
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Reflection.PropertyInfo)">
+            <summary>
+            Generates a documentation comment ID for a property.
+            Example: P:Namespace.ContainingType.PropertyName or for an indexer P:Namespace.ContainingType.Item(System.Int32)
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Type,System.String)">
+            <summary>
+            Generates a documentation comment ID for a property given its container type and property name.
+            Example: P:Namespace.ContainingType.PropertyName
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.CreateDocumentationId(System.Reflection.MethodInfo)">
+            <summary>
+            Generates a documentation comment ID for a method (or constructor).
+            For example:
+              M:Namespace.ContainingType.MethodName(ParamType1,ParamType2)~ReturnType
+              M:Namespace.ContainingType.#ctor(ParamType)
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.GetTypeDocId(System.Type,System.Boolean,System.Boolean)">
+            <summary>
+            Generates a documentation ID string for a type.
+            This method handles nested types (replacing '+' with '.'),
+            generic types, arrays, pointers, by-ref types, and generic parameters.
+            The <paramref name="includeGenericArguments"/> flag controls whether
+            constructed generic type arguments are emitted, while <paramref name="omitGenericArity"/>
+            controls whether the generic arity marker (e.g. "`1") is appended.
+            </summary>
+        </member>
+        <member name="M:Microsoft.AspNetCore.OpenApi.Generated.DocumentationCommentIdHelper.NormalizeDocId(System.String)">
+            <summary>
+            Normalizes a documentation comment ID to match the compiler-style format.
+            Strips the return type suffix for ordinary methods but retains it for conversion operators.
+            </summary>
+            <param name="docId">The documentation comment ID to normalize.</param>
+            <returns>The normalized documentation comment ID.</returns>
+        </member>
+    </members>
+</doc>

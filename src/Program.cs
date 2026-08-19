@@ -194,16 +194,14 @@ builder.Services.AddScoped<QRCodeGeneratorService>();
 builder.Services.AddScoped<IEmailRepository, EmailService>();
 builder.Services.AddScoped<IContactRepository, ContactService>();
 
-
 builder.Services.AddScoped<IAuthTokenProcessor, AuthTokenProcessor>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAccountService, AccountService>();
 
-
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(databaseConfig));
 builder.Services.AddSingleton(x => new BlobServiceClient(azureBlobStorageConnStrg));
 
-/* 
+/*
 builder.Services.AddRateLimiter(options =>
 {
     options.OnRejected = async (context, token) =>
@@ -232,7 +230,7 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0,
                 Window = TimeSpan.FromMinutes(1)
             }));
-}); 
+});
 */
 
 builder.Services.AddCors(options =>

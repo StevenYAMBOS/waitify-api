@@ -725,6 +725,16 @@ Une erreur est survenue.
 
 ---
 
+### Récupérer une entreprise (avec son `Id`) 
+
+⚠️ ROUTE ADMIN !
+
+> Chemin : `GET /api/business/{id}`
+
+Route réservé aux Admin/développeurs pour récupérer les informations d'une entreprise depuis son `Id`.
+
+---
+
 ## Routes authentification Google (OAuth 2.0)
 
 ---

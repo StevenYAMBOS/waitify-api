@@ -57,7 +57,7 @@ public class BusinessController(
     }
 
     [HttpGet("{id}")]
-    [Authorize(AuthenticationSchemes = "Bearer")]
+    [Authorize(Roles = AppConstants.Roles.Admin, AuthenticationSchemes = "Bearer")]
     public async Task<IActionResult> GetBusinessById(Guid id)
     {
         var business = await businessService.FindBusinessByIdAsync(id);
@@ -178,7 +178,7 @@ public class BusinessController(
         try
         {
             var business = await businessService.UpdateBusinessLogoAsync(
-                // ownerIdFromToken, 
+                // ownerIdFromToken,
                 id,
                 request);
             if (business == null)

@@ -1,4 +1,3 @@
-
 namespace WaitifyApi.Constants;
 
 public static class AppConstants

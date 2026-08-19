@@ -57,10 +57,17 @@ public class BusinessController(
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = AppConstants.Roles.Admin, AuthenticationSchemes = "Bearer")]
+    [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
     public async Task<IActionResult> GetBusinessById(Guid id)
     {
-        var business = await businessService.FindBusinessByIdAsync(id);
+        var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        if (ownerIdFromToken == null)
+        {
+            logger.LogError("Impossible de récupérer l'ID de l'utilisateur depuis le token JWT.");
+            return Unauthorized("Utilisateur non authentifié.");
+        }
+
+        var business = await businessService.FindBusinessByIdAsync(id, ownerIdFromToken);
         if (business == null)
         {
             logger.LogError("Entreprise avec l'id : `{@id}` introuvable", id);
@@ -81,11 +88,6 @@ public class BusinessController(
         }
 
         var businesses = await businessService.GetAllOwnerBusinessesAsync(ownerIdFromToken);
-        /*       if (businesses == null)
-              {
-                  logger.LogInformation("Entreprise avec l'id : `{id}` introuvable");
-                  return StatusCode(StatusCodes.Status404NotFound, "Entreprise introuvable");
-              } */
         logger.LogInformation("ENTREPRISES : {@0}", JsonConvert.SerializeObject(businesses, Formatting.Indented));
         return Ok(businesses);
     }
@@ -239,9 +241,16 @@ public class BusinessController(
     [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<IActionResult> DeleteOneBusiness(Guid id)
     {
+        var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        if (ownerIdFromToken == null)
+        {
+            logger.LogError("Impossible de récupérer l'ID de l'utilisateur depuis le token JWT.");
+            return Unauthorized("Utilisateur non authentifié.");
+        }
+
         try
         {
-            await businessService.DeleteBusinessAsync(id);
+            await businessService.DeleteBusinessAsync(id, ownerIdFromToken);
             return NoContent();
         }
         catch (KeyNotFoundException)

@@ -9,6 +9,7 @@ using WaitifyApi.Enums;
 using WaitifyApi.Helpers;
 using WaitifyApi.Models;
 using WaitifyApi.Repositories;
+using WaitifyApi.Constants;
 
 namespace WaitifyApi.Services;
 
@@ -53,8 +54,22 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             return business.FirstOrDefault();
         } */
 
-    public async Task<Business?> FindBusinessByIdAsync(Guid id)
+    public async Task<Business?> FindBusinessByIdAsync(Guid id, string userId)
     {
+        var user = await userService.FindUserByIdAsync(userId);
+        logger.LogInformation("[Requête] ROLE UTILISATEUR : {@0}", user.Role);
+        logger.LogInformation("[Vérification] ROLE UTILISATEUR : {@0}", AppConstants.Roles.Admin);
+        if (user == null)
+        {
+            logger.LogError("L'id utilisateur n'est pas correcte : {@0}", user.Id);
+            throw new KeyNotFoundException("Utilisateur non trouvé");
+        }
+
+        if (user.Role.ToString() != AppConstants.Roles.Admin)
+        {
+            throw new UnauthorizedAccessException("Accès interdit");
+        }
+
         var business = await context.Businesses.FindAsync(id);
         return business;
     }
@@ -212,10 +227,14 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         }
     }
 
-    public async Task DeleteBusinessAsync(Guid id)
+    public async Task DeleteBusinessAsync(Guid id, string userId)
     {
-        var business = await FindBusinessByIdAsync(id);
-
+        var user = await userService.FindUserByIdAsync(userId);
+        if (user == null)
+        {
+            logger.LogError("L'id utilisateur n'est pas correcte : {@0}", user.Id);
+            throw new KeyNotFoundException("Utilisateur non trouvé");
+        }        var business = await FindBusinessByIdAsync(id, user.Id);
 
         if (business is null)
         {

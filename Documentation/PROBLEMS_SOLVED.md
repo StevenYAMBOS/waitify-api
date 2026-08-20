@@ -118,7 +118,7 @@ Autres liens utiles (concernant l'appel des chemins des templates) :
 
 Solution : https://stackoverflow.com/a/62426421/17386694
 
-Le projet de test ne doit pas être dans le projet de base, chaque projets doivent être dans un dossier différent.
+Le projet de test ne doit pas être dans le projet de base, chaque projets doivent être dans un dossier différent (sinon il y a "collision").
 
 ```
 MyProject

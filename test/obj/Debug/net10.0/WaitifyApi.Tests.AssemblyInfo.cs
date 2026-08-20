@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WaitifyApi.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ffd3c325f9f498999ace7b16f2cd4214534ea280")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+091eadc3435eaf1bbdd061f77db5bd908e25efcd")]
 [assembly: System.Reflection.AssemblyProductAttribute("WaitifyApi.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WaitifyApi.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

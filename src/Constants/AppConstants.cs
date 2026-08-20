@@ -24,6 +24,7 @@ public static class AppConstants
 
     public record Authorization
     {
+        public const string NameIdentifierClaim = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier";
         public const string Denied = "Accès non autorisé !";
     }
 

@@ -20,7 +20,7 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
     public async Task<IActionResult> GetUserProfil()
     {
 
-        var idFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        var idFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, AppConstants.Authorization.NameIdentifierClaim);
         if (idFromFromJwt == null)
         {
             logger.LogError("Erreur lors de la récupération de l'utilisateur  : {@0}", idFromFromJwt);
@@ -50,7 +50,7 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
             return BadRequest();
         }
 
-        var idFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        var idFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, AppConstants.Authorization.NameIdentifierClaim);
         if (idFromFromJwt == null)
         {
             logger.LogError("Erreur lors de la récupération de l'utilisateur  : {@0}", idFromFromJwt);
@@ -73,7 +73,7 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
     [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<IActionResult> DeleteUserProfile()
     {
-        var idFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        var idFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, AppConstants.Authorization.NameIdentifierClaim);
         if (idFromFromJwt == null)
         {
             logger.LogError("Erreur lors de la récupération de l'utilisateur  : {@0}", idFromFromJwt);
@@ -95,12 +95,13 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
 
     [HttpDelete("admin")]
     [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
-    public async Task<IActionResult> AdminDeleteUserProfile([FromBody]AdminDeleteUserRequest request)
+    public async Task<ActionResult<AdminDeleteUserResponse>> AdminDeleteUserProfile([FromBody] AdminDeleteUserRequest request)
     {
         try
         {
-            logger.LogInformation("Utilisateur '{@0}' supprimé avec succès.", request);
             await userProfilService.AdminDeleteUserAsync(request);
+            logger.LogInformation("Utilisateur '{@0}' supprimé avec succès.", request);
+
             return NoContent();
         }
         catch (KeyNotFoundException)

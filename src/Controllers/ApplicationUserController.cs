@@ -82,7 +82,7 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
 
         try
         {
-            logger.LogInformation("Utilisateur '{0}' supprimé avec succès.", idFromFromJwt);
+            logger.LogInformation("Utilisateur '{@0}' supprimé avec succès.", idFromFromJwt);
             await userProfilService.DeleteProfilAsync(idFromFromJwt);
             return NoContent();
         }
@@ -95,12 +95,12 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
 
     [HttpDelete("admin")]
     [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
-    public async Task<IActionResult> AdminDeleteUserProfile(AdminDeleteUserRequest request)
+    public async Task<IActionResult> AdminDeleteUserProfile([FromBody]AdminDeleteUserRequest request)
     {
         try
         {
-            logger.LogInformation("Utilisateur '{@0}' supprimé avec succès.", request?.UserId);
-            await userProfilService.AdminDeleteUserAsync(request.UserId);
+            logger.LogInformation("Utilisateur '{@0}' supprimé avec succès.", request);
+            await userProfilService.AdminDeleteUserAsync(request);
             return NoContent();
         }
         catch (KeyNotFoundException)

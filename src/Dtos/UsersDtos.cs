@@ -2,9 +2,9 @@ using System.ComponentModel.DataAnnotations;
 
 namespace WaitifyApi.Dtos;
 
-public class AdminDeleteUserRequest
+public record AdminDeleteUserRequest
 {
-    [Required(ErrorMessage = "L'Id est obligatoire !")]
+    [Required(ErrorMessage = "L'id est obligatoire !")]
     public string UserId { get; set; } = string.Empty;
 }
 

@@ -62,7 +62,7 @@ namespace WaitifyApi.Services
             await context.SaveChangesAsync();
         }
 
-        public async Task<AdminDeleteUserResponse?> AdminDeleteUserAsync(AdminDeleteUserRequest request)
+        public async Task<AdminDeleteUserResponse> AdminDeleteUserAsync(AdminDeleteUserRequest request)
         {
             var user = await FindUserByIdAsync(request?.UserId) ?? throw new KeyNotFoundException("Utilisateur non trouvé.");
 

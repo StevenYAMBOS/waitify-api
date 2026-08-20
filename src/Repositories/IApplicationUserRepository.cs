@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.JsonPatch;
 using WaitifyApi.Dtos;
 using WaitifyApi.Entities;
+
 namespace WaitifyApi.Repositories;
 
 public interface IApplicationUserRepository

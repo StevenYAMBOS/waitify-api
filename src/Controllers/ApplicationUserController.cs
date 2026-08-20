@@ -3,12 +3,11 @@ using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using WaitifyApi.Constants;
-
-
-// using Microsoft.AspNetCore.RateLimiting;
+using WaitifyApi.Dtos;
 using WaitifyApi.Entities;
 using WaitifyApi.Repositories;
 using WaitifyApi.Services;
+// using Microsoft.AspNetCore.RateLimiting;
 
 namespace WaitifyApi.Controllers;
 
@@ -96,19 +95,12 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
 
     [HttpDelete("admin")]
     [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
-    public async Task<IActionResult> AdminDeleteUserProfile(string userId)
+    public async Task<IActionResult> AdminDeleteUserProfile(AdminDeleteUserRequest request)
     {
-        var idFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
-        if (idFromFromJwt == null)
-        {
-            logger.LogError("Erreur lors de la récupération de l'utilisateur  : {@0}", idFromFromJwt);
-            return StatusCode(StatusCodes.Status404NotFound, "Utilisateur introuvable");
-        }
-
         try
         {
-            logger.LogInformation("Utilisateur '{@0}' supprimé avec succès.", userId);
-            await userProfilService.AdminDeleteUserAsync(userId);
+            logger.LogInformation("Utilisateur '{@0}' supprimé avec succès.", request?.UserId);
+            await userProfilService.AdminDeleteUserAsync(request.UserId);
             return NoContent();
         }
         catch (KeyNotFoundException)

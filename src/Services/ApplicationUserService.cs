@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.JsonPatch;
 using WaitifyApi.Data;
+using WaitifyApi.Dtos;
 using WaitifyApi.Entities;
 using WaitifyApi.Repositories;
 
@@ -61,9 +62,9 @@ namespace WaitifyApi.Services
             await context.SaveChangesAsync();
         }
 
-        public async Task AdminDeleteUserAsync(string userId)
+        public async Task<AdminDeleteUserResponse?> AdminDeleteUserAsync(AdminDeleteUserRequest request)
         {
-            var user = await FindUserByIdAsync(userId) ?? throw new KeyNotFoundException("Utilisateur non trouvé.");
+            var user = await FindUserByIdAsync(request?.UserId) ?? throw new KeyNotFoundException("Utilisateur non trouvé.");
 
             if (user.ProfilePicture != null)
             {
@@ -75,6 +76,14 @@ namespace WaitifyApi.Services
 
             context.Users.Remove(user);
             await context.SaveChangesAsync();
+
+            var response = new AdminDeleteUserResponse
+            {
+                Success = true,
+                Message = "Utilisateur supprimé avec succès"
+            };
+
+            return response;
         }
 
         /*         public async Task<IEnumerable<Business>> GetBusinessesAsync(string id)

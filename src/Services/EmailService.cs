@@ -7,6 +7,8 @@ namespace WaitifyApi.Services;
 
 public class EmailService(ILogger<EmailService> logger) : IEmailRepository
 {
+    /* ************************* EMAILS ************************* */
+
     public async Task RegisterEmail(string receiver, string userName, string createdAt, string url)
     {
         try
@@ -80,37 +82,7 @@ public class EmailService(ILogger<EmailService> logger) : IEmailRepository
         }
     }
 
-    private string NewUserAcquiredEmailBody(string userEmail, string userName, string userId, string createdAt, string trialEndsAt)
-    {
-        string body = string.Empty;
-        using (StreamReader SourceReader = File.OpenText("Utils/NewUserAcquiredEmail.html"))
-        {
-            body = SourceReader.ReadToEnd();
-        }
-
-        body = body.Replace("{userId}", userId);
-        body = body.Replace("{userEmail}", userEmail);
-        body = body.Replace("{trialEndsAt}", trialEndsAt);
-        body = body.Replace("{userName}", userName);
-        body = body.Replace("{createdAt}", createdAt);
-        return body;
-    }
-
-    private string RegisterEmailBody(string userName, string receiver, string createdAt, string url)
-    {
-        string body = string.Empty;
-        using (StreamReader SourceReader = File.OpenText("Utils/RegisterEmail.html"))
-        {
-            body = SourceReader.ReadToEnd();
-        }
-
-        body = body.Replace("{userName}", userName);
-        body = body.Replace("{receiver}", receiver);
-        body = body.Replace("{createdAt}", createdAt);
-        body = body.Replace("{url}", url);
-        return body;
-    }
-
+    // Email envoyé aux développeurs
     public async Task AlertContactFormEmail(Guid contactId, string userEmail, string subject, string content, DateTime createdAt)
     {
         try
@@ -142,6 +114,77 @@ public class EmailService(ILogger<EmailService> logger) : IEmailRepository
         }
     }
 
+    // Email envoyé aux utilisateurs (formulaire de contact)
+    public async Task SendContactEmail(string userEmail, string subject, DateTime createdAt)
+    {
+        try
+        {
+            var smtpServer = Environment.GetEnvironmentVariable("SmtpServer");
+            var port = int.Parse(Environment.GetEnvironmentVariable("SmtpPort")!);
+            var smtpUser = Environment.GetEnvironmentVariable("SmtpUser");
+            var password = Environment.GetEnvironmentVariable("SmtpPassword");
+
+            var email = new MimeMessage();
+            email.From.Add(new MailboxAddress("Waitify.fr", smtpUser));
+            email.To.Add(new MailboxAddress("Destinataire", userEmail));
+            email.Subject = subject;
+
+            string body = SendContactEmailBody(userEmail, subject, createdAt);
+
+            var builder = new BodyBuilder()
+            {
+                HtmlBody = body
+            }
+            ;
+            email.Body = builder.ToMessageBody();
+
+            using var smtp = new SmtpClient();
+
+            await smtp.ConnectAsync(smtpServer!, port, SecureSocketOptions.StartTls);
+            await smtp.AuthenticateAsync(smtpUser!, password!);
+            await smtp.SendAsync(email);
+            await smtp.DisconnectAsync(true);
+        }
+        catch (Exception ex)
+        {
+            logger.LogInformation("Erreur lors de l'envoi de l'email : {@0}", ex.Message);
+        }
+    }
+
+    /* ************************* CORPS DES EMAILS ************************* */
+    // Corps des emails utilisés par les template HTML
+
+    private static string NewUserAcquiredEmailBody(string userEmail, string userName, string userId, string createdAt, string trialEndsAt)
+    {
+        string body = string.Empty;
+        using (StreamReader SourceReader = File.OpenText("Utils/NewUserAcquiredEmail.html"))
+        {
+            body = SourceReader.ReadToEnd();
+        }
+
+        body = body.Replace("{userId}", userId);
+        body = body.Replace("{userEmail}", userEmail);
+        body = body.Replace("{trialEndsAt}", trialEndsAt);
+        body = body.Replace("{userName}", userName);
+        body = body.Replace("{createdAt}", createdAt);
+        return body;
+    }
+
+    private static string RegisterEmailBody(string userName, string receiver, string createdAt, string url)
+    {
+        string body = string.Empty;
+        using (StreamReader SourceReader = File.OpenText("Utils/RegisterEmail.html"))
+        {
+            body = SourceReader.ReadToEnd();
+        }
+
+        body = body.Replace("{userName}", userName);
+        body = body.Replace("{receiver}", receiver);
+        body = body.Replace("{createdAt}", createdAt);
+        body = body.Replace("{url}", url);
+        return body;
+    }
+
     private static string AlertContactFormEmailBody(Guid contactId, string userEmail, string subject, string content, DateTime createdAt)
     {
         string body;
@@ -159,44 +202,20 @@ public class EmailService(ILogger<EmailService> logger) : IEmailRepository
         return body;
     }
 
-    // Email envoyé aux développeurs
-    // public async Task SendContactEmail(string sender, string subject, string body, IFormFile file)
-    // {
-    //     try
-    //     {
-    //         var smtpServer = Environment.GetEnvironmentVariable("SmtpServer");
-    //         var port = int.Parse(Environment.GetEnvironmentVariable("SmtpPort")!);
-    //         var smtpUser = Environment.GetEnvironmentVariable("SmtpUser");
-    //         var password = Environment.GetEnvironmentVariable("SmtpPassword");
+    private static string SendContactEmailBody(string userEmail, string subject, DateTime createdAt)
+    {
+        string body;
+        using (StreamReader sourceReader = File.OpenText("Utils/RequestContactEmail.html"))
+        {
+            body = sourceReader.ReadToEnd();
+        }
 
-    //         var email = new MimeMessage();
-    //         email.From.Add(new MailboxAddress("stevenyambos.fr", sender));
-    //         email.To.Add(new MailboxAddress("Destinataire", smtpUser));
-    //         email.Subject = subject;
+        body = body.Replace("{userEmail}", userEmail)
+                   .Replace("{subject}", subject)
+                   .Replace("{createdAt}", createdAt.ToString("dd/MM/yyyy HH:mm"));
 
-    //         var builder = new BodyBuilder
-    //         {
-    //             TextBody = body
-    //         };
+        return body;
+    }
 
-    //         if (email.Attachments != null)
-    //         {
-    //             string fileName = Path.GetFileName(file.FileName);
-    //             builder.Attachments.Add(fileName, file.OpenReadStream());
-    //         }
-    //         email.Body = builder.ToMessageBody();
 
-    //         using var smtp = new SmtpClient();
-
-    //         await smtp.ConnectAsync(smtpServer, port, SecureSocketOptions.StartTls);
-    //         await smtp.AuthenticateAsync(smtpUser, password);
-    //         await smtp.SendAsync(email);
-    //         await smtp.DisconnectAsync(true);
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         logger.LogInformation("Erreur lors de l'envoi du mail : {@0}", ex.Message);
-    //         // return $"Erreur lors de l'envoi du mail : {ex.Message}";
-    //     }
-    // }
 }

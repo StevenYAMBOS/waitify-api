@@ -38,7 +38,8 @@ public class ContactService(AppDbContext context, FileStorageService fileService
         await context.SaveChangesAsync();
 
         await emailService.AlertContactFormEmail(contact.Id, contact.Email, contact.Subject, contact.Content, contact.CreatedAt);
-        logger.LogInformation("Email '{@0}' envoyé avec succès", contact.Subject);
+        await emailService.SendContactEmail(contact.Email, contact.Subject, contact.CreatedAt);
+        logger.LogInformation("Emails '{@0}' envoyés avec succès", contact.Subject);
 
         return contact;
     }

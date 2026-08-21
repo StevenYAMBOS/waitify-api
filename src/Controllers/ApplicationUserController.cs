@@ -99,9 +99,10 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
     {
         try
         {
-            await userProfilService.AdminDeleteUserAsync(request);
+            var response = await userProfilService.AdminDeleteUserAsync(request);
             logger.LogInformation("Utilisateur '{@0}' supprimé avec succès.", request);
 
+            logger.LogInformation(response);
             return NoContent();
         }
         catch (KeyNotFoundException)

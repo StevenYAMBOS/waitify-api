@@ -1,5 +1,3 @@
-
-
 using Microsoft.EntityFrameworkCore;
 using WaitifyApi.Constants;
 using WaitifyApi.Data;
@@ -14,7 +12,7 @@ namespace WaitifyApi.Services;
 
 public class ContactService(AppDbContext context, FileStorageService fileService, IEmailRepository emailService, IApplicationUserRepository userService, ILogger<ContactService> logger) : IContactRepository
 {
-    public async Task<Contact> SendContactInfoAsync(SendContactInfoDto request)
+    public async Task<Contact> SendContactInfoAsync(SendContactInfoRequest request)
     {
         string? fileUrl = null;
         string contactName = request?.Email;
@@ -35,12 +33,12 @@ public class ContactService(AppDbContext context, FileStorageService fileService
             CreatedAt = DateTime.UtcNow,
         };
 
-        await emailService.SendContactEmail(request?.Email, request?.Subject, request?.Content, request?.File);
-        logger.LogInformation("Email '{0}' envoyé avec succès : ", request.File);
-
 
         context.Contacts.Add(contact);
         await context.SaveChangesAsync();
+
+        await emailService.AlertContactFormEmail(contact.Id, contact.Email, contact.Subject, contact.Content, contact.CreatedAt);
+        logger.LogInformation("Email '{@0}' envoyé avec succès", contact.Subject);
 
         return contact;
     }
@@ -48,7 +46,7 @@ public class ContactService(AppDbContext context, FileStorageService fileService
     public async Task<Contact?> FindContactByIdAsync(Guid id)
     {
         var contact = await context.Contacts.FindAsync(id);
-        logger.LogInformation("Information de la demande : {0}", contact);
+        logger.LogInformation("Information de la demande : {@0}", contact);
         return contact;
     }
 
@@ -75,7 +73,7 @@ public class ContactService(AppDbContext context, FileStorageService fileService
         return response;
     }
 
-    public async Task DeleteContatAsync(Guid contactId)
+    public async Task<AdminDeleteContactResponse> AdminDeleteContatAsync(Guid contactId)
     {
         var contact = await FindContactByIdAsync(contactId) ?? throw new KeyNotFoundException("Demande non trouvée.");
 
@@ -89,5 +87,14 @@ public class ContactService(AppDbContext context, FileStorageService fileService
 
         context.Contacts.Remove(contact);
         await context.SaveChangesAsync();
+
+        var response = new AdminDeleteContactResponse
+        {
+            Success = true,
+            Message = "Suppression réussie."
+        };
+
+        logger.LogInformation("Contact '{@0}' supprimé avec succès.", contactId);
+        return response;
     }
 }

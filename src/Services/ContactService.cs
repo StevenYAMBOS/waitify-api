@@ -51,18 +51,10 @@ public class ContactService(AppDbContext context, FileStorageService fileService
         return contact;
     }
 
-    public async Task<AdminGetAllWaitifyContactsResponse> AdminGetAllWaitifyContactsAsync(string userId)
+    public async Task<AdminGetAllWaitifyContactsResponse> AdminGetAllWaitifyContactsAsync()
     {
-        var user = await userService.FindUserByIdAsync(userId);
-        var role = user?.Role;
         var contacts = await context.Contacts.ToListAsync();
         var contactsCount = await context.Contacts.CountAsync();
-
-        if (role != Role.Admin)
-        {
-            logger.LogInformation(AppConstants.Authorization.Denied);
-            throw new ArgumentException(AppConstants.Authorization.Denied);
-        }
 
         var response = new AdminGetAllWaitifyContactsResponse
         {

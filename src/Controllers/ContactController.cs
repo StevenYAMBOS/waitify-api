@@ -42,7 +42,7 @@ public class ContactController(IContactRepository contactService, ILogger<Contac
   }
 
   [HttpGet("{id}")]
-  [Authorize(AuthenticationSchemes = "Bearer")]
+  [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
   public async Task<IActionResult> FindContactByIdAsync(Guid id)
   {
     var contact = await contactService.FindContactByIdAsync(id);
@@ -56,9 +56,9 @@ public class ContactController(IContactRepository contactService, ILogger<Contac
 
   [HttpGet("all")]
   [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
-  public async Task<IActionResult> AdminGetAllWaitifyContacts(string userId)
+  public async Task<IActionResult> AdminGetAllWaitifyContacts()
   {
-    var contacts = await contactService.AdminGetAllWaitifyContactsAsync(userId);
+    var contacts = await contactService.AdminGetAllWaitifyContactsAsync();
     return Ok(contacts);
   }
 

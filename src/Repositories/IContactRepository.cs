@@ -8,7 +8,7 @@ public interface IContactRepository
 {
     Task<Contact> SendContactInfoAsync(SendContactInfoRequest request);
     Task<Contact?> FindContactByIdAsync(Guid contactId);
-    Task<AdminGetAllWaitifyContactsResponse> AdminGetAllWaitifyContactsAsync(string userId);
+    Task<AdminGetAllWaitifyContactsResponse> AdminGetAllWaitifyContactsAsync();
     Task<AdminDeleteContactResponse> AdminDeleteContatAsync(Guid contactId);
 
 }

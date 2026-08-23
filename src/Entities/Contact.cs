@@ -25,6 +25,9 @@ public class Contact
     [MaxLength(1000)]
     public string? Content { get; set; }
 
+    [Column("Checked")]
+    public bool Checked { get; set; } = false;
+
     [Column("File", TypeName = "varchar(200)")]
     [MaxLength(200)]
     public string? File { get; set; }

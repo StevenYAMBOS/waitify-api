@@ -34,4 +34,7 @@ public class Contact
 
     [Column("CreatedAt")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [Column("UpdatedAt")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

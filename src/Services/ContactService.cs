@@ -101,6 +101,7 @@ public class ContactService(AppDbContext context, FileStorageService fileService
             }
 
             contact.Checked = true;
+            contact.UpdatedAt = DateTime.UtcNow;
 
             context.Contacts.Update(contact);
             await context.SaveChangesAsync();

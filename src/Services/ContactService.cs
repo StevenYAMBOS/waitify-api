@@ -66,6 +66,29 @@ public class ContactService(AppDbContext context, FileStorageService fileService
         return response;
     }
 
+    public async Task<AdminGetAllWaitifyContactsResponse> AdminFindContactsListByUserAsync(string userId)
+    {
+        var user = await userService.FindUserByIdAsync(userId) ?? throw new KeyNotFoundException("Utilisateur non trouvé.");
+
+        var contactsCount = await context.Contacts
+        .Where(
+          contact => contact.Email == user.Email)
+        .CountAsync();
+
+        logger.LogInformation("Nombre de demandes de l'utilisateur `{@0}` : {@1}", user.Email, JsonResponseHelper.JsonConversion(contactsCount));
+
+        var contacts = await context.Contacts.ToListAsync();
+
+        var response = new AdminGetAllWaitifyContactsResponse
+        {
+            Count = contactsCount,
+            Contacts = contacts
+        };
+
+        logger.LogInformation("LISTE DES DEMANDES : {@0}", JsonResponseHelper.JsonConversion(contacts));
+        return response;
+    }
+
     public async Task<AdminDeleteContactResponse> AdminDeleteContatAsync(Guid contactId)
     {
         var contact = await FindContactByIdAsync(contactId) ?? throw new KeyNotFoundException("Demande non trouvée.");

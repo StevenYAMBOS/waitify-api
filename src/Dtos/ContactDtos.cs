@@ -13,7 +13,7 @@ public record SendContactInfoRequest
 
 public record AdminGetAllWaitifyContactsResponse
 {
-    public int Count { get; set; }
+    public int Count { get; set; } = 0;
     public required IEnumerable<Contact?>? Contacts { get; set; } = null;
 }
 

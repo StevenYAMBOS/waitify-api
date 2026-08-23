@@ -62,6 +62,23 @@ public class ContactController(IContactRepository contactService, ILogger<Contac
     return Ok(contacts);
   }
 
+  [HttpGet("user/{id}")]
+  [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
+  public async Task<ActionResult<AdminGetAllWaitifyContactsResponse>> AdminGetContactsByUser(string id)
+    {
+    /*
+    Actuellement :
+        Pour récupérer les contacts d'un utilisateur on utilise son `Id` afin de récupérer son email (table `Users` colonne `Email`).
+        Table `Contacts` colonne Email, si l'email de l'utilisateur correspond avec l'email dans `Contacts` alors on affiche les demandes.
+   Plus tard :
+        Créer une table de liaison `UserContacts` avec les colonnes `Id`, `User`, `Contact`.
+        Quand une demande sera soumise la table `Contacts` et `UserContacts` seront remplies.
+
+    */
+    var contacts = await contactService.AdminFindContactsListByUserAsync(id);
+    return contacts;
+  }
+
 
   [HttpDelete("{id}")]
   [Authorize(AuthenticationSchemes = "Bearer")]

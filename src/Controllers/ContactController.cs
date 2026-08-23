@@ -62,23 +62,66 @@ public class ContactController(IContactRepository contactService, ILogger<Contac
     return Ok(contacts);
   }
 
-  [HttpGet("user/{id}")]
-  [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
-  public async Task<ActionResult<AdminGetAllWaitifyContactsResponse>> AdminGetContactsByUser(string id)
-    {
+[HttpGet("user/{id}")]
+[Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
+public async Task<ActionResult<AdminGetAllWaitifyContactsResponse>> AdminGetContactsByUser(string id)
+{
     /*
     Actuellement :
         Pour récupérer les contacts d'un utilisateur on utilise son `Id` afin de récupérer son email (table `Users` colonne `Email`).
         Table `Contacts` colonne Email, si l'email de l'utilisateur correspond avec l'email dans `Contacts` alors on affiche les demandes.
-   Plus tard :
+    Plus tard :
         Créer une table de liaison `UserContacts` avec les colonnes `Id`, `User`, `Contact`.
         Quand une demande sera soumise la table `Contacts` et `UserContacts` seront remplies.
 
     */
-    var contacts = await contactService.AdminFindContactsListByUserAsync(id);
-    return contacts;
-  }
+    try
+    {
+        var contacts = await contactService.AdminFindContactsListByUserAsync(id);
+        return contacts;
+    }
+    catch (KeyNotFoundException ex)
+    {
+        logger.LogError("Ressource introuvable : {@0}", ex.Message);
+        return NotFound(ex.Message);
+    }
+    catch (InvalidOperationException ex)
+    {
+        logger.LogError("Opération invalide : {@0}", ex.Message);
+        return BadRequest(ex.Message);
+    }
+    catch (Exception ex)
+    {
+        logger.LogError(ex, "Erreur lors de la récupération des demandes.");
+        return StatusCode(StatusCodes.Status500InternalServerError, "Une erreur est survenue.");
+    }
+}
 
+    [HttpPatch("{id}")]
+    [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
+    public async Task<IActionResult> AdminValidateContact(Guid id)
+    {
+        try
+        {
+            var reponse = await contactService.AdminValideContactAsync(id);
+            return Ok(reponse);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            logger.LogError("Ressource introuvable : {@0}", ex.Message);
+            return NotFound(ex.Message);
+        }
+            catch (InvalidOperationException ex)
+        {
+            logger.LogError("Opération invalide : {@0}", ex.Message);
+            return BadRequest(ex.Message);
+        }
+            catch (Exception ex)
+        {
+            logger.LogError(ex, "Erreur lors de la validation de la demande.");
+            return StatusCode(StatusCodes.Status500InternalServerError, "Une erreur est survenue.");
+        }
+    }
 
   [HttpDelete("{id}")]
   [Authorize(AuthenticationSchemes = "Bearer")]

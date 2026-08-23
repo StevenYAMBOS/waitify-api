@@ -10,6 +10,7 @@ public interface IContactRepository
     Task<Contact?> FindContactByIdAsync(Guid contactId);
     Task<AdminGetAllWaitifyContactsResponse> AdminGetAllWaitifyContactsAsync();
     Task<AdminGetAllWaitifyContactsResponse> AdminFindContactsListByUserAsync(string userId);
+    Task<Contact?> AdminValideContactAsync(Guid contactId);
     Task<AdminDeleteContactResponse> AdminDeleteContatAsync(Guid contactId);
 
 }

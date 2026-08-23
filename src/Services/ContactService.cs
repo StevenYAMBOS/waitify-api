@@ -89,6 +89,32 @@ public class ContactService(AppDbContext context, FileStorageService fileService
         return response;
     }
 
+    public async Task<Contact?> AdminValideContactAsync(Guid contactId)
+    {
+        try
+        {
+            var contact = await FindContactByIdAsync(contactId);
+            if (contact == null)
+            {
+                logger.LogError("Demande avec cet Id introuvable -> `{@0}`.", contactId);
+                throw new KeyNotFoundException("Demande non trouvée");
+            }
+
+            contact.Checked = true;
+
+            context.Contacts.Update(contact);
+            await context.SaveChangesAsync();
+
+            logger.LogInformation("Demande validée avec succès : `{@0}`.", contact);
+            return contact;
+        }
+        catch (Exception ex)
+        {
+            logger.LogInformation("Erreur : {@0}", ex);
+            throw new InvalidOperationException("Une erreur est survenue lors de la mise à jour de la demande.", ex);
+        }
+    }
+
     public async Task<AdminDeleteContactResponse> AdminDeleteContatAsync(Guid contactId)
     {
         var contact = await FindContactByIdAsync(contactId) ?? throw new KeyNotFoundException("Demande non trouvée.");

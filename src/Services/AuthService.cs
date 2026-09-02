@@ -240,32 +240,22 @@ public class AuthService(
         return jwtToken;
     }
 
-    public async Task<bool> SendPasswordResetLinkAsync(string email)
-    {
-        // Try to find the user by their email address
-        var user = await userManager.FindByEmailAsync(email);
-        var userEmailConfirmed = await userManager.IsEmailConfirmedAsync(user);
+    // public async Task<bool> SendPasswordResetLinkAsync(string email)
+    // {
+    //     var user = await userManager.FindByEmailAsync(email);
+    //     var userEmailConfirmed = await userManager.IsEmailConfirmedAsync(user);
 
-        // Security measure:
-        // Do not reveal whether the user exists or not —
-        // always behave the same if the user is not found or the email is not confirmed
+    //     if (user == null || !userEmailConfirmed)
+    //         return false;
 
-        if (user == null || !userEmailConfirmed)
-            return false;
+    //     var token = await userManager.GeneratePasswordResetTokenAsync(user);
 
-        // Generate a unique, secure token for password reset
-        var token = await userManager.GeneratePasswordResetTokenAsync(user);
+    //     var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
 
-        // Encode the token so it can be safely used in a URL
-        var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
+    //     var resetLink = $"{baseUrl}/Account/ResetPassword?email={user.Email}&token={encodedToken}";
 
-        // Construct the password reset link with the encoded token and user’s email
-        var baseUrl = _configuration["AppSettings:BaseUrl"];
-        var resetLink = $"{baseUrl}/Account/ResetPassword?email={user.Email}&token={encodedToken}";
+    //     await emailService.SendPasswordResetEmailAsync(user.Email!, user.FirstName, resetLink);
 
-        // Send the reset link via email to the user
-        await _emailService.SendPasswordResetEmailAsync(user.Email!, user.FirstName, resetLink);
-
-        return true;
-    }
+    //     return true;
+    // }
 }

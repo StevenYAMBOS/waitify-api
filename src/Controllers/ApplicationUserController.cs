@@ -7,13 +7,13 @@ using WaitifyApi.Dtos;
 using WaitifyApi.Entities;
 using WaitifyApi.Repositories;
 using WaitifyApi.Services;
-// using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Identity;
 
 namespace WaitifyApi.Controllers;
 
 [ApiController]
 [Route("api/user/profile")]
-public class ApplicationUserProfileController(TokenService tokenService, IApplicationUserRepository userProfilService, ILogger<ApplicationUserProfileController> logger) : ControllerBase
+public class ApplicationUserProfileController(UserManager<ApplicationUser> userManager, IEmailRepository emailService, TokenService tokenService, IApplicationUserRepository userProfilService, ILogger<ApplicationUserProfileController> logger) : ControllerBase
 {
     [HttpGet()]
     [Authorize(AuthenticationSchemes = "Bearer")]
@@ -109,5 +109,59 @@ public class ApplicationUserProfileController(TokenService tokenService, IApplic
             StatusCode(StatusCodes.Status500InternalServerError);
             return NotFound();
         }
+    }
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword(ForgotPasswordRequestDto request)
+    {
+        if (ModelState.IsValid)
+        {
+            var user = await userManager.FindByEmailAsync(request.Email);
+            if (user == null)
+            {
+                return BadRequest("Payload invalide");
+            }
+
+            var token = await userManager.GeneratePasswordResetTokenAsync(user);
+            if (string.IsNullOrEmpty(token))
+                return BadRequest("Une erreur est survenue");
+
+            var callBackUrl = $"{AppConstants.Config.WaitifyUrl}/callback?code={token}&email={user.Email}";
+
+            await emailService.SendResetPasswordEmail(user.Email, user.FirstName, callBackUrl);
+
+            return Ok(new
+            {
+                token = token,
+                email = user.Email
+            });
+
+        }
+            return BadRequest("Une erreur est survenue");
+    }
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword(ResetPasswordRequestDto request)
+    {
+        if (!ModelState.IsValid)
+            return BadRequest("Payload invalide");
+
+        var date = DateTime.UtcNow;
+        var user = await userManager.FindByEmailAsync(request.Email);
+        var userEmailConfirmed = await userManager.IsEmailConfirmedAsync(user);
+        if (user == null || !userEmailConfirmed)
+        {
+            return BadRequest("Payload invalide");
+        }
+
+        var result = await userManager.ResetPasswordAsync(user, request.Token, request.Password);
+
+        if (result.Succeeded)
+        {
+            await emailService.SendPasswordUpdatedEmail(user.Email, user.FirstName, date);
+            return Ok("Changement de mot de passe effectué !");
+        }
+
+        return BadRequest("Une erreur est survenue");
     }
 }

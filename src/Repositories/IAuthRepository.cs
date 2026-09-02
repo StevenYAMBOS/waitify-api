@@ -10,6 +10,6 @@ namespace WaitifyApi.Repositories
         Task<(bool Success, TokenResponseDTO? Tokens, string? Error)> LoginAsync(LoginRequest request);
         Task<(bool Success, TokenResponseDTO? Tokens, string? Error)> RefreshTokensAsync(RefreshTokenRequestDTO request);
         Task<string> LoginWithGoogleAsync(ClaimsPrincipal? claimsPrincipal);
-        Task<bool> SendPasswordResetLinkAsync(string email);
+        // Task<bool> SendPasswordResetLinkAsync(string email);
     }
 }

@@ -1,4 +1,3 @@
-
 namespace WaitifyApi.Repositories;
 
 public interface IEmailRepository
@@ -8,4 +7,5 @@ public interface IEmailRepository
     Task AlertContactFormEmail(Guid contactId, string userEmail, string subject, string content, DateTime createdAt);
     Task SendContactEmail(string userEmail, string subject, DateTime createdAt);
     Task SendResetPasswordEmail(string toEmail, string firstName, string resetPasswordLink);
+    Task SendPasswordUpdatedEmail(string userEmail, string firstName, DateTime updatedAt);
 }

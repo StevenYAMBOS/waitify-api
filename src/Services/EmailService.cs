@@ -151,7 +151,7 @@ public class EmailService(ILogger<EmailService> logger) : IEmailRepository
         }
     }
 
-    public async Task SendResetPasswordEmail(string firstName, string resetLink)
+    public async Task SendResetPasswordEmail(string userEmail, string firstName, string resetLink)
     {
         try
         {
@@ -163,7 +163,7 @@ public class EmailService(ILogger<EmailService> logger) : IEmailRepository
             var email = new MimeMessage();
             email.From.Add(new MailboxAddress("Waitify.fr", smtpUser));
             email.To.Add(new MailboxAddress("Destinataire", userEmail));
-            email.Subject = subject;
+            email.Subject = "Waitify - Résiliation de votre mot de passe.";
 
             string body = ResetPasswordEmailBody(firstName, resetLink);
 

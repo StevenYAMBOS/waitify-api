@@ -13,54 +13,54 @@ namespace WaitifyApi.Controllers;
 [Route("api/[controller]")]
 public class ContactController(IContactRepository contactService, ILogger<ContactController> logger) : ControllerBase
 {
-  [HttpPost]
-  [EnableRateLimiting("fixed")]
-  public async Task<IActionResult> SendContactForm([FromForm] SendContactInfoRequest request)
-  {
-    if (request.File?.Length > 1 * 1024 * 1024)
+    [HttpPost]
+    [EnableRateLimiting("fixed")]
+    public async Task<IActionResult> SendContactForm([FromForm] SendContactInfoRequest request)
     {
-      return StatusCode(StatusCodes.Status400BadRequest, "La taille du fichier ne doit pas excéder 1MB.");
+        if (request.File?.Length > 1 * 1024 * 1024)
+        {
+            return StatusCode(StatusCodes.Status400BadRequest, "La taille du fichier ne doit pas excéder 1MB.");
+        }
+
+        try
+        {
+            var formrequest = await contactService.SendContactInfoAsync(request);
+            if (formrequest is null)
+            {
+                logger.LogError("Erreur lors de l'envoie du formulaire : {@0}", request.Subject);
+                return Conflict("Erreur lors de l'envoie du formulaire.");
+            }
+
+            logger.LogInformation("Formulaire envoyé avec succès.");
+            return CreatedAtAction(nameof(SendContactForm), new { id = formrequest.Id }, formrequest);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Erreur lors de l'envoi du formulaire '{@0}'.", request.Subject);
+            return StatusCode(StatusCodes.Status500InternalServerError, "Une erreur interne est survenue.");
+        }
     }
 
-    try
+    [HttpGet("{id}")]
+    [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
+    public async Task<IActionResult> FindContactByIdAsync(Guid id)
     {
-      var formrequest = await contactService.SendContactInfoAsync(request);
-      if (formrequest is null)
-      {
-        logger.LogError("Erreur lors de l'envoie du formulaire : {@0}", request.Subject);
-        return Conflict("Erreur lors de l'envoie du formulaire.");
-      }
-
-      logger.LogInformation("Formulaire envoyé avec succès.");
-      return CreatedAtAction(nameof(SendContactForm), new { id = formrequest.Id }, formrequest);
+        var contact = await contactService.FindContactByIdAsync(id);
+        if (contact == null)
+        {
+            logger.LogInformation("Demande avec l'id : `{@0}` introuvable", id);
+            return StatusCode(StatusCodes.Status404NotFound, "contact introuvable");
+        }
+        return Ok(contact);
     }
-    catch (Exception ex)
+
+    [HttpGet("all")]
+    [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
+    public async Task<IActionResult> AdminGetAllWaitifyContacts()
     {
-      logger.LogError(ex, "Erreur lors de l'envoi du formulaire '{@0}'.", request.Subject);
-      return StatusCode(StatusCodes.Status500InternalServerError, "Une erreur interne est survenue.");
+        var contacts = await contactService.AdminGetAllWaitifyContactsAsync();
+        return Ok(contacts);
     }
-  }
-
-  [HttpGet("{id}")]
-  [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
-  public async Task<IActionResult> FindContactByIdAsync(Guid id)
-  {
-    var contact = await contactService.FindContactByIdAsync(id);
-    if (contact == null)
-    {
-      logger.LogInformation("Demande avec l'id : `{@0}` introuvable", id);
-      return StatusCode(StatusCodes.Status404NotFound, "contact introuvable");
-    }
-    return Ok(contact);
-  }
-
-  [HttpGet("all")]
-  [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
-  public async Task<IActionResult> AdminGetAllWaitifyContacts()
-  {
-    var contacts = await contactService.AdminGetAllWaitifyContactsAsync();
-    return Ok(contacts);
-  }
 
     [HttpGet("user/{id}")]
     [Authorize(AuthenticationSchemes = "Bearer", Roles = AppConstants.Roles.Admin)]
@@ -110,23 +110,23 @@ public class ContactController(IContactRepository contactService, ILogger<Contac
             logger.LogError("Ressource introuvable : {@0}", ex.Message);
             return NotFound(ex.Message);
         }
-            catch (InvalidOperationException ex)
+        catch (InvalidOperationException ex)
         {
             logger.LogError("Opération invalide : {@0}", ex.Message);
             return BadRequest(ex.Message);
         }
-            catch (Exception ex)
+        catch (Exception ex)
         {
             logger.LogError(ex, "Erreur lors de la validation de la demande.");
             return StatusCode(StatusCodes.Status500InternalServerError, "Une erreur est survenue.");
         }
     }
 
-  [HttpDelete("{id}")]
-  [Authorize(AuthenticationSchemes = "Bearer")]
-  [EnableRateLimiting("fixed")]
-  public async Task<ActionResult<AdminDeleteContactResponse>> DeleteOneContact(Guid id)
-  {
+    [HttpDelete("{id}")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    [EnableRateLimiting("fixed")]
+    public async Task<ActionResult<AdminDeleteContactResponse>> DeleteOneContact(Guid id)
+    {
         try
         {
             var response = await contactService.AdminDeleteContatAsync(id);
@@ -141,5 +141,5 @@ public class ContactController(IContactRepository contactService, ILogger<Contac
             StatusCode(StatusCodes.Status500InternalServerError);
             return NotFound();
         }
-  }
+    }
 }

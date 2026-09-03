@@ -8,6 +8,9 @@ using WaitifyApi.Entities;
 using WaitifyApi.Repositories;
 using WaitifyApi.Services;
 using Microsoft.AspNetCore.Identity;
+using WaitifyApi.Helpers;
+using Microsoft.AspNetCore.WebUtilities;
+using System.Text;
 
 namespace WaitifyApi.Controllers;
 
@@ -117,16 +120,25 @@ public class ApplicationUserProfileController(UserManager<ApplicationUser> userM
         if (ModelState.IsValid)
         {
             var user = await userManager.FindByEmailAsync(request.Email);
+            logger.LogInformation($"Utilisateur : {JsonResponseHelper.JsonConversion(user)}");
+
             if (user == null)
             {
+                logger.LogError($"Erreur Payload utilisateur : {user}.");
                 return BadRequest("Payload invalide");
             }
 
             var token = await userManager.GeneratePasswordResetTokenAsync(user);
-            if (string.IsNullOrEmpty(token))
-                return BadRequest("Une erreur est survenue");
+            logger.LogInformation($"Token MDP : {token}");
 
+            if (string.IsNullOrEmpty(token))
+            {
+                logger.LogError("Token vide");
+                return BadRequest("Une erreur est survenue");
+            }
             var callBackUrl = $"{AppConstants.Config.WaitifyUrl}/callback?code={token}&email={user.Email}";
+
+            logger.LogInformation($"Lien de résiliation : {callBackUrl}");
 
             await emailService.SendResetPasswordEmail(user.Email, user.FirstName, callBackUrl);
 
@@ -148,17 +160,27 @@ public class ApplicationUserProfileController(UserManager<ApplicationUser> userM
 
         var date = DateTime.UtcNow;
         var user = await userManager.FindByEmailAsync(request.Email);
-        var userEmailConfirmed = await userManager.IsEmailConfirmedAsync(user);
-        if (user == null || !userEmailConfirmed)
+        // var userEmailConfirmed = await userManager.IsEmailConfirmedAsync(user);
+        // logger.LogInformation($"Utilisateur confirmé ? {userEmailConfirmed}");
+
+        // if (user == null || !userEmailConfirmed)
+        if (user == null)
         {
+            logger.LogError("Erreur utlisateur : payload invalide !");
             return BadRequest("Payload invalide");
         }
 
-        var result = await userManager.ResetPasswordAsync(user, request.Token, request.Password);
+        var decodedBytes = WebEncoders.Base64UrlDecode(request.Token);
+        var decodedToken = Encoding.UTF8.GetString(decodedBytes);
+        logger.LogInformation($"Bytes décodé : {decodedBytes}");
+        logger.LogInformation($"Token décodé : {decodedToken}");
+
+        var result = await userManager.ResetPasswordAsync(user, decodedToken, request.Password);
 
         if (result.Succeeded)
         {
             await emailService.SendPasswordUpdatedEmail(user.Email, user.FirstName, date);
+            await userManager.UpdateSecurityStampAsync(user);
             return Ok("Changement de mot de passe effectué !");
         }
 

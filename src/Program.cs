@@ -80,6 +80,9 @@ builder.Services
     .AddDefaultTokenProviders()
     .AddEntityFrameworkStores<AppDbContext>();
 
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
+       options.TokenLifespan = TimeSpan.FromHours(2));
+
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;

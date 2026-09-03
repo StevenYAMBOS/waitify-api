@@ -239,23 +239,4 @@ public class AuthService(
 
         return jwtToken;
     }
-
-    // public async Task<bool> SendPasswordResetLinkAsync(string email)
-    // {
-    //     var user = await userManager.FindByEmailAsync(email);
-    //     var userEmailConfirmed = await userManager.IsEmailConfirmedAsync(user);
-
-    //     if (user == null || !userEmailConfirmed)
-    //         return false;
-
-    //     var token = await userManager.GeneratePasswordResetTokenAsync(user);
-
-    //     var encodedToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(token));
-
-    //     var resetLink = $"{baseUrl}/Account/ResetPassword?email={user.Email}&token={encodedToken}";
-
-    //     await emailService.SendPasswordResetEmailAsync(user.Email!, user.FirstName, resetLink);
-
-    //     return true;
-    // }
 }

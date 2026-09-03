@@ -22,7 +22,14 @@ public record ForgotPasswordRequestDto
 
 public record ResetPasswordRequestDto
 {
+    [Required(ErrorMessage = "Le token de résiliation du mot de passe est requis.")]
     public string Token { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Champ email obligatoire.")]
+    [EmailAddress(ErrorMessage = "Format invalide.")]
     public string Email { get; set; } = string.Empty;
+
+    [Required(ErrorMessage = "Le mot de passe est requis.")]
+    [DataType(DataType.Password, ErrorMessage = "Mauvais formay de mot de passe.")]
     public string Password { get; set; } = string.Empty;
 }

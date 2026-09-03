@@ -74,7 +74,6 @@ builder.Services
         options.Password.RequireLowercase = true;
         options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
         options.Lockout.MaxFailedAccessAttempts = 5;
-        options.User.RequireUniqueEmail = true;
     })
     .AddRoles<IdentityRole>()
     .AddDefaultTokenProviders()

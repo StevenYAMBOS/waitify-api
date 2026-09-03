@@ -155,35 +155,43 @@ public class ApplicationUserProfileController(UserManager<ApplicationUser> userM
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword(ResetPasswordRequestDto request)
     {
-        if (!ModelState.IsValid)
-            return BadRequest("Payload invalide");
-
-        var date = DateTime.UtcNow;
-        var user = await userManager.FindByEmailAsync(request.Email);
-        // var userEmailConfirmed = await userManager.IsEmailConfirmedAsync(user);
-        // logger.LogInformation($"Utilisateur confirmé ? {userEmailConfirmed}");
-
-        // if (user == null || !userEmailConfirmed)
-        if (user == null)
+        try
         {
-            logger.LogError("Erreur utlisateur : payload invalide !");
-            return BadRequest("Payload invalide");
+            if (!ModelState.IsValid)
+                return BadRequest("Payload invalide");
+
+            var date = DateTime.UtcNow;
+            var user = await userManager.FindByEmailAsync(request.Email);
+            // var userEmailConfirmed = await userManager.IsEmailConfirmedAsync(user);
+            // logger.LogInformation($"Utilisateur confirmé ? {userEmailConfirmed}");
+
+            // if (user == null || !userEmailConfirmed)
+            if (user == null)
+            {
+                logger.LogError("Erreur utlisateur : payload invalide !");
+                return BadRequest("Payload invalide");
+            }
+
+            var decodedBytes = WebEncoders.Base64UrlDecode(request.Token);
+            var decodedToken = Encoding.UTF8.GetString(decodedBytes);
+            logger.LogInformation($"Bytes décodé : {decodedBytes}");
+            logger.LogInformation($"Token décodé : {decodedToken}");
+
+            var result = await userManager.ResetPasswordAsync(user, request.Token, request.Password);
+
+            // if (result.Succeeded)
+            // {
+                await emailService.SendPasswordUpdatedEmail(user.Email, user.FirstName, date);
+                await userManager.UpdateSecurityStampAsync(user);
+            // }
+                return Ok("Changement de mot de passe effectué !");
         }
 
-        var decodedBytes = WebEncoders.Base64UrlDecode(request.Token);
-        var decodedToken = Encoding.UTF8.GetString(decodedBytes);
-        logger.LogInformation($"Bytes décodé : {decodedBytes}");
-        logger.LogInformation($"Token décodé : {decodedToken}");
-
-        var result = await userManager.ResetPasswordAsync(user, decodedToken, request.Password);
-
-        if (result.Succeeded)
-        {
-            await emailService.SendPasswordUpdatedEmail(user.Email, user.FirstName, date);
-            await userManager.UpdateSecurityStampAsync(user);
-            return Ok("Changement de mot de passe effectué !");
+        catch(KeyNotFoundException ex) {
+            logger.LogError($"Une erreur est survenue {ex}");
+            StatusCode(StatusCodes.Status500InternalServerError);
+            return BadRequest("Une erreur est survenue");
         }
 
-        return BadRequest("Une erreur est survenue");
     }
 }

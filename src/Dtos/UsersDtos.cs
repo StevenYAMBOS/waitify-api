@@ -26,7 +26,7 @@ public record ResetPasswordRequestDto
     public string Token { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Champ email obligatoire.")]
-    [EmailAddress(ErrorMessage = "Format invalide.")]
+    [EmailAddress(ErrorMessage = "Format email invalide.")]
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Le mot de passe est requis.")]

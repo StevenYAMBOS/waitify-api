@@ -144,7 +144,8 @@ CREATE TABLE Businesses (
     ClientTimeoutMinutes INTEGER DEFAULT 5,
     IsActive BOOLEAN DEFAULT true,
     CreatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    UpdatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    UpdatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    QueueOpenedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Index pour les performances multi-business
@@ -196,6 +197,7 @@ ALTER TABLE Businesses ADD CONSTRAINT check_phone_number_format_business CHECK (
 - `IsActive` : Permet de désactiver temporairement un établissement
 - `CreatedAt` : Timestamp de création de l'établissement
 - `UpdatedAt` : Timestamp de dernière modification
+- `QueueOpenedAt` : Timestamp doit être tracé explicitement à chaque activation de file
 
 **Format JSON pour OpeningHours :**
 

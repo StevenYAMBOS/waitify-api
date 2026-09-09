@@ -87,3 +87,13 @@ public record GetAllWaitifyBusinessesResponse
     public int Count { get; set; } = 0;
     public IEnumerable<Business?>? Businesses { get; set; } = null;
 }
+
+public record GetBusinessLiveKpisResponse
+{
+    public Guid BusinessId { get; set; }
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public int ClientsWaiting { get; set; } = 0;
+    public int ClientsServedToday { get; set; } = 0;
+    public int AverageWaitMinutes { get; set; } = 0;
+    public DateTime QueueOpenSince { get; set; } = DateTime.UtcNow;
+}

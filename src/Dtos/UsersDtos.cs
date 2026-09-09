@@ -30,6 +30,6 @@ public record ResetPasswordRequestDto
     public string Email { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "Le mot de passe est requis.")]
-    [DataType(DataType.Password, ErrorMessage = "Mauvais formay de mot de passe.")]
+    [DataType(DataType.Password, ErrorMessage = "Mauvais format du mot de passe.")]
     public string Password { get; set; } = string.Empty;
 }

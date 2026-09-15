@@ -48,12 +48,23 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
             q.ServedAt = now)
         .CountAsync();
 
-        // int averageWaitMinutes = await context.Queues
-        // .
+        double averageWaitMinutes = await context.Queues
+        .Where(q =>
+            q.BusinessId = businessId,
+            q.Status = AppConstants.Queues.Status.Waiting)
+        .Average(q => q.EstimatedWaitTime);
 
-        var reponse = await context.Analyticses.FindAsync(id);
-        logger.LogInformation("[Vérification] ROLE UTILISATEUR : {@0}", response);
+        var reponse = new GetBusinessLiveKpisResponse
+        {
+            BusinessId = business.Id,
+            UpdatedAt = business.Updated,
+            ClientsWaiting = clientsWaiting,
+            ClientsServedToday = clientsServedToday,
+            AverageWaitMinutes = averageWaitMinutes,
+            QueueOpenSince = now
+        };
 
+        logger.LogInformation("[LOG] KPIS : {@0}", response);
 
         return response;
     }

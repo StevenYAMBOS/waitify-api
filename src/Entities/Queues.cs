@@ -20,7 +20,7 @@ public class QueueEntries
     [Required]
     public int Position { get; set; }
 
-    public int EstimatedWaitTime { get; set; }
+    public int EstimatedWaitTime { get; set; } = 0;
 
     [Column(TypeName = "varchar(50)")]
     public string? Status { get; set; }

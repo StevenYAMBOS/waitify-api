@@ -53,13 +53,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
                 .WithMany()
                 .HasForeignKey(q => q.BusinessQrCodeToken)
                 .OnDelete(DeleteBehavior.Cascade);
-
             entity.HasIndex(q => q.BusinessQrCodeToken);
             entity.HasIndex(q => q.Status);
             // entity.HasIndex(q => new { q.BusinessQrCodeToken, q.Status });
-
             entity.Property(q => q.Status).HasDefaultValue("waiting");
-
             entity.ToTable(t => t.HasCheckConstraint(
                 "CK_QueueEntries_Status",
                 "\"Status\" IN ('waiting', 'called', 'served', 'missed', 'cancelled')"

@@ -54,11 +54,16 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
             q.ServedAt == now)
         .CountAsync();
 
+        /*
+         ⚠️ Sélectionner toutes les colonnes 'EstimatedWaitTime' de 'QueueEntries' et en faire une moyenne avec 'Average'.
+        */
         double averageWaitMinutes = await context.Queues
-        .Where(q =>
-            q.Business.QrCodeToken == businessQrCodeToken &&
-            q.Status == AppConstants.Queues.Status.Waiting)
-        .Average(q => q.EstimatedWaitTime);
+        .Select(q => q.EstimatedWaitTime).Average();
+        // .Where(q =>
+        //     q.Business.QrCodeToken == businessQrCodeToken &&
+        //     q.Status == AppConstants.Queues.Status.Waiting)
+        // .Select(q => q.EstimatedWaitTime);
+        // .Average();
 
         var response = new GetBusinessLiveKpisResponse
         {

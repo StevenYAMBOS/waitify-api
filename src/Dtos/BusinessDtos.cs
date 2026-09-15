@@ -96,10 +96,10 @@ public record GetBusinessLiveKpisRequest
 
 public record GetBusinessLiveKpisResponse
 {
-    public Guid BusinessId { get; set; }
+    public Guid BusinessQrCodeToken { get; set; }
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public int ClientsWaiting { get; set; } = 0;
     public int ClientsServedToday { get; set; } = 0;
-    public int AverageWaitMinutes { get; set; } = 0;
+    public double AverageWaitMinutes { get; set; } = 0.0;
     public DateTime QueueOpenSince { get; set; } = DateTime.UtcNow;
 }

@@ -54,6 +54,7 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             return business.FirstOrDefault();
         } */
 
+    // Service uniquement utilisé par les Admins.
     public async Task<Business?> FindBusinessByIdAsync(Guid id, string userId)
     {
         var user = await userService.FindUserByIdAsync(userId);

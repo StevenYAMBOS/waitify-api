@@ -195,7 +195,7 @@ builder.Services.AddScoped<IQueueRepository, QueueService>();
 builder.Services.AddScoped<QRCodeGeneratorService>();
 builder.Services.AddScoped<IEmailRepository, EmailService>();
 builder.Services.AddScoped<IContactRepository, ContactService>();
-
+builder.Services.AddScoped<IAnalyticsRepository, AnalyticsService>();
 builder.Services.AddScoped<IAuthTokenProcessor, AuthTokenProcessor>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAccountService, AccountService>();

@@ -15,7 +15,7 @@ namespace WaitifyApi.Services;
 
 public class AnalyticsService(AppDbContext context, IApplicationUserRepository userService, IBusinessRepository businessService, ILogger<AnalyticsService> logger) : IAnalyticsRepository
 {
-    public async Task<GetBusinessLiveKpisResponse> GetLiveKpisAsync(GetBusinessLiveKpisRequest request)
+    public async Task<GetBusinessLiveKpisResponse> GetLiveKpisAsync(Guid businessId, string userId)
     {
         var user = await userService.FindUserByIdAsync(userId);
         var business = await businessService.FindBusinessByIdAsync(userId);

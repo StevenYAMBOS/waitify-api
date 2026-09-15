@@ -24,22 +24,26 @@ public class AnalyticsController(
 {
     [HttpGet("{businessId}/live")]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    public async Task<IActionResult> GetLiveKpis(Guid businessId, [FromBody] GetBusinessLiveKpisRequest request)
+    public async Task<IActionResult> GetLiveKpis(Guid businessId, string userId)
     {
-        var userIdFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
+        var userIdFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, AppConstants.Authorization.NameIdentifierClaim);
         if (userIdFromFromJwt == null)
         {
             logger.LogError("Erreur lors de la récupération de l'utilisateur  : {@0}", userIdFromFromJwt);
             return StatusCode(StatusCodes.Status404NotFound, "Utilisateur introuvable ou accès refusé.");
         }
 
-        var analytics = await analyticsService.GenerateNewQRCodeAsync(analyticsQRCodeToken, userIdFromFromJwt);
-        if (analytics == null)
+        try
         {
-            logger.LogInformation("QRCode non généré : {@0}", analytics);
-            return StatusCode(StatusCodes.Status404NotFound, "QRCode non généré.");
-        }
-        return Ok(analytics);
-    }
+            var kpis = await analyticsService.GetLiveKpisAsync(businessId, userId);
+            logger.LogInformation("KPIs '{@0}' récupérés avec succès.", JsonResponseHelper.JsonConversion(kpis));
 
+            return Ok(kpis);
+        }
+        catch (KeyNotFoundException)
+        {
+            StatusCode(StatusCodes.Status500InternalServerError);
+            return NotFound();
+        }
+    }
 }

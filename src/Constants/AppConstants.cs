@@ -33,6 +33,7 @@ public static class AppConstants
         public record Status
         {
             public const string Waiting = "waiting";
+            public const string Served = "served";
 
         }
 

@@ -88,6 +88,12 @@ public record GetAllWaitifyBusinessesResponse
     public IEnumerable<Business?>? Businesses { get; set; } = null;
 }
 
+public record GetBusinessLiveKpisRequest
+{
+    public Guid BusinessId { get; set; }
+    public string? UserId { get; set; } = string.Empty;
+}
+
 public record GetBusinessLiveKpisResponse
 {
     public Guid BusinessId { get; set; }

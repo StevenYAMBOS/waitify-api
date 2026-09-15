@@ -24,7 +24,7 @@ public class AnalyticsController(
 {
     [HttpGet("{businessId}/live")]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    public async Task<IActionResult> GetLiveKpis(Guid businessId)
+    public async Task<IActionResult> GetLiveKpis(Guid businessId, [FromBody] GetBusinessLiveKpisRequest request)
     {
         var userIdFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
         if (userIdFromFromJwt == null)

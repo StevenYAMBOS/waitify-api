@@ -6,6 +6,6 @@ namespace WaitifyApi.Repositories
 {
     public interface IAnalyticsRepository
     {
-        Task<Analytics?> GetLiveKpisAsync(Guid businessId);
+        Task<GetBusinessLiveKpisResponse> GetLiveKpisAsync(GetBusinessLiveKpisRequest request);
     }
 }

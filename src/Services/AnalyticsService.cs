@@ -13,25 +13,48 @@ using WaitifyApi.Constants;
 
 namespace WaitifyApi.Services;
 
-public class AnalyticsService(AppDbContext context, IApplicationUserRepository userService, ILogger<AnalyticsService> logger) : IAnalyticsRepository
+public class AnalyticsService(AppDbContext context, IApplicationUserRepository userService, IBusinessRepository businessService, ILogger<AnalyticsService> logger) : IAnalyticsRepository
 {
-    public async Task<Analytics?> GetLiveKpisAsync(Guid businessId)
+    public async Task<GetBusinessLiveKpisResponse> GetLiveKpisAsync(GetBusinessLiveKpisRequest request)
     {
         var user = await userService.FindUserByIdAsync(userId);
-        logger.LogInformation("[Requête] ROLE UTILISATEUR : {@0}", user.Role);
-        logger.LogInformation("[Vérification] ROLE UTILISATEUR : {@0}", AppConstants.Roles.Admin);
+        var business = await businessService.FindBusinessByIdAsync(userId);
+        var now = DateTime.UtcNow;
+
+        logger.LogInformation("[LOG] Utilisateur : {@0}", user.email);
+        logger.LogInformation("[LOG] Entreprise : {@0}", business.Name);
+
         if (user == null)
         {
-            logger.LogError("L'id utilisateur n'est pas correcte : {@0}", user.Id);
-            throw new KeyNotFoundException("Utilisateur non trouvé");
-        }
-
-        if (user.Role.ToString() != AppConstants.Roles.Admin)
-        {
+            logger.LogError("[ERREUR] Uitlisateur non récupéré : {@0}", user.Id);
             throw new UnauthorizedAccessException("Accès interdit");
         }
 
-        var Analytics = await context.Analyticses.FindAsync(id);
-        return Analytics;
+        if (business == null)
+        {
+            logger.LogError("[ERREUR] Entreprise non récupérée : {@0}", user.Id);
+            throw new KeyNotFoundException("Accès interdit");
+        }
+
+        int clientsWaiting = await context.Queues
+        .Where(q =>
+            q.BusinessId = businessId,
+            q.Status = AppConstants.Queues.Status.Waiting)
+        .CountAsync();
+
+        int clientsServedToday = await context.Queues
+        .Where(q =>
+            q.Status = AppConstants.Queues.Status.Served &&
+            q.ServedAt = now)
+        .CountAsync();
+
+        // int averageWaitMinutes = await context.Queues
+        // .
+
+        var reponse = await context.Analyticses.FindAsync(id);
+        logger.LogInformation("[Vérification] ROLE UTILISATEUR : {@0}", response);
+
+
+        return response;
     }
 }

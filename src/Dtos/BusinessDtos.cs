@@ -100,7 +100,6 @@ public record GetBusinessLiveKpisResponse
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
     public int ClientsWaiting { get; set; } = 0;
     public int ClientsServedToday { get; set; } = 0;
-    // public ICollection<QueueEntries> AverageWaitMinutes { get; set; }
-    // public double AverageWaitMinutes { get; set; } = 0.0;
+    public double AverageWaitMinutes { get; set; } = 0.0;
     public DateTime QueueOpenSince { get; set; } = DateTime.UtcNow;
 }

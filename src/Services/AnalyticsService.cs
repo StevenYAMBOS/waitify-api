@@ -58,24 +58,10 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
             q.ServedAt == now)
         .CountAsync();
 
-        /*
-         ⚠️ Sélectionner toutes les colonnes 'EstimatedWaitTime' de 'QueueEntries' et en faire une moyenne avec 'Average'.
-         SELECT ROUND(AVG("EstimatedWaitTime"), 1) FROM "QueueEntries" WHERE "BusinessQrCodeToken" = 'cee2e51d-a152-47dd-8319-1e175b7f5e44';
-        */
+        // var averageWaitMinutes = context.Queues.FromSql($"SELECT ROUND(AVG(EstimatedWaitTime), 1) FROM QueueEntries WHERE BusinessQrCodeToken = {businessQrCodeToken}");
 
-        // QueueEntries averageWaitMinutes = context.Queues
-        // .FromSql($"SELECT ROUND(AVG(EstimatedWaitTime), 1) FROM QueueEntries WHERE BusinessQrCodeToken = {businessQrCodeToken}").ToListAsync();
-
-        // logger.LogInformation($"[LOG] Temps moyen = {averageWaitMinutes}");
-
-        // double averageWaitMinutes = await context.Queues
-        // .Select(q => q.EstimatedWaitTime).Average();
-
-        // .Where(q =>
-        //     q.Business.QrCodeToken == businessQrCodeToken &&
-        //     q.Status == AppConstants.Queues.Status.Waiting)
-        // .Select(q => q.EstimatedWaitTime);
-        // .Average();
+        var averageWaitMinutes = Math.Round(context.Queues
+            .Select(q => q.EstimatedWaitTime).Average(), 1);
 
         var response = new GetBusinessLiveKpisResponse
         {
@@ -83,7 +69,7 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
             UpdatedAt = business.UpdatedAt,
             ClientsWaiting = clientsWaiting,
             ClientsServedToday = clientsServedToday,
-            // AverageWaitMinutes = averageWaitMinutes,
+            AverageWaitMinutes = averageWaitMinutes,
             QueueOpenSince = now
         };
 

@@ -22,9 +22,9 @@ public class AnalyticsController(
     ILogger<AnalyticsController> logger
 ) : ControllerBase
 {
-    [HttpGet("{businessId}/live")]
+    [HttpGet("{businessQrCodeToken}/live")]
     [Authorize(AuthenticationSchemes = "Bearer")]
-    public async Task<IActionResult> GetLiveKpis(Guid businessId, string userId)
+    public async Task<IActionResult> GetLiveKpis(Guid businessQrCodeToken)
     {
         var userIdFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, AppConstants.Authorization.NameIdentifierClaim);
         if (userIdFromFromJwt == null)
@@ -35,13 +35,14 @@ public class AnalyticsController(
 
         try
         {
-            var kpis = await analyticsService.GetLiveKpisAsync(businessId, userId);
+            var kpis = await analyticsService.GetLiveKpisAsync(businessQrCodeToken, userIdFromFromJwt);
             logger.LogInformation("KPIs '{@0}' récupérés avec succès.", JsonResponseHelper.JsonConversion(kpis));
 
             return Ok(kpis);
         }
-        catch (KeyNotFoundException)
+        catch (KeyNotFoundException ex)
         {
+            logger.LogError("[ERREUR] Une erreur est survenue : {@0}", ex);
             StatusCode(StatusCodes.Status500InternalServerError);
             return NotFound();
         }

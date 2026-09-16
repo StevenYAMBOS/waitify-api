@@ -26,20 +26,24 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
 
         if (user == null)
         {
-            logger.LogError("[ERREUR] Uitlisateur non récupéré : {@0}", user.Id);
+            logger.LogError("[ERREUR] Utilisateur non récupéré : {@0}", user.Id);
             throw new UnauthorizedAccessException("Accès interdit");
         }
 
-        if (business.Owner.ToString() != user.Id)
-        {
-            logger.LogError("[ERREUR] Accès interdit, l'utilisateur n'est pas le gérant : \n `business.Owner` = '{@0}', \n `user.id` = '{@1}'", business.Owner, user.Id);
-            throw new UnauthorizedAccessException("Accès interdit");
-        }
+        Guid existingUserId = Guid.Parse(user.Id);
 
         if (business == null)
         {
             logger.LogError("[ERREUR] Entreprise non récupérée : {@0}", user.Id);
             throw new KeyNotFoundException("Entreprise non trouvée.");
+        }
+
+        var existingBusinessId = Guid.Parse(business.Owner.Id);
+
+        if (existingBusinessId != existingUserId)
+        {
+            logger.LogError("[ERREUR] Accès interdit, l'utilisateur n'est pas le gérant : \n `business.Owner` = '{@0}', \n `user.id` = '{@1}'", existingBusinessId, existingUserId);
+            throw new UnauthorizedAccessException("Accès interdit");
         }
 
         int clientsWaiting = await context.Queues
@@ -56,9 +60,17 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
 
         /*
          ⚠️ Sélectionner toutes les colonnes 'EstimatedWaitTime' de 'QueueEntries' et en faire une moyenne avec 'Average'.
+         SELECT ROUND(AVG("EstimatedWaitTime"), 1) FROM "QueueEntries" WHERE "BusinessQrCodeToken" = 'cee2e51d-a152-47dd-8319-1e175b7f5e44';
         */
-        double averageWaitMinutes = await context.Queues
-        .Select(q => q.EstimatedWaitTime).Average();
+
+        // QueueEntries averageWaitMinutes = context.Queues
+        // .FromSql($"SELECT ROUND(AVG(EstimatedWaitTime), 1) FROM QueueEntries WHERE BusinessQrCodeToken = {businessQrCodeToken}").ToListAsync();
+
+        // logger.LogInformation($"[LOG] Temps moyen = {averageWaitMinutes}");
+
+        // double averageWaitMinutes = await context.Queues
+        // .Select(q => q.EstimatedWaitTime).Average();
+
         // .Where(q =>
         //     q.Business.QrCodeToken == businessQrCodeToken &&
         //     q.Status == AppConstants.Queues.Status.Waiting)
@@ -71,7 +83,7 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
             UpdatedAt = business.UpdatedAt,
             ClientsWaiting = clientsWaiting,
             ClientsServedToday = clientsServedToday,
-            AverageWaitMinutes = averageWaitMinutes,
+            // AverageWaitMinutes = averageWaitMinutes,
             QueueOpenSince = now
         };
 

@@ -125,3 +125,34 @@ MyProject
    src/MyProject.csproj
    tests/MyTestProject.csproj
 ```
+
+## Erreur : `error CS1061`
+
+Certaines requêtes ont des éléments qui ne s'éxecutent pas en asynchrone, donc sans `await`. 
+Dans le service `GetLiveKpisAsync()` pour afficher des KPIs, il y a la requête suivante :
+
+```csharp
+        var averageWaitMinutes = Math.Round(context.Queues
+            .Select(q => q.EstimatedWaitTime).Average(), 1);
+```
+
+Utiliser `await` produit l'erreur suivante : 
+
+```plaintext
+'type' does not contain a definition for 'name' and no accessible extension method 'name' accepting a first argument of type 'type' could be found (are you missing a using directive or an assembly reference?).
+```
+
+Dans notre cas :
+
+```plaintext
+error CS1061: 'double' does not contain a definition for 'GetAwaiter' and no accessible extension method 'GetAwaiter' accepting a first argument of type 'double' could be found (are you missing a using directive or an assembly reference?)
+```
+
+Pour simplifier, `GetAwaiter` n'existe pas pour certains éléments qui ne sont pas asynchrones, c'est logique.
+
+Ressources pour compléter :
+
+- [[Blog] HatchJS.com](https://hatchjs.com/does-not-contain-a-definition-for-getawaiter/)
+- [[Documentation] - Microsoft Compiler Error CS1061](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/cs1061)
+- [[Blog] - CodeGenes.net](https://www.codegenes.net/blog/list-myobject-does-not-contain-a-definition-for-getawaiter/)
+- [[Blog] - CSharp Examples](https://www.csharp-examples.net/linq-average/)

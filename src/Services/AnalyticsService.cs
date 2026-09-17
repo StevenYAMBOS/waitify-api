@@ -19,7 +19,7 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
     {
         var user = await userService.FindUserByIdAsync(userId);
         var business = await businessService.FindBusinessByQrTokenAsync(businessQrCodeToken);
-        var now = DateTime.UtcNow;
+        var now = DateTime.Today;
 
         logger.LogInformation("[LOG] Utilisateur : {@0}", user.FirstName);
         logger.LogInformation("[LOG] Entreprise : {@0}", business.Name);

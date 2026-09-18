@@ -52,6 +52,18 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
             q.Status == AppConstants.Queues.Status.Waiting)
         .CountAsync();
 
+        /*
+        Reproduire cette requête SELECT COUNT("Status") FROM "QueueEntries" WHERE "BusinessQrCodeToken" = '' AND "Status" = 'waiting';
+        */
+        int clientsWaiting2 = await context.Queues
+        .Select(q => q.Status)
+        .Where(q =>
+            q.Business.QrCodeToken == businessQrCodeToken &&
+            q.Status == AppConstants.Queues.Status.Waiting)
+        .Count();
+
+        logger.LogInformation("[LOG] Clients en attente : {@0}", clientsWaiting2);
+
         int clientsServedToday = await context.Queues
         .Where(q =>
             q.Status == AppConstants.Queues.Status.Served &&

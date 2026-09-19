@@ -21,7 +21,9 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
     {
         var user = await userService.FindUserByIdAsync(userId);
         var business = await businessService.FindBusinessByQrTokenAsync(businessQrCodeToken);
-        DateTime now = DateTime.UtcNow;
+        // string? dateTimeToString = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        DateTime dateTimeNow = DateTime.UtcNow.Date;
+        var dateTimeNowFormat = dateTimeNow.GetDateTimeFormats();
 
         if (user == null)
         {
@@ -54,22 +56,31 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
         .CountAsync();
 
         // Format date BDD = "ServedAt": "2026-09-17T23:54:35.0808710Z"
-        // int clientsServedToday = await context.Queues
-        // .Where(q =>
-        //     q.BusinessQrCodeToken == businessQrCodeToken &&
-        //     q.Status == AppConstants.Queues.Status.Served &&
-        //     q.ServedAt.ToString().Remove(9) == now)
-        // .CountAsync();
-
-        var clientsServedToday = await context.Queues
+        // Reproduire :
+        // SELECT COUNT("Status") FROM "QueueEntries" WHERE "BusinessQrCodeToken" = '' AND "Status" = 'served' AND "ServedAt" = CURRENT_DATE;
+        int clientsServedToday = await context.Queues
         .Where(q =>
             q.BusinessQrCodeToken == businessQrCodeToken &&
             q.Status == AppConstants.Queues.Status.Served &&
-            q.ServedAt != null)
-        .ToListAsync();
+            q.ServedAt == dateTimeNow)
+        .Select(q => q.Status)
+        .CountAsync();
 
-        logger.LogInformation("[LOG CODE] Clients servis : {@0}", now.ToString("yyyy-MM-dd"));
-        logger.LogInformation("[LOG DATABASE] Clients servis formatté : {@0}", clientsServedToday[0].ServedAt.ToString());
+        // Liste
+        // var clientsServedToday = await context.Queues
+        // .Where(q =>
+        //     q.BusinessQrCodeToken == businessQrCodeToken &&
+        //     q.Status == AppConstants.Queues.Status.Served &&
+        //     q.ServedAt != null)
+        // .ToListAsync();
+
+        logger.LogInformation("[LOG CODE] Clients servis : {@0}", dateTimeNowFormat);
+        // logger.LogInformation("[LOG DATABASE] Clients servis formatté : {@0}", clientsServedToday[0].ServedAt.GetDateTimeFormats());
+        // DateTime july28 = new DateTime(2009, 7, 28, 5, 23, 15, 16);
+        // logger.LogInformation("[LOG CODE] .GetDateTimeFormats() : {@0}", july28.GetDateTimeFormats());
+        // logger.LogInformation("[LOG CODE] Clients servis : {@0}", new DateTimeOffset(now).ToUnixTimeSeconds());
+        // logger.LogInformation("[LOG DATABASE] Clients servis formatté : {@0}", new DateTimeOffset(clientsServedToday[0].ServedAt).ToUnixTimeSeconds());
+        // logger.LogInformation("[LOG DATABASE] Clients servis formatté : {@0}", clientsServedToday[0].ServedAt.ToString("yyyy-MM-dd"));
 
         // var averageWaitMinutes = context.Queues.FromSql($"SELECT ROUND(AVG(EstimatedWaitTime), 1) FROM QueueEntries WHERE BusinessQrCodeToken = {businessQrCodeToken}");
         var averageWaitMinutes = Math.Round(context.Queues
@@ -82,13 +93,13 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
             BusinessQrCodeToken = business.QrCodeToken,
             UpdatedAt = business.UpdatedAt,
             ClientsWaiting = clientsWaiting,
-            ClientsServedToday = 2237,
-            // ClientsServedToday = clientsServedToday,
+            // ClientsServedToday = 2237,
+            ClientsServedToday = clientsServedToday,
             AverageWaitMinutes = averageWaitMinutes,
-            QueueOpenSince = now
+            QueueOpenSince = dateTimeNow
         };
 
-        // logger.LogInformation("[LOG] KPIS : {@0}", response);
+        logger.LogInformation("[LOG] KPIS : {@0}", response);
 
         return response;
     }

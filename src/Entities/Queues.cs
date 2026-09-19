@@ -27,7 +27,7 @@ public class QueueEntries
 
     public DateTime? CalledAt { get; set; }
 
-    public DateTime? ServedAt { get; set; } = DateTime.UtcNow;
+    public DateTime ServedAt { get; set; } = DateTime.UtcNow;
 
     public int ActualServiceTime { get; set; }
 

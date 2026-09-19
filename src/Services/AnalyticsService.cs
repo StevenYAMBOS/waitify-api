@@ -46,23 +46,24 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
             throw new UnauthorizedAccessException("Accès interdit");
         }
 
+
+        // Reproduire cette requête SELECT COUNT("Status") FROM "QueueEntries" WHERE "BusinessQrCodeToken" = '' AND "Status" = 'waiting';
         int clientsWaiting = await context.Queues
         .Where(q =>
-            q.Business.QrCodeToken == businessQrCodeToken &&
+            q.BusinessQrCodeToken == businessQrCodeToken &&
             q.Status == AppConstants.Queues.Status.Waiting)
+        .Select(q => q.Status)
         .CountAsync();
 
-        /*
-        Reproduire cette requête SELECT COUNT("Status") FROM "QueueEntries" WHERE "BusinessQrCodeToken" = '' AND "Status" = 'waiting';
-        */
-        int clientsWaiting2 = await context.Queues
-        .Select(q => q.Status)
-        .Where(q =>
-            q.Business.QrCodeToken == businessQrCodeToken &&
-            q.Status == AppConstants.Queues.Status.Waiting)
-        .Count();
+        // int clientsWaiting = context.Queues
+        // .Select(q => q.Status)
+        // .Where(q =>
+        //     q.BusinessQrCodeToken == businessQrCodeToken &&
+        //     q.Status == AppConstants.Queues.Status.Waiting)
+        // .CountAsync();
 
-        logger.LogInformation("[LOG] Clients en attente : {@0}", clientsWaiting2);
+        logger.LogInformation("[LOG] Clients en attente : {@0}", clientsWaiting);
+
 
         int clientsServedToday = await context.Queues
         .Where(q =>
@@ -71,9 +72,10 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
         .CountAsync();
 
         // var averageWaitMinutes = context.Queues.FromSql($"SELECT ROUND(AVG(EstimatedWaitTime), 1) FROM QueueEntries WHERE BusinessQrCodeToken = {businessQrCodeToken}");
-
         var averageWaitMinutes = Math.Round(context.Queues
-            .Select(q => q.EstimatedWaitTime).Average(), 1);
+            .Where(q => q.BusinessQrCodeToken == businessQrCodeToken)
+            .Select(q => q.EstimatedWaitTime)
+            .Average(), 1);
 
         var response = new GetBusinessLiveKpisResponse
         {

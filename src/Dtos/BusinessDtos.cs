@@ -101,5 +101,5 @@ public record GetBusinessLiveKpisResponse
     public int ClientsWaiting { get; set; } = 0;
     public int ClientsServedToday { get; set; } = 0;
     public double AverageWaitMinutes { get; set; } = 0.0;
-    public DateTime QueueOpenSince { get; set; } = DateTime.UtcNow;
+    public DateTime QueueOpenSince { get; set; }
 }

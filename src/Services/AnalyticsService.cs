@@ -10,6 +10,8 @@ using WaitifyApi.Helpers;
 using WaitifyApi.Models;
 using WaitifyApi.Repositories;
 using WaitifyApi.Constants;
+using System.Globalization;
+using System;
 
 namespace WaitifyApi.Services;
 
@@ -20,9 +22,6 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
         var user = await userService.FindUserByIdAsync(userId);
         var business = await businessService.FindBusinessByQrTokenAsync(businessQrCodeToken);
         DateTime now = DateTime.UtcNow;
-
-        logger.LogInformation("[LOG] Utilisateur : {@0}", user.FirstName);
-        logger.LogInformation("[LOG] Entreprise : {@0}", business.Name);
 
         if (user == null)
         {
@@ -46,7 +45,6 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
             throw new UnauthorizedAccessException("Accès interdit");
         }
 
-
         // Reproduire cette requête SELECT COUNT("Status") FROM "QueueEntries" WHERE "BusinessQrCodeToken" = '' AND "Status" = 'waiting';
         int clientsWaiting = await context.Queues
         .Where(q =>
@@ -55,21 +53,23 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
         .Select(q => q.Status)
         .CountAsync();
 
-        // int clientsWaiting = context.Queues
-        // .Select(q => q.Status)
+        // Format date BDD = "ServedAt": "2026-09-17T23:54:35.0808710Z"
+        // int clientsServedToday = await context.Queues
         // .Where(q =>
         //     q.BusinessQrCodeToken == businessQrCodeToken &&
-        //     q.Status == AppConstants.Queues.Status.Waiting)
+        //     q.Status == AppConstants.Queues.Status.Served &&
+        //     q.ServedAt.ToString().Remove(9) == now)
         // .CountAsync();
 
-        logger.LogInformation("[LOG] Clients en attente : {@0}", clientsWaiting);
-
-
-        int clientsServedToday = await context.Queues
+        var clientsServedToday = await context.Queues
         .Where(q =>
+            q.BusinessQrCodeToken == businessQrCodeToken &&
             q.Status == AppConstants.Queues.Status.Served &&
-            q.ServedAt == now)
-        .CountAsync();
+            q.ServedAt != null)
+        .ToListAsync();
+
+        logger.LogInformation("[LOG CODE] Clients servis : {@0}", now.ToString("yyyy-MM-dd"));
+        logger.LogInformation("[LOG DATABASE] Clients servis formatté : {@0}", clientsServedToday[0].ServedAt.ToString());
 
         // var averageWaitMinutes = context.Queues.FromSql($"SELECT ROUND(AVG(EstimatedWaitTime), 1) FROM QueueEntries WHERE BusinessQrCodeToken = {businessQrCodeToken}");
         var averageWaitMinutes = Math.Round(context.Queues
@@ -82,12 +82,13 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
             BusinessQrCodeToken = business.QrCodeToken,
             UpdatedAt = business.UpdatedAt,
             ClientsWaiting = clientsWaiting,
-            ClientsServedToday = clientsServedToday,
+            ClientsServedToday = 2237,
+            // ClientsServedToday = clientsServedToday,
             AverageWaitMinutes = averageWaitMinutes,
             QueueOpenSince = now
         };
 
-        logger.LogInformation("[LOG] KPIS : {@0}", response);
+        // logger.LogInformation("[LOG] KPIS : {@0}", response);
 
         return response;
     }

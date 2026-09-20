@@ -156,3 +156,14 @@ Ressources pour compléter :
 - [[Documentation] - Microsoft Compiler Error CS1061](https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-messages/cs1061)
 - [[Blog] - CodeGenes.net](https://www.codegenes.net/blog/list-myobject-does-not-contain-a-definition-for-getawaiter/)
 - [[Blog] - CSharp Examples](https://www.csharp-examples.net/linq-average/)
+
+---
+
+## Comparer des `DateTime` 
+
+`clientsServedToday` compare `q.ServedAt` avec `DateTime dateTimeNow = DateTime.UtcNow.Date;`.
+
+`DateTime.UtcNow.Date` renvoie un objet.
+
+Solution ici -> https://stackoverflow.com/a/6817292/17386694
+

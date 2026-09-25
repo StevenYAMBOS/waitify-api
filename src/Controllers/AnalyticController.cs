@@ -40,11 +40,17 @@ public class AnalyticsController(
 
             return Ok(kpis);
         }
-        catch (KeyNotFoundException ex)
+        catch (KeyNotFoundException)
         {
-            logger.LogError("[ERREUR] Une erreur est survenue : {@0}", ex);
-            StatusCode(StatusCodes.Status500InternalServerError);
-            return NotFound();
+            return NotFound("Entreprise introuvable.");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, "Accès interdit.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return Conflict(ex.Message);
         }
     }
 }

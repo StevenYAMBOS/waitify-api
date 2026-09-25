@@ -11,13 +11,8 @@ namespace WaitifyApi.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AlterColumn<Guid>(
-                name: "QrCodeToken",
-                table: "Businesses",
-                type: "uuid",
-                nullable: false,
-                oldClrType: typeof(string),
-                oldType: "varchar(255)");
+            // Postgres ne sait pas convertir varchar -> uuid sans clause USING explicite.
+            migrationBuilder.Sql(@"ALTER TABLE ""Businesses"" ALTER COLUMN ""QrCodeToken"" TYPE uuid USING ""QrCodeToken""::uuid;");
         }
 
         /// <inheritdoc />

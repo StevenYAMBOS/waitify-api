@@ -18,6 +18,9 @@ namespace WaitifyApi.Controllers;
 [Route("api/user/profile")]
 public class ApplicationUserProfileController(UserManager<ApplicationUser> userManager, IEmailRepository emailService, TokenService tokenService, IApplicationUserRepository userProfilService, ILogger<ApplicationUserProfileController> logger) : ControllerBase
 {
+    private static readonly HashSet<string> EditableProfileProperties =
+        new(["firstName", "lastName", "phoneNumber", "themePreference"], StringComparer.OrdinalIgnoreCase);
+
     [HttpGet()]
     [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<IActionResult> GetUserProfil()
@@ -39,8 +42,7 @@ public class ApplicationUserProfileController(UserManager<ApplicationUser> userM
             return StatusCode(StatusCodes.Status404NotFound, "Utilisateur introuvable");
         }
 
-        logger.LogInformation("Informations utilisateur : {@0}", JsonConvert.SerializeObject(user, Formatting.Indented));
-        return Ok(user);
+        return Ok(UserProfileResponse.From(user));
     }
 
     [HttpPatch()]
@@ -51,6 +53,11 @@ public class ApplicationUserProfileController(UserManager<ApplicationUser> userM
         {
             logger.LogError("La requête est nulle : {@0}", patchDocument);
             return BadRequest();
+        }
+
+        if (!JsonPatchGuard.OnlyTouches(patchDocument, EditableProfileProperties))
+        {
+            return BadRequest("Seuls firstName, lastName, phoneNumber et themePreference sont modifiables.");
         }
 
         var idFromFromJwt = await tokenService.GetInformationFromToken(Request.HttpContext, AppConstants.Authorization.NameIdentifierClaim);
@@ -68,8 +75,7 @@ public class ApplicationUserProfileController(UserManager<ApplicationUser> userM
             return NotFound(new { error });
         }
 
-        logger.LogInformation("Utilisateur mis à jour avec succès : {@0}", existingUser);
-        return Ok(existingUser);
+        return Ok(UserProfileResponse.From(existingUser!));
     }
 
     [HttpDelete()]
@@ -129,7 +135,6 @@ public class ApplicationUserProfileController(UserManager<ApplicationUser> userM
             }
 
             var token = await userManager.GeneratePasswordResetTokenAsync(user);
-            logger.LogInformation($"Token MDP : {token}");
 
             if (string.IsNullOrEmpty(token))
             {
@@ -142,11 +147,8 @@ public class ApplicationUserProfileController(UserManager<ApplicationUser> userM
 
             await emailService.SendResetPasswordEmail(user.Email, user.FirstName, callBackUrl);
 
-            return Ok(new
-            {
-                token = token,
-                email = user.Email
-            });
+            // Le token de réinitialisation ne part que par e-mail, jamais dans la réponse.
+            return Ok();
 
         }
             return BadRequest("Une erreur est survenue");

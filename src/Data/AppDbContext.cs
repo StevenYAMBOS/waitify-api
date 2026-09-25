@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using WaitifyApi.Entities;
+using WaitifyApi.Enums;
 
 namespace WaitifyApi.Data;
 
@@ -26,6 +27,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
         {
             entity.ToTable("Users");
             entity.Property(u => u.Role).HasConversion<string>();
+            entity.Property(u => u.ThemePreference)
+                .HasConversion<string>()
+                .HasColumnType("varchar(10)")
+                .HasDefaultValue(ThemePreference.System);
             entity.HasIndex(u => u.Email).IsUnique();
             entity.HasIndex(u => u.SubsriptionId);
             entity.HasIndex(u => u.SubsriptionStatus);
@@ -52,6 +57,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             entity.HasOne(q => q.Business)
                 .WithMany()
                 .HasForeignKey(q => q.BusinessQrCodeToken)
+                .HasPrincipalKey(b => b.QrCodeToken)
                 .OnDelete(DeleteBehavior.Cascade);
             entity.HasIndex(q => q.BusinessQrCodeToken);
             entity.HasIndex(q => q.Status);
@@ -78,6 +84,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
             entity.HasOne(s => s.Business)
                 .WithMany()
                 .HasForeignKey(s => s.BusinessQrCodeToken)
+                .HasPrincipalKey(b => b.QrCodeToken)
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(s => s.QueueEntry)

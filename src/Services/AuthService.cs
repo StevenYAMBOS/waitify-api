@@ -67,7 +67,6 @@ public class AuthService(
         await userManager.AddToRoleAsync(user, Role.Owner.ToString());
 
         var token = await tokenService.CreateTokenAsync(user);
-        logger.LogInformation("Token de connexion : {@0}", JsonConvert.SerializeObject(token, Formatting.Indented));
 
         var Email = request?.Email;
         var UserName = $"{request?.FirstName} {request?.LastName}";
@@ -232,7 +231,6 @@ public class AuthService(
 
         await userManager.UpdateAsync(user);
 
-        logger.LogInformation("Google JWT Token : {@0}", jwtToken);
 
         authTokenProcessor.WriteAuthTokenAsHttpOnlyCookie("waitify_token", jwtToken, expirationDateInUtc);
         authTokenProcessor.WriteAuthTokenAsHttpOnlyCookie("REFRESH_TOKEN", user.RefreshToken, refreshTokenExpirationDateInUtc);

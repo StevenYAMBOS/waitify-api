@@ -64,7 +64,6 @@ namespace WaitifyApi.Controllers
                 return Unauthorized(new { error });
             }
 
-            logger.LogInformation("Token : {@0}", tokens?.AccessToken);
             return Ok(tokens);
         }
 

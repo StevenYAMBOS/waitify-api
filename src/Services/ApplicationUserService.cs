@@ -31,8 +31,8 @@ namespace WaitifyApi.Services
                     return (false, null, "Erreur lors de la mise à jour de l'utilisateur.");
                 }
 
-                logger.LogInformation("Utilisateur mis à jour avec succès : {@0}", existingUser);
                 patchDocument.ApplyTo(existingUser);
+                existingUser.UpdatedAt = DateTime.UtcNow;
 
                 context.Users.Update(existingUser);
                 await context.SaveChangesAsync();

@@ -33,3 +33,31 @@ public record ResetPasswordRequestDto
     [DataType(DataType.Password, ErrorMessage = "Mauvais format du mot de passe.")]
     public string Password { get; set; } = string.Empty;
 }
+
+public record UserProfileResponse
+{
+    public string Id { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? FirstName { get; set; }
+    public string? LastName { get; set; }
+    public string? PhoneNumber { get; set; }
+    public string? ProfilePicture { get; set; }
+    public string Role { get; set; } = string.Empty;
+    public string ThemePreference { get; set; } = string.Empty;
+    public DateTime TrialEndsAt { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public static UserProfileResponse From(WaitifyApi.Entities.ApplicationUser user) => new()
+    {
+        Id = user.Id,
+        Email = user.Email,
+        FirstName = user.FirstName,
+        LastName = user.LastName,
+        PhoneNumber = user.PhoneNumber,
+        ProfilePicture = user.ProfilePicture,
+        Role = user.Role.ToString(),
+        ThemePreference = user.ThemePreference.ToString().ToLowerInvariant(),
+        TrialEndsAt = user.TrialEndsAt,
+        CreatedAt = user.CreatedAt,
+    };
+}

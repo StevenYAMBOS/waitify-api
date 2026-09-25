@@ -75,3 +75,15 @@ public record QueueEntriesCountForBusinessResponse
 {
   public int Count { get; set; } = 0;
 }
+
+public record QueueEntryResponse
+{
+  public Guid Id { get; set; }
+  public string? ClientName { get; set; }
+  public string? Phone { get; set; }
+  public int Position { get; set; }
+  public string? Status { get; set; }
+  public int EstimatedWaitTime { get; set; }
+  public DateTime CreatedAt { get; set; }
+  public DateTime? CalledAt { get; set; }
+}

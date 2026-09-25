@@ -12,6 +12,47 @@ namespace WaitifyApi.Services;
 public class QueueService(AppDbContext context, IApplicationUserRepository userService, IBusinessRepository businessService, ILogger<QueueService> logger) : IQueueRepository
 {
 
+  private async Task<Business> FindOwnedBusinessAsync(Guid qrCodeToken, string ownerId)
+  {
+    var business = await businessService.FindBusinessByQrTokenAsync(qrCodeToken)
+      ?? throw new KeyNotFoundException("Entreprise non trouvée.");
+
+    if (business.OwnerId != ownerId)
+    {
+      logger.LogWarning("Accès refusé à la file `{QrCodeToken}` pour l'utilisateur `{UserId}`.", qrCodeToken, ownerId);
+      throw new UnauthorizedAccessException("Accès interdit");
+    }
+
+    return business;
+  }
+
+  public async Task<IEnumerable<QueueEntryResponse>> GetActiveEntriesAsync(Guid qrCodeToken, string ownerId)
+  {
+    await FindOwnedBusinessAsync(qrCodeToken, ownerId);
+
+    return await context.Queues
+      .AsNoTracking()
+      .Where(q =>
+        q.BusinessQrCodeToken == qrCodeToken &&
+        (q.Status == AppConstants.Queues.Status.Waiting || q.Status == AppConstants.Queues.Status.Called))
+      // Les clients appelés (au comptoir) d'abord, puis la file dans l'ordre.
+      .OrderBy(q => q.Status == AppConstants.Queues.Status.Called ? 0 : 1)
+      .ThenBy(q => q.Status == AppConstants.Queues.Status.Called ? q.CalledAt : null)
+      .ThenBy(q => q.Position)
+      .Select(q => new QueueEntryResponse
+      {
+        Id = q.Id,
+        ClientName = q.ClientName,
+        Phone = q.Phone,
+        Position = q.Position,
+        Status = q.Status,
+        EstimatedWaitTime = q.EstimatedWaitTime,
+        CreatedAt = q.CreatedAt,
+        CalledAt = q.CalledAt,
+      })
+      .ToListAsync();
+  }
+
   public async Task<QueueEntries?> FindQueueByIdAsync(Guid id)
   {
     var queue = await context.Queues.FindAsync(id);
@@ -61,7 +102,8 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     // Vérification client pas déjà inscrit (même numéro + business)
     bool alreadyInQueue = await context.Queues.AnyAsync(q =>
       q.Phone == request.Phone &&
-      q.BusinessQrCodeToken == business.QrCodeToken);
+      q.BusinessQrCodeToken == business.QrCodeToken &&
+      (q.Status == AppConstants.Queues.Status.Waiting || q.Status == AppConstants.Queues.Status.Called));
 
     if (alreadyInQueue)
     {
@@ -118,15 +160,9 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     };
   }
 
-  public async Task<CallNextClientResponse> CallNextClientAsync(Guid qrCodeToken)
+  public async Task<CallNextClientResponse> CallNextClientAsync(Guid qrCodeToken, string ownerId)
   {
-    var business = await businessService.FindBusinessByQrTokenAsync(qrCodeToken);
-
-    if (business == null)
-    {
-      logger.LogError("Entreprise non trouvée pour le QR token : `{@0}`.", qrCodeToken);
-      throw new KeyNotFoundException("Entreprise non trouvée.");
-    }
+    var business = await FindOwnedBusinessAsync(qrCodeToken, ownerId);
 
     if (!business.IsQueueActive)
     {
@@ -208,7 +244,7 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
     };
   }
 
-  public async Task<MarkClientAsServedResponse> MarkClientAsServedAsync(Guid id, MarkClientAsServedRequest request)
+  public async Task<MarkClientAsServedResponse> MarkClientAsServedAsync(Guid id, string ownerId, MarkClientAsServedRequest request)
   {
     var entry = await context.Queues.FindAsync(id);
 
@@ -217,6 +253,8 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
       logger.LogError("Entrée de file d'attente introuvable : `{@0}`.", id);
       throw new KeyNotFoundException("Entrée de file d'attente introuvable.");
     }
+
+    await FindOwnedBusinessAsync(entry.BusinessQrCodeToken, ownerId);
 
     if (entry.Status != "called")
     {

@@ -121,55 +121,19 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.Events = new JwtBearerEvents()
+    options.Events = new JwtBearerEvents
     {
-        OnMessageReceived = msg =>
+        // Le front web s'authentifie par cookie, les autres clients (app mobile) par l'en-tête Authorization.
+        OnMessageReceived = ctx =>
         {
-            msg.Token = msg.Request.Cookies["waitify_token"];
-            var token = msg?.Request.Headers.Authorization.ToString();
-            string path = msg?.Request.Path ?? "";
-            if (!string.IsNullOrEmpty(msg.Token))
-
+            if (string.IsNullOrEmpty(ctx.Request.Headers.Authorization))
             {
-                Console.WriteLine("Access token");
-                Console.WriteLine($"URL: {path}");
-                Console.WriteLine($"JWT Token: {token}\r\n");
-                Console.WriteLine($"Google Token: {msg.Token}\r\n");
+                ctx.Token = ctx.Request.Cookies["waitify_token"];
             }
-            else
-            {
-                Console.WriteLine("Access token");
-                Console.WriteLine("URL: " + path);
-                Console.WriteLine("Token: Aucun token fourni\r\n");
-            }
-            return Task.CompletedTask;
-        },
-        OnTokenValidated = ctx =>
-        {
-            Console.WriteLine();
-            Console.WriteLine("Claims from the access token");
-            if (ctx?.Principal != null)
-            {
-                foreach (var claim in ctx.Principal.Claims)
-                {
-                    Console.WriteLine($"{claim.Type} - {claim.Value}");
-                }
-            }
-            Console.WriteLine();
-            return Task.CompletedTask;
-        },
-        OnAuthenticationFailed = ctx =>
-        {
-            Console.WriteLine($"❌ Auth failed: {ctx.Exception.GetType().Name} - {ctx.Exception.Message}");
-            return Task.CompletedTask;
-        },
-        OnChallenge = ctx =>
-        {
-            Console.WriteLine($"⚠️ Challenge: Error={ctx.Error}, Description={ctx.ErrorDescription}");
             return Task.CompletedTask;
         }
     };
-    options.IncludeErrorDetails = true;
+    options.IncludeErrorDetails = builder.Environment.IsDevelopment();
     options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
     options.SaveToken = true;
     options.TokenValidationParameters = new TokenValidationParameters

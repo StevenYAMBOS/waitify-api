@@ -1,5 +1,7 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using WaitifyApi.Constants;
 using WaitifyApi.Models;
 using WaitifyApi.Repositories;
 
@@ -13,6 +15,28 @@ public class QueueController(
     ILogger<QueueController> logger
 ) : ControllerBase
 {
+    private string? CurrentUserId => User.FindFirst(AppConstants.Authorization.NameIdentifierClaim)?.Value;
+
+    // Côté gérant : clients en attente ou appelés d'une file.
+    [HttpGet("{qrCodeToken}/entries")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<IActionResult> GetActiveEntries(Guid qrCodeToken)
+    {
+        if (CurrentUserId is not { } userId) return Unauthorized();
+        try
+        {
+            return Ok(await queueService.GetActiveEntriesAsync(qrCodeToken, userId));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, AppConstants.Authorization.Denied);
+        }
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> FindQueueEntrieById(Guid id)
     {
@@ -26,12 +50,18 @@ public class QueueController(
     }
 
     [HttpPost("{qrCodeToken}/call-next")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<IActionResult> CallNextClient(Guid qrCodeToken)
     {
+        if (CurrentUserId is not { } userId) return Unauthorized();
         try
         {
-            var result = await queueService.CallNextClientAsync(qrCodeToken);
+            var result = await queueService.CallNextClientAsync(qrCodeToken, userId);
             return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, AppConstants.Authorization.Denied);
         }
         catch (KeyNotFoundException ex)
         {
@@ -51,12 +81,18 @@ public class QueueController(
     }
 
     [HttpPatch("{id}/served")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
     public async Task<IActionResult> MarkClientAsServed(Guid id, [FromBody] MarkClientAsServedRequest request)
     {
+        if (CurrentUserId is not { } userId) return Unauthorized();
         try
         {
-            var result = await queueService.MarkClientAsServedAsync(id, request);
+            var result = await queueService.MarkClientAsServedAsync(id, userId, request);
             return Ok(result);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, AppConstants.Authorization.Denied);
         }
         catch (KeyNotFoundException ex)
         {

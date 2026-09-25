@@ -200,37 +200,31 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             throw new InvalidOperationException("Une erreur est survenue lors de la mise à jour du logo de l'entreprise.", ex);
         }
     }
-    public async Task<string> OpenOrCloseBusinessQueueAsync(Guid qrCodeToken, OpenOrCloseBusinessQueueRequest request)
+    public async Task<string> OpenOrCloseBusinessQueueAsync(Guid id, string ownerId, OpenOrCloseBusinessQueueRequest request)
     {
-        try
+        var existingBusiness = await context.Businesses.FirstOrDefaultAsync(business => business.Id == id)
+            ?? throw new KeyNotFoundException("Entreprise non trouvée.");
+
+        if (existingBusiness.OwnerId != ownerId)
         {
-            var existingBusiness = await FindBusinessByQrTokenAsync(qrCodeToken);
-
-            if (existingBusiness == null)
-            {
-                logger.LogError("Entreprise non trouvée : `{@0}`.", existingBusiness?.Id);
-                throw new KeyNotFoundException("Entreprise non trouvée.");
-            }
-
-            existingBusiness.IsQueueActive = request.IsQueueActive;
-            existingBusiness.UpdatedAt = DateTime.UtcNow;
-
-            if (existingBusiness.IsQueueActive == true)
-            {
-                existingBusiness.QueueOpenedAt = DateTime.UtcNow;
-            }
-
-            context.Businesses.Update(existingBusiness);
-            await context.SaveChangesAsync();
-
-            logger.LogInformation("Status de la file d'attente de l'entreprise mis à jour avec succès : {@0}", JsonConvert.SerializeObject(existingBusiness.IsQueueActive, Formatting.Indented));
-            return "Status de la file d'attente de l'entreprise mis à jour avec succès";
+            throw new UnauthorizedAccessException("Accès interdit");
         }
-        catch (Exception ex)
+
+        if (request.IsQueueActive && !existingBusiness.IsQueueActive)
         {
-            logger.LogInformation("Erreur : {@0}", ex);
-            throw new InvalidOperationException("Une erreur est survenue lors de la mise à jour de l'entreprise.", ex);
+            existingBusiness.QueueOpenedAt = DateTime.UtcNow;
         }
+        if (!request.IsQueueActive)
+        {
+            existingBusiness.IsQueuePaused = false;
+        }
+        existingBusiness.IsQueueActive = request.IsQueueActive;
+        existingBusiness.UpdatedAt = DateTime.UtcNow;
+
+        await context.SaveChangesAsync();
+
+        logger.LogInformation("File de l'entreprise `{BusinessId}` : active = {IsQueueActive}.", id, request.IsQueueActive);
+        return "Status de la file d'attente de l'entreprise mis à jour avec succès";
     }
 
     public async Task DeleteBusinessAsync(Guid id, string userId)
@@ -263,49 +257,13 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
 
     public async Task<IEnumerable<Business>> GetAllOwnerBusinessesAsync(string id)
     {
-        var user = await userService.FindUserByIdAsync(id);
+        _ = await userService.FindUserByIdAsync(id) ?? throw new KeyNotFoundException("Utilisateur non trouvé.");
 
-        if (user == null)
-        {
-            throw new KeyNotFoundException("Utilisateur non trouvé.");
-        }
-
-        var businesses = await context.Businesses.ToListAsync();
-
-        foreach (Business business in businesses)
-        {
-            if (business.OwnerId != user?.Id.ToString())
-            {
-                logger.LogError("Accès interdit. L'id utilisateur est incorrecte.\n ID en base de données : `{@0}`.\n ID de la requête : `{@1}`.", user?.Id, id);
-                return null;
-            }
-        }
-
-        return businesses.Select(business => new Business
-        {
-            Id = business.Id,
-            Name = business.Name,
-            OwnerId = business.OwnerId,
-            BusinessType = business.BusinessType,
-            Logo = business.Logo,
-            Address = business.Address,
-            City = business.City,
-            ZipCode = business.ZipCode,
-            Country = business.Country,
-            QrCodeToken = business.QrCodeToken,
-            AverageServiceTime = business.AverageServiceTime,
-            IsQueueActive = business.IsQueueActive,
-            IsQueuePaused = business.IsQueuePaused,
-            MaxQueueSize = business.MaxQueueSize,
-            OpeningHours = business.OpeningHours,
-            CustomMessage = business.CustomMessage,
-            SmsNotificationsEnabled = business.SmsNotificationsEnabled,
-            AutoAdvanceEnabled = business.AutoAdvanceEnabled,
-            ClientTimeoutMinutes = business.ClientTimeoutMinutes,
-            IsActive = business.IsActive,
-            CreatedAt = business.CreatedAt,
-            UpdatedAt = business.UpdatedAt,
-        });
+        return await context.Businesses
+            .AsNoTracking()
+            .Where(business => business.OwnerId == id)
+            .OrderBy(business => business.Name)
+            .ToListAsync();
     }
 
     public async Task<GetAllWaitifyBusinessesResponse> GetAllWaitifyBusinessesAsync(string userId)

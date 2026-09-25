@@ -14,8 +14,9 @@ public class FileStorageService
     {
         var azureUsersContainer = Environment.GetEnvironmentVariable("AzureBlobUsersContainer");
         _blobServiceClient = blobServiceClient;
+        // Aucun appel réseau ici : le service est injecté dans presque toutes les routes,
+        // une indisponibilité d'Azure ne doit pas faire tomber l'authentification ou les files.
         _containerClient = _blobServiceClient.GetBlobContainerClient(azureUsersContainer);
-        _containerClient.CreateIfNotExists();
         logger = _logger;
     }
 

@@ -16,6 +16,7 @@ namespace WaitifyApi.Controllers;
 [Route("api/[controller]")]
 [EnableRateLimiting("fixed")]
 [ApiController]
+[Authorize(AuthenticationSchemes = "Bearer")]
 public class BusinessController(
     IBusinessRepository businessService,
     TokenService tokenService,
@@ -75,6 +76,18 @@ public class BusinessController(
         }
         logger.LogInformation("ENTREPRISE : {@0}", JsonResponseHelper.JsonConversion(business));
         return Ok(business);
+    }
+
+    private static readonly HashSet<string> EditableBusinessProperties = new(
+        ["name", "businessType", "phoneNumber", "address", "city", "zipCode", "country",
+         "averageServiceTime", "maxQueueSize", "openingHours", "customMessage",
+         "smsNotificationsEnabled", "autoAdvanceEnabled", "clientTimeoutMinutes", "isQueuePaused"],
+        StringComparer.OrdinalIgnoreCase);
+
+    private async Task<bool> IsOwnerAsync(Guid businessId, string ownerId)
+    {
+        var businesses = await businessService.GetAllOwnerBusinessesAsync(ownerId);
+        return businesses.Any(business => business.Id == businessId);
     }
 
     [HttpGet("all")]
@@ -153,6 +166,16 @@ public class BusinessController(
             return BadRequest();
         }
 
+        if (!JsonPatchGuard.OnlyTouches(patchedDocument, EditableBusinessProperties))
+        {
+            return BadRequest("Propriété non modifiable.");
+        }
+
+        if (!await IsOwnerAsync(id, ownerIdFromToken))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, "Vous n'êtes pas autorisé à modifier cette entreprise.");
+        }
+
         var (success, existingUser, error) = await businessService.UpdateBusinessAsync(id, patchedDocument);
 
         if (!success)
@@ -170,17 +193,20 @@ public class BusinessController(
     public async Task<IActionResult> UpdateBusinessLogo(Guid id, [FromForm] UpdateBusinessLogoRequest request)
     {
 
-        // var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier");
-        // if (ownerIdFromToken == null)
-        // {
-        //     logger.LogError("Impossible de récupérer l'ID de l'utilisateur depuis le token JWT.");
-        //     return Unauthorized("Utilisateur non authentifié.");
-        // }
+        var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, AppConstants.Authorization.NameIdentifierClaim);
+        if (ownerIdFromToken == null)
+        {
+            return Unauthorized("Utilisateur non authentifié.");
+        }
+
+        if (!await IsOwnerAsync(id, ownerIdFromToken))
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, "Vous n'êtes pas autorisé à modifier cette entreprise.");
+        }
 
         try
         {
             var business = await businessService.UpdateBusinessLogoAsync(
-                // ownerIdFromToken,
                 id,
                 request);
             if (business == null)
@@ -219,7 +245,7 @@ public class BusinessController(
 
         try
         {
-            var result = await businessService.OpenOrCloseBusinessQueueAsync(id, request);
+            var result = await businessService.OpenOrCloseBusinessQueueAsync(id, ownerIdFromToken, request);
             return Ok(result);
         }
         catch (KeyNotFoundException ex)
@@ -228,7 +254,7 @@ public class BusinessController(
         }
         catch (UnauthorizedAccessException)
         {
-            return Forbid("Vous n'êtes pas autorisé à modifier cette entreprise.");
+            return StatusCode(StatusCodes.Status403Forbidden, "Vous n'êtes pas autorisé à modifier cette entreprise.");
         }
         catch (Exception ex)
         {

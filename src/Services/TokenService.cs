@@ -72,42 +72,17 @@ public class TokenService(ILogger<TokenService> logger, UserManager<ApplicationU
         return Convert.ToBase64String(randomNumber);
     }
 
-    public async Task<string?> GetJwtTokenFromRequest(HttpContext context)
+    /// <summary>
+    /// Lit un claim de l'utilisateur authentifié. L'identité provient du JWT déjà validé
+    /// (signature, émetteur, audience, expiration) par le middleware d'authentification :
+    /// un token non signé ou expiré renvoie <c>null</c>.
+    /// </summary>
+    public Task<string?> GetInformationFromToken(HttpContext context, string dataProp)
     {
-        var authHeader = context.Request.Headers.Authorization.FirstOrDefault();
-        if (string.IsNullOrEmpty(authHeader))
+        if (context.User.Identity?.IsAuthenticated != true)
         {
-            return null;
+            return Task.FromResult<string?>(null);
         }
-        if (!authHeader.StartsWith("Bearer "))
-        {
-            return authHeader;
-        }
-        return authHeader.Substring("Bearer ".Length).Trim();
-
-    }
-
-    public async Task<string?> GetInformationFromToken(HttpContext context, string dataProp)
-    {
-        var token = await GetJwtTokenFromRequest(context);
-        if (string.IsNullOrEmpty(token))
-        {
-            return null;
-        }
-        try
-        {
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var tokenS = tokenHandler.ReadToken(token) as JwtSecurityToken;
-            var targetInfo = tokenS!.Claims.FirstOrDefault(claim => claim.Type == dataProp);
-            if (targetInfo != null)
-            {
-                return targetInfo.Value;
-            }
-            return null;
-        }
-        catch (Exception e)
-        {
-            return null;
-        }
+        return Task.FromResult(context.User.FindFirst(dataProp)?.Value);
     }
 }

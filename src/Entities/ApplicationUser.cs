@@ -29,6 +29,7 @@ public class ApplicationUser : IdentityUser
     public virtual ICollection<Business> Businesses { get; set; } = [];
     public string? GoogleId { get; set; }
     public string? AuthProvider { get; set; }
+    public ThemePreference ThemePreference { get; set; } = ThemePreference.System;
 }
 
 public class PeopleApiPhotos

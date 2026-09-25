@@ -1,6 +1,6 @@
 # Base de données
 
-**Mise à jour :** 03-04-2026
+**Mise à jour :** 25-09-2026
 
 **Par :** [Steven YAMBOS](https://www.linkedin.com/in/steven-yambos/)
 
@@ -145,7 +145,7 @@ CREATE TABLE Businesses (
     IsActive BOOLEAN DEFAULT true,
     CreatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     UpdatedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    QueueOpenedAt TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    QueueOpenedAt TIMESTAMP WITH TIME ZONE
 );
 
 -- Index pour les performances multi-business

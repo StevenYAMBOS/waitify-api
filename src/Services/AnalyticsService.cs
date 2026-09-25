@@ -48,6 +48,12 @@ public class AnalyticsService(AppDbContext context, IApplicationUserRepository u
                 throw new UnauthorizedAccessException("Accès interdit");
             }
 
+            if (business.IsQueueActive == false)
+            {
+                logger.LogError("[ERREUR] La file d'attente n'est pas ouverte.");
+                throw new UnauthorizedAccessException("La file d'attente n'est pas ouverte.");
+            }
+
             // Reproduire cette requête SELECT COUNT("Status") FROM "QueueEntries" WHERE "BusinessQrCodeToken" = '' AND "Status" = 'waiting';
             int clientsWaiting = await context.Queues
             .Where(q =>

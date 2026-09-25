@@ -215,6 +215,11 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             existingBusiness.IsQueueActive = request.IsQueueActive;
             existingBusiness.UpdatedAt = DateTime.UtcNow;
 
+            if (existingBusiness.IsQueueActive == true)
+            {
+                existingBusiness.QueueOpenedAt = DateTime.UtcNow;
+            }
+
             context.Businesses.Update(existingBusiness);
             await context.SaveChangesAsync();
 

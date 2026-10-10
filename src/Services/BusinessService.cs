@@ -24,18 +24,11 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             throw new KeyNotFoundException("Entreprise non trouvée.");
         }
 
-        var existingUser = userService.FindUserByIdAsync(userId);
-        if (existingUser?.Id.ToString() == userId)
+        if (business.OwnerId != userId)
         {
-            logger.LogError("Accès interdit. L'id utilisateur est incorrecte.\n ID utilisateur en base de données : `{@0}`.\n ID fourni de la requête : `{@1}`.", existingUser?.Id, userId);
-            throw new KeyNotFoundException("Utilisateur non trouvé ou accès non autorisé.");
+            logger.LogWarning("Accès refusé au QR code de `{QrCodeToken}` pour l'utilisateur `{UserId}`.", businessQRCodeToken, userId);
+            throw new UnauthorizedAccessException("Accès interdit");
         }
-
-        // if (business.OwnerId != existingUser?.Id.ToString())
-        // {
-        //     logger.LogError("Accès refusé !\n ID récupéré du JWT : `{@0}`.\n ID du gérant en BDD : `{@1}`.", userId, business.OwnerId);
-        //     throw new KeyNotFoundException("Utilisateur non trouvé.");
-        // }
 
         var url = AppConstants.Config.WaitifyUrl + "/q/" + businessQRCodeToken;
         var qrCodeGenerated = await qRCodeHelper.GenerateQRCode(url);

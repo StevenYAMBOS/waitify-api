@@ -34,13 +34,18 @@ public class BusinessController(
             return StatusCode(StatusCodes.Status404NotFound, "Utilisateur introuvable ou accès refusé.");
         }
 
-        var business = await businessService.GenerateNewQRCodeAsync(businessQRCodeToken, userIdFromFromJwt);
-        if (business == null)
+        try
         {
-            logger.LogInformation("QRCode non généré : {@0}", business);
-            return StatusCode(StatusCodes.Status404NotFound, "QRCode non généré.");
+            return Ok(await businessService.GenerateNewQRCodeAsync(businessQRCodeToken, userIdFromFromJwt));
         }
-        return Ok(business);
+        catch (KeyNotFoundException)
+        {
+            return NotFound("Entreprise introuvable.");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, AppConstants.Authorization.Denied);
+        }
     }
 
     [HttpGet("info/{qrCodeToken}")]

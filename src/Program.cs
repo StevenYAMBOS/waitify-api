@@ -131,6 +131,18 @@ builder.Services.AddAuthentication(options =>
                 ctx.Token = ctx.Request.Cookies["waitify_token"];
             }
             return Task.CompletedTask;
+        },
+        // Un token reste valide jusqu'à son expiration même si le compte a été supprimé
+        // entre-temps : on refuse alors la requête (401) au lieu de laisser les services
+        // échouer plus loin sur un utilisateur introuvable.
+        OnTokenValidated = async ctx =>
+        {
+            var userId = ctx.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userManager = ctx.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
+            if (userId is null || await userManager.FindByIdAsync(userId) is null)
+            {
+                ctx.Fail("Compte introuvable.");
+            }
         }
     };
     options.IncludeErrorDetails = builder.Environment.IsDevelopment();

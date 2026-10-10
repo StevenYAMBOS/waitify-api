@@ -174,18 +174,18 @@ public class ApplicationUserProfileController(UserManager<ApplicationUser> userM
                 return BadRequest("Payload invalide");
             }
 
-            var decodedBytes = WebEncoders.Base64UrlDecode(request.Token);
-            var decodedToken = Encoding.UTF8.GetString(decodedBytes);
-            logger.LogInformation($"Bytes décodé : {decodedBytes}");
-            logger.LogInformation($"Token décodé : {decodedToken}");
-
             var result = await userManager.ResetPasswordAsync(user, request.Token, request.Password);
 
-            // if (result.Succeeded)
-            // {
-                await emailService.SendPasswordUpdatedEmail(user.Email, user.FirstName, date);
-                await userManager.UpdateSecurityStampAsync(user);
-            // }
+            // Token invalide ou expiré, ou mot de passe refusé par la politique : rien n'a
+            // changé, donc ni confirmation ni e-mail « mot de passe modifié ».
+            if (!result.Succeeded)
+            {
+                logger.LogWarning("Réinitialisation du mot de passe refusée pour {Email}.", request.Email);
+                return BadRequest("Lien de réinitialisation invalide ou expiré, ou mot de passe non conforme.");
+            }
+
+            await emailService.SendPasswordUpdatedEmail(user.Email, user.FirstName, date);
+            await userManager.UpdateSecurityStampAsync(user);
                 return Ok("Changement de mot de passe effectué !");
         }
 

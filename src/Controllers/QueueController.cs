@@ -111,6 +111,30 @@ public class QueueController(
         }
     }
 
+    // Côté gérant : le client appelé ne s'est pas présenté.
+    [HttpPatch("{id}/missed")]
+    [Authorize(AuthenticationSchemes = "Bearer")]
+    public async Task<IActionResult> MarkClientAsMissed(Guid id)
+    {
+        if (CurrentUserId is not { } userId) return Unauthorized();
+        try
+        {
+            return Ok(await queueService.MarkClientAsMissedAsync(id, userId));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, AppConstants.Authorization.Denied);
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(ex.Message);
+        }
+    }
+
     [HttpDelete("{id}/cancel")]
     public async Task<IActionResult> CancelQueueEntry(Guid id)
     {

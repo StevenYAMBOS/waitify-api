@@ -90,6 +90,30 @@ public class BusinessController(
         return businesses.Any(business => business.Id == businessId);
     }
 
+    // QR code de l'enseigne en données exploitables (URL + PNG), pour les clients non web.
+    [HttpGet("{id}/qrcode")]
+    public async Task<IActionResult> GetQrCode(Guid id)
+    {
+        var ownerIdFromToken = await tokenService.GetInformationFromToken(Request.HttpContext, AppConstants.Authorization.NameIdentifierClaim);
+        if (ownerIdFromToken == null)
+        {
+            return Unauthorized("Utilisateur non authentifié.");
+        }
+
+        try
+        {
+            return Ok(await businessService.GetQrCodeAsync(id, ownerIdFromToken));
+        }
+        catch (KeyNotFoundException)
+        {
+            return NotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, AppConstants.Authorization.Denied);
+        }
+    }
+
     [HttpGet("all")]
     public async Task<IActionResult> GetAllOwnerBusinesses()
     {
@@ -281,8 +305,11 @@ public class BusinessController(
         }
         catch (KeyNotFoundException)
         {
-            StatusCode(StatusCodes.Status500InternalServerError);
             return NotFound();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return StatusCode(StatusCodes.Status403Forbidden, AppConstants.Authorization.Denied);
         }
     }
 }

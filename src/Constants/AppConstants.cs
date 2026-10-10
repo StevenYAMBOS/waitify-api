@@ -35,6 +35,7 @@ public static class AppConstants
             public const string Waiting = "waiting";
             public const string Called = "called";
             public const string Served = "served";
+            public const string Missed = "missed";
 
         }
 

@@ -236,6 +236,12 @@ namespace WaitifyApi.Migrations
                     b.Property<string>("SubsriptionStatus")
                         .HasColumnType("text");
 
+                    b.Property<string>("ThemePreference")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("varchar(10)")
+                        .HasDefaultValue("System");
+
                     b.Property<DateTime>("TrialEndsAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -634,6 +640,7 @@ namespace WaitifyApi.Migrations
                     b.HasOne("WaitifyApi.Entities.Business", "Business")
                         .WithMany()
                         .HasForeignKey("BusinessQrCodeToken")
+                        .HasPrincipalKey("QrCodeToken")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
@@ -645,6 +652,7 @@ namespace WaitifyApi.Migrations
                     b.HasOne("WaitifyApi.Entities.Business", "Business")
                         .WithMany()
                         .HasForeignKey("BusinessQrCodeToken")
+                        .HasPrincipalKey("QrCodeToken")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 

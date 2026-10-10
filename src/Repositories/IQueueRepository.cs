@@ -12,5 +12,6 @@ namespace WaitifyApi.Repositories
     Task<CallNextClientResponse> CallNextClientAsync(Guid qrCodeToken, string ownerId);
     Task<CancelQueueEntryResponse> CancelQueueEntryAsync(Guid id);
     Task<MarkClientAsServedResponse> MarkClientAsServedAsync(Guid id, string ownerId, MarkClientAsServedRequest request);
+    Task<QueueEntryResponse> MarkClientAsMissedAsync(Guid id, string ownerId);
   }
 }

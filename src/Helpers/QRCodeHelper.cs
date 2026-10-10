@@ -4,6 +4,14 @@ namespace WaitifyApi.Helpers;
 
 public sealed class QRCodeGeneratorService
 {
+    public string GeneratePngBase64(string url)
+    {
+        using QRCodeGenerator qrGenerator = new();
+        using QRCodeData qrCodeData = qrGenerator.CreateQrCode(url, QRCodeGenerator.ECCLevel.Q);
+        PngByteQRCode qrCode = new(qrCodeData);
+        return Convert.ToBase64String(qrCode.GetGraphic(20));
+    }
+
     public async Task<string> GenerateQRCode(
         string url
         // string filePath

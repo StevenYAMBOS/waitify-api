@@ -103,3 +103,9 @@ public record GetBusinessLiveKpisResponse
     public double AverageWaitMinutes { get; set; } = 0.0;
     public DateTime? QueueOpenSince { get; set; }
 }
+
+public record BusinessQrCodeResponse
+{
+    public required string Url { get; set; }
+    public required string PngBase64 { get; set; }
+}

@@ -99,6 +99,11 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
       throw new InvalidOperationException("La file d'attente est fermée.");
     }
 
+    if (business.IsQueuePaused)
+    {
+      throw new InvalidOperationException("La file d'attente est en pause.");
+    }
+
     // Vérification client pas déjà inscrit (même numéro + business)
     bool alreadyInQueue = await context.Queues.AnyAsync(q =>
       q.Phone == request.Phone &&
@@ -283,6 +288,35 @@ public class QueueService(AppDbContext context, IApplicationUserRepository userS
       CalledAt = entry.CalledAt,
       ServedAt = entry.ServedAt,
       ActualServiceTime = entry.ActualServiceTime == 0 ? null : entry.ActualServiceTime,
+    };
+  }
+
+  public async Task<QueueEntryResponse> MarkClientAsMissedAsync(Guid id, string ownerId)
+  {
+    var entry = await context.Queues.FindAsync(id)
+      ?? throw new KeyNotFoundException("Entrée de file d'attente introuvable.");
+
+    await FindOwnedBusinessAsync(entry.BusinessQrCodeToken, ownerId);
+
+    if (entry.Status != AppConstants.Queues.Status.Called)
+    {
+      throw new InvalidOperationException($"Impossible de marquer comme absent une entrée avec le statut '{entry.Status}'.");
+    }
+
+    entry.Status = AppConstants.Queues.Status.Missed;
+    entry.UpdatedAt = DateTime.UtcNow;
+    await context.SaveChangesAsync();
+
+    return new QueueEntryResponse
+    {
+      Id = entry.Id,
+      ClientName = entry.ClientName,
+      Phone = entry.Phone,
+      Position = entry.Position,
+      Status = entry.Status,
+      EstimatedWaitTime = entry.EstimatedWaitTime,
+      CreatedAt = entry.CreatedAt,
+      CalledAt = entry.CalledAt,
     };
   }
 }

@@ -229,20 +229,16 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
 
     public async Task DeleteBusinessAsync(Guid id, string userId)
     {
-        var user = await userService.FindUserByIdAsync(userId);
-        if (user == null)
-        {
-            logger.LogError("L'id utilisateur n'est pas correcte : {@0}", user.Id);
-            throw new KeyNotFoundException("Utilisateur non trouvé");
-        }        var business = await FindBusinessByIdAsync(id, user.Id);
+        var business = await context.Businesses.FirstOrDefaultAsync(b => b.Id == id)
+            ?? throw new KeyNotFoundException("Entreprise non trouvée.");
 
-        if (business is null)
+        if (business.OwnerId != userId)
         {
-            logger.LogError("Entreprise non trouvée.");
-            throw new KeyNotFoundException("Entreprise non trouvée.");
+            throw new UnauthorizedAccessException("Accès interdit");
         }
 
-        if (business.Logo != null)
+        // Le logo par défaut est partagé entre toutes les entreprises : il ne se supprime jamais.
+        if (!string.IsNullOrEmpty(business.Logo) && business.Logo != AppConstants.Azure.WaitifyLogoUrl)
         {
             string blobUrl = Environment.GetEnvironmentVariable("AzureGenericBlobsUrl")!;
             string azureContainerName = Environment.GetEnvironmentVariable("AzureBlobBusinessesContainer")!;
@@ -253,6 +249,24 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
         context.Businesses.Remove(business);
         await context.SaveChangesAsync();
         logger.LogInformation("Entreprise '{@0}' supprimée avec succès", business.Name);
+    }
+
+    public async Task<BusinessQrCodeResponse> GetQrCodeAsync(Guid id, string ownerId)
+    {
+        var business = await context.Businesses.AsNoTracking().FirstOrDefaultAsync(b => b.Id == id)
+            ?? throw new KeyNotFoundException("Entreprise non trouvée.");
+
+        if (business.OwnerId != ownerId)
+        {
+            throw new UnauthorizedAccessException("Accès interdit");
+        }
+
+        var url = AppConstants.Config.WaitifyUrl + "/q/" + business.QrCodeToken;
+        return new BusinessQrCodeResponse
+        {
+            Url = url,
+            PngBase64 = qRCodeHelper.GeneratePngBase64(url),
+        };
     }
 
     public async Task<IEnumerable<Business>> GetAllOwnerBusinessesAsync(string id)

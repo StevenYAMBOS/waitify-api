@@ -143,8 +143,12 @@ public class BusinessService(AppDbContext context, IApplicationUserRepository us
             context.Businesses.Update(existingBusiness);
             await context.SaveChangesAsync();
 
-            logger.LogInformation("Entreprise mis à jour avec succès : {@0}", JsonConvert.SerializeObject(existingBusiness, Formatting.Indented));
-            return (true, existingBusiness, null);
+            // On relit l'entreprise sans son gérant : l'entité suivie référence Owner, qui
+            // référence ses Businesses, et cette boucle fait échouer la sérialisation JSON
+            // alors que la modification est déjà enregistrée.
+            var updated = await context.Businesses.AsNoTracking().FirstAsync(business => business.Id == businessId);
+            logger.LogInformation("Entreprise `{BusinessId}` mise à jour.", businessId);
+            return (true, updated, null);
         }
         catch (Exception ex)
         {
